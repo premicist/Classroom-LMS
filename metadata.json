@@ -1,0 +1,6 @@
+{
+  "name": "Classroom LMS",
+  "description": "Classroom Learning Management System featuring real-time grade tracking, assignment submissions checklist, homework check record, multiple classroom setup, and automated attendance reports for teachers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
