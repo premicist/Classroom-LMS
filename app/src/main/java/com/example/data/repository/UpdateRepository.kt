@@ -1,7 +1,6 @@
 package com.example.data.repository
 
 import com.example.BuildConfig
-import com.example.data.model.GitHubRelease
 import com.example.data.network.GitHubReleaseService
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
