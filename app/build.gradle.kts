@@ -106,8 +106,9 @@ dependencies {
   // Uncomment to use Firestore:
   // implementation(libs.firebase.firestore)
 
-  // Firebase Auth and Google Sign-In:
+  // Firebase Auth, Messaging, and Google Sign-In:
   implementation(libs.firebase.auth)
+  implementation(libs.firebase.messaging)
   implementation("com.google.android.gms:play-services-auth:21.0.0")
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services)
