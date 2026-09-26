@@ -15,5 +15,6 @@ data class ClassroomEntity(
     val colorHex: Long = 0xFF2563EB, // default vibrant blue
     val iconName: String = "SCHOOL",
     val academicYear: String = "2025-2026",
+    val linkedSpreadsheetId: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )

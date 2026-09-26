@@ -3,12 +3,14 @@ package com.example.util
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.example.ui.viewmodel.StudentGradeSummary
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -30,6 +32,124 @@ object PdfReportExporter {
     private const val HEADING_SIZE = 12f
     private const val BODY_SIZE = 10f
     private const val SMALL_SIZE = 9f
+
+    fun exportStudentPortfolio(
+        context: Context,
+        summary: StudentGradeSummary,
+        classTitle: String
+    ) {
+        try {
+            val document = PdfDocument()
+            
+            val paint = Paint().apply {
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+                textSize = BODY_SIZE
+                color = Color.BLACK
+            }
+            val titlePaint = Paint(paint).apply {
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                textSize = TITLE_SIZE
+            }
+            val headingPaint = Paint(paint).apply {
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                textSize = HEADING_SIZE
+            }
+
+            // --- Draw Page ---
+            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+
+            var currentY = MARGIN
+
+            // 1. Header
+            canvas.drawText("Comprehensive Student Portfolio", MARGIN, currentY, titlePaint)
+            currentY += LINE_HEIGHT * 2
+            
+            val dateStr = SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(Date())
+            canvas.drawText("Date: $dateStr", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Classroom: $classTitle", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT * 2
+
+            // 2. Student Info
+            canvas.drawText("Student Profile", MARGIN, currentY, headingPaint)
+            currentY += LINE_HEIGHT * 1.5f
+            val s = summary.student
+            canvas.drawText("Name: ${s.name}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("ID: ${s.studentNumber}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            if (s.email.isNotBlank()) {
+                canvas.drawText("Email: ${s.email}", MARGIN, currentY, paint)
+                currentY += LINE_HEIGHT
+            }
+            if (s.guardianContact.isNotBlank()) {
+                canvas.drawText("Guardian: ${s.guardianContact}", MARGIN, currentY, paint)
+                currentY += LINE_HEIGHT
+            }
+            s.customAttributes.forEach { (key, value) ->
+                canvas.drawText("$key: $value", MARGIN, currentY, paint)
+                currentY += LINE_HEIGHT
+            }
+            currentY += LINE_HEIGHT
+
+            // 3. Academic Performance
+            canvas.drawText("Academic Performance", MARGIN, currentY, headingPaint)
+            currentY += LINE_HEIGHT * 1.5f
+            canvas.drawText("Overall Grade: ${summary.percentage}% (${summary.letterGrade})", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("GPA: ${summary.gpa}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Academic Tier: ${summary.tier.name.replace("_", " ")}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT * 2
+
+            // 4. Attendance & Participation
+            canvas.drawText("Participation & Consistency", MARGIN, currentY, headingPaint)
+            currentY += LINE_HEIGHT * 1.5f
+            canvas.drawText("Attendance Rate: ${summary.attendanceRate.toInt()}%", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Homework Completion: ${summary.homeworkCompletionRate.toInt()}%", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT * 2
+            
+            // 5. TCMS Automated Analytics
+            if (summary.riskReasons.isNotEmpty() || summary.enrichmentReasons.isNotEmpty()) {
+                canvas.drawText("Automated Insights (TCMS)", MARGIN, currentY, headingPaint)
+                currentY += LINE_HEIGHT * 1.5f
+                
+                summary.riskReasons.forEach { risk ->
+                    canvas.drawText("• Alert: $risk", MARGIN + 10f, currentY, paint)
+                    currentY += LINE_HEIGHT
+                }
+                summary.enrichmentReasons.forEach { enrichment ->
+                    canvas.drawText("• Strength: $enrichment", MARGIN + 10f, currentY, paint)
+                    currentY += LINE_HEIGHT
+                }
+            }
+
+            document.finishPage(page)
+
+            // Save and share
+            val file = File(context.cacheDir, "Portfolio_${s.name.replace(" ", "_")}.pdf")
+            FileOutputStream(file).use { out ->
+                document.writeTo(out)
+            }
+            document.close()
+
+            val uri: Uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Student Portfolio: ${s.name}")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Share Student Portfolio"))
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Failed to export PDF", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     /**
      * Build a multi-page A4 PDF from plain report text and open the share sheet.

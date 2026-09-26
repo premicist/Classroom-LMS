@@ -67,9 +67,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
@@ -226,7 +226,7 @@ fun LmsMainScreen(
                 activeClassroom = uiState.activeClassroom,
                 classrooms = uiState.classrooms,
                 onSelectClassroom = { viewModel.selectClassroom(it.id) },
-                onAddClassroom = { viewModel.openAddClassroom() },
+                onMenuClick = { scope.launch { drawerState.open() } },
                 onManageClassrooms = { viewModel.openClassroomManagement() }
             )
         },
@@ -432,8 +432,9 @@ fun LmsMainScreen(
 
     // Full student roster (add / edit / remove / re-assign)
     if (uiState.isStudentRosterOpen) {
+        val displayList = if (uiState.allStudents.isEmpty()) uiState.students else uiState.allStudents
         StudentRosterScreen(
-            students = uiState.allStudents.ifEmpty { uiState.students },
+            students = displayList,
             classrooms = uiState.classrooms,
             activeClassroomId = uiState.activeClassroom?.id,
             onBack = { viewModel.closeStudentRoster() },
@@ -495,4 +496,13 @@ fun LmsMainScreen(
             }
         )
     }
+
+    if (uiState.isPlannerOpen && uiState.activeClassroom != null) {
+        PlannerScreen(
+            classroomId = uiState.activeClassroom!!.id,
+            viewModel = viewModel,
+            onBack = { viewModel.closePlanner() }
+        )
+    }
+}
 }

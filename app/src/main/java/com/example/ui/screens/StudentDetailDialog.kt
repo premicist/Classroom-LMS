@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
@@ -48,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,8 +69,9 @@ import com.example.ui.viewmodel.StudentGradeSummary
 import com.example.ui.viewmodel.StudentProgressTrajectory
 import com.example.ui.viewmodel.StudentTier
 import com.example.ui.viewmodel.TrajectoryTrend
+import com.example.util.PdfReportExporter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StudentDetailDialog(
     summary: StudentGradeSummary,
@@ -77,6 +82,7 @@ fun StudentDetailDialog(
     onDeleteStudent: () -> Unit,
     onLogIntervention: () -> Unit,
     onExportReport: () -> Unit,
+    isClassroomLinked: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -166,6 +172,43 @@ fun StudentDetailDialog(
                         MetricItem("GPA", "${summary.gpa}", MaterialTheme.colorScheme.onSurface)
                         MetricItem("HW Check", "${summary.homeworkCompletionRate.toInt()}%", EduPrimary)
                         MetricItem("Attendance", "${summary.attendanceRate.toInt()}%", StatusSuccess)
+                    }
+                }
+            }
+
+            // Extended Dynamic Student Info (Custom Attributes)
+            if (student.email.isNotBlank() || student.guardianContact.isNotBlank() || student.customAttributes.isNotEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "Student Information",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (student.email.isNotBlank()) {
+                                    InfoCard("Email", student.email)
+                                }
+                                if (student.guardianContact.isNotBlank()) {
+                                    InfoCard("Guardian", student.guardianContact)
+                                }
+                                student.customAttributes.forEach { (key, value) ->
+                                    InfoCard(key, value)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -388,37 +431,51 @@ fun StudentDetailDialog(
 
             // Export & Management Action Buttons
             item {
+                val context = LocalContext.current
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = onExportReport,
+                        onClick = { PdfReportExporter.exportStudentPortfolio(context, summary, "Portfolio") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Icon(imageVector = Icons.Default.Description, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(imageVector = Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Export Student Progress Portfolio")
+                        Text("Download PDF Portfolio")
                     }
 
-                    Row(
+                    Button(
+                        onClick = onExportReport,
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
-                        OutlinedButton(
-                            onClick = onEditStudent,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp)
+                        Icon(imageVector = Icons.Default.Description, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("View Text Report")
+                    }
+
+                    if (!isClassroomLinked) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Edit Details")
-                        }
-                        Button(
-                            onClick = onDeleteStudent,
-                            colors = ButtonDefaults.buttonColors(containerColor = StatusError),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                            OutlinedButton(
+                                onClick = onEditStudent,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Edit Details")
+                            }
+                            Button(
+                                onClick = onDeleteStudent,
+                                colors = ButtonDefaults.buttonColors(containerColor = StatusError),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
@@ -432,5 +489,20 @@ private fun MetricItem(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = color)
         Text(text = label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun InfoCard(label: String, value: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(8.dp),
+        shadowElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(text = label.uppercase(), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = value, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }

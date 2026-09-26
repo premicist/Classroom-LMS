@@ -20,6 +20,10 @@ import com.example.data.entity.InterventionEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 
+import com.example.data.entity.LessonPlanEntity
+import com.example.data.entity.DailyLogEntity
+import com.example.data.dao.PlannerDao
+
 @Database(
     entities = [
         ClassroomEntity::class,
@@ -29,11 +33,13 @@ import com.example.data.entity.SubmissionEntity
         HomeworkRecordEntity::class,
         AttendanceRecordEntity::class,
         InterventionEntity::class,
+        LessonPlanEntity::class,
+        DailyLogEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false,
 )
-@TypeConverters(Converters::class)
+@TypeConverters(Converters::class, com.example.data.entity.Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun classroomDao(): ClassroomDao
     abstract fun studentDao(): StudentDao
@@ -42,6 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun homeworkRecordDao(): HomeworkRecordDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun interventionDao(): InterventionDao
+    abstract fun plannerDao(): PlannerDao
 
     companion object {
         @Volatile

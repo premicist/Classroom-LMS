@@ -28,5 +28,6 @@ data class StudentEntity(
     val avatarColorHex: Long = 0xFF3B82F6,
     val photoPath: String? = null,
     val notes: String = "",
+    val customAttributes: Map<String, String> = emptyMap(),
     val createdAt: Long = System.currentTimeMillis()
 )

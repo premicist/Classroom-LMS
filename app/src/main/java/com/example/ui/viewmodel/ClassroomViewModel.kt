@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.database.AppDatabase
@@ -27,6 +28,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import com.example.data.auth.AuthManager
+import com.example.data.repository.SyncRepository
+import com.example.util.PdfReportExporter
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -35,7 +39,9 @@ import kotlin.math.roundToInt
 class ClassroomViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: ClassroomRepository
+    private val db = AppDatabase.getInstance(application)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val authManager = AuthManager(application)
 
     private val _uiState = MutableStateFlow(
         LmsUiState(
@@ -48,7 +54,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private val _selectedClassroomId = MutableStateFlow<Long?>(null)
 
     init {
-        val db = AppDatabase.getInstance(application)
         repository = ClassroomRepository(db)
 
         viewModelScope.launch {
@@ -146,6 +151,52 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     )
 
     // --- NAVIGATION & TABS ---
+    // ==========================================
+    // UI Events & State Mutators
+    // ==========================================
+
+    fun syncGoogleSheet(classroomId: Long) {
+        val classroom = uiState.value.activeClassroom ?: return
+        if (classroom.linkedSpreadsheetId == null) {
+            _uiState.update { it.copy(userNotificationMessage = "No Google Sheet linked to this classroom") }
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val token = authManager.getAccessToken()
+                if (token == null) {
+                    _uiState.update { it.copy(userNotificationMessage = "Failed to get Google Token. Please sign in.") }
+                    return@launch
+                }
+                
+                _uiState.update { it.copy(userNotificationMessage = "Syncing with Google Sheets...") }
+                
+                val syncRepo = SyncRepository(db, token)
+                val resultMsg = syncRepo.syncClassroomRoster(classroomId, classroom.linkedSpreadsheetId)
+                
+                // Trigger a refresh of the UI state to ensure the new students show up immediately
+                _selectedClassroomId.value = null
+                _selectedClassroomId.value = classroomId
+                
+                _uiState.update { it.copy(userNotificationMessage = resultMsg) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(userNotificationMessage = "Sync failed: ${e.message}") }
+            }
+        }
+    }
+
+    fun linkSpreadsheet(classroomId: Long, spreadsheetId: String) {
+        viewModelScope.launch {
+            val classroom = db.classroomDao().getClassroomByIdOnce(classroomId) ?: return@launch
+            val updated = classroom.copy(linkedSpreadsheetId = spreadsheetId)
+            repository.updateClassroom(updated)
+            syncGoogleSheet(classroomId)
+        }
+    }
+
+    fun getAuthManager() = authManager
+
     fun selectTab(tab: LmsTab) {
         _uiState.update { it.copy(selectedTab = tab) }
     }
@@ -348,12 +399,25 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun exportPdfPortfolio(context: Context, summary: StudentGradeSummary) {
+        val classroomName = uiState.value.activeClassroom?.name ?: "Classroom"
+        PdfReportExporter.exportStudentPortfolio(context, summary, classroomName)
+    }
+
     fun openExportReport(content: String, title: String = "Class Progress & Intervention Report") {
         _uiState.update { it.copy(isExportReportOpen = true, exportReportContent = content, exportReportTitle = title) }
     }
 
     fun closeExportReport() {
         _uiState.update { it.copy(isExportReportOpen = false, exportReportContent = "", exportReportTitle = "") }
+    }
+
+    fun openPlanner() {
+        _uiState.update { it.copy(isPlannerOpen = true) }
+    }
+
+    fun closePlanner() {
+        _uiState.update { it.copy(isPlannerOpen = false) }
     }
 
     fun showToast(message: String) {

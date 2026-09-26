@@ -21,7 +21,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MeetingRoom
@@ -51,8 +52,9 @@ fun ClassroomHeader(
     activeClassroom: ClassroomEntity?,
     classrooms: List<ClassroomEntity>,
     onSelectClassroom: (ClassroomEntity) -> Unit,
-    onAddClassroom: () -> Unit,
+    onMenuClick: () -> Unit,
     onManageClassrooms: () -> Unit,
+    onSyncClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -125,18 +127,28 @@ fun ClassroomHeader(
                     }
                 }
 
-                // Add Class Quick Button
+                if (activeClassroom != null) {
+                    IconButton(onClick = onSyncClick) {
+                        Icon(
+                            imageVector = Icons.Default.CloudSync,
+                            contentDescription = "Sync with Google Sheets",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Menu Quick Button
                 Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer)
-                        .clickable { onAddClassroom() },
+                        .clickable { onMenuClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Classroom",
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(20.dp)
                     )

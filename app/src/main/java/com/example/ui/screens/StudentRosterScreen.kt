@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -87,6 +88,8 @@ fun StudentRosterScreen(
     var studentToReassign by remember { mutableStateOf<StudentEntity?>(null) }
 
     val classroomMap = remember(classrooms) { classrooms.associateBy { it.id } }
+    val activeClassroom = classroomMap[filterClassroomId]
+    val isClassroomLinked = activeClassroom?.linkedSpreadsheetId != null
 
     val filtered = remember(students, searchQuery, filterClassroomId) {
         students.filter { s ->
@@ -120,13 +123,15 @@ fun StudentRosterScreen(
                     }
                 },
                 actions = {
-                    FilledTonalButton(
-                        onClick = onAddStudent,
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add")
+                    if (!isClassroomLinked) {
+                        FilledTonalButton(
+                            onClick = onAddStudent,
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Add")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -141,6 +146,34 @@ fun StudentRosterScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
+            if (isClassroomLinked) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudSync,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Roster managed via linked Google Sheet",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
             // Search
             OutlinedTextField(
                 value = searchQuery,

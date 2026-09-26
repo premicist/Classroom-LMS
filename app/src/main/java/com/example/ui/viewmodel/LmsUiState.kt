@@ -228,5 +228,6 @@ data class LmsUiState(
     val isExportReportOpen: Boolean = false,
     val exportReportContent: String = "",
     val exportReportTitle: String = "Class Progress & Intervention Report",
-    val userNotificationMessage: String? = null
+    val userNotificationMessage: String? = null,
+    val isPlannerOpen: Boolean = false
 )
