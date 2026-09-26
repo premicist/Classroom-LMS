@@ -11,6 +11,7 @@ import com.example.data.entity.InterventionType
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
+import com.example.data.repository.AppUpdateInfo
 
 enum class TrajectoryTrend(val label: String) {
     IMPROVING("Improving Trajectory"),
@@ -229,5 +230,10 @@ data class LmsUiState(
     val exportReportContent: String = "",
     val exportReportTitle: String = "Class Progress & Intervention Report",
     val userNotificationMessage: String? = null,
-    val isPlannerOpen: Boolean = false
+    val isPlannerOpen: Boolean = false,
+
+    // App Update State
+    val isCheckingForUpdates: Boolean = false,
+    val updateInfo: AppUpdateInfo? = null,
+    val isUpdateDialogOpen: Boolean = false
 )

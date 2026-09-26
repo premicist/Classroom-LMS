@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import com.example.data.auth.AuthManager
 import com.example.data.repository.SyncRepository
+import com.example.data.repository.UpdateRepository
 import com.example.util.PdfReportExporter
 import java.util.Date
 import java.util.Locale
@@ -42,6 +43,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private val db = AppDatabase.getInstance(application)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val authManager = AuthManager(application)
+    private val updateRepository = UpdateRepository()
 
     private val _uiState = MutableStateFlow(
         LmsUiState(
@@ -418,6 +420,34 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun closePlanner() {
         _uiState.update { it.copy(isPlannerOpen = false) }
+    }
+
+    fun checkForUpdates(isManual: Boolean = false) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingForUpdates = true) }
+            val result = updateRepository.checkLatestRelease()
+            result.onSuccess { updateInfo ->
+                _uiState.update {
+                    it.copy(
+                        isCheckingForUpdates = false,
+                        updateInfo = updateInfo,
+                        isUpdateDialogOpen = updateInfo.isUpdateAvailable
+                    )
+                }
+                if (!updateInfo.isUpdateAvailable && isManual) {
+                    showToast("Classroom LMS is up to date (${updateInfo.currentVersionName})")
+                }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isCheckingForUpdates = false) }
+                if (isManual) {
+                    showToast("Unable to check for updates: ${error.localizedMessage ?: "Network error"}")
+                }
+            }
+        }
+    }
+
+    fun closeUpdateDialog() {
+        _uiState.update { it.copy(isUpdateDialogOpen = false) }
     }
 
     fun showToast(message: String) {

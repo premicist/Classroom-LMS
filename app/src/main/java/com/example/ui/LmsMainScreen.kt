@@ -70,6 +70,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SystemUpdate
+import com.example.ui.dialogs.UpdateAlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
@@ -79,6 +81,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.BuildConfig
 import com.example.ui.screens.PlannerScreen
 import com.example.ui.screens.StudentRosterScreen
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -204,9 +207,35 @@ fun LmsMainScreen(
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
+                NavigationDrawerItem(
+                    label = { 
+                        Text(if (uiState.isCheckingForUpdates) "Checking for Updates..." else "Check for Updates") 
+                    },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { drawerState.close() }
+                        viewModel.checkForUpdates(isManual = true)
+                    },
+                    icon = { Icon(Icons.Default.SystemUpdate, contentDescription = "Check for Updates") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
                 Spacer(modifier = Modifier.weight(1f))
                 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Classroom LMS v${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
 
                 NavigationDrawerItem(
                     label = { Text("Go Back") },
@@ -502,6 +531,14 @@ fun LmsMainScreen(
             classroomId = uiState.activeClassroom!!.id,
             viewModel = viewModel,
             onBack = { viewModel.closePlanner() }
+        )
+    }
+
+    // App Update Dialog
+    if (uiState.isUpdateDialogOpen && uiState.updateInfo != null) {
+        UpdateAlertDialog(
+            updateInfo = uiState.updateInfo!!,
+            onDismiss = { viewModel.closeUpdateDialog() }
         )
     }
 }
