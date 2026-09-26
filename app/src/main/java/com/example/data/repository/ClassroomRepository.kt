@@ -5,8 +5,10 @@ import com.example.data.database.SampleDataGenerator
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.ClassroomEntity
+import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
+import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -22,6 +24,7 @@ class ClassroomRepository(private val database: AppDatabase) {
     private val homeworkDao = database.homeworkRecordDao()
     private val attendanceDao = database.attendanceDao()
     private val interventionDao = database.interventionDao()
+    private val plannerDao = database.plannerDao()
 
     // Classrooms
     fun getAllClassrooms(): Flow<List<ClassroomEntity>> = classroomDao.getAllClassrooms()
@@ -101,6 +104,17 @@ class ClassroomRepository(private val database: AppDatabase) {
     suspend fun saveIntervention(intervention: InterventionEntity): Long = interventionDao.insertIntervention(intervention)
     suspend fun updateIntervention(intervention: InterventionEntity) = interventionDao.updateIntervention(intervention)
     suspend fun deleteIntervention(id: Long) = interventionDao.deleteInterventionById(id)
+
+    // Lesson Plans & Daily Diary
+    fun getLessonPlans(classroomId: Long): Flow<List<LessonPlanEntity>> = plannerDao.getLessonPlansForClassroom(classroomId)
+    suspend fun saveLessonPlan(plan: LessonPlanEntity): Long = plannerDao.insertLessonPlan(plan)
+    suspend fun updateLessonPlan(plan: LessonPlanEntity) = plannerDao.updateLessonPlan(plan)
+    suspend fun deleteLessonPlan(plan: LessonPlanEntity) = plannerDao.deleteLessonPlan(plan)
+
+    fun getDailyLogs(classroomId: Long): Flow<List<DailyLogEntity>> = plannerDao.getDailyLogsForClassroom(classroomId)
+    suspend fun saveDailyLog(log: DailyLogEntity): Long = plannerDao.insertDailyLog(log)
+    suspend fun updateDailyLog(log: DailyLogEntity) = plannerDao.updateDailyLog(log)
+    suspend fun deleteDailyLog(log: DailyLogEntity) = plannerDao.deleteDailyLog(log)
 
     // Initialize or Reset Demo Data
     suspend fun checkAndSeedInitialData() {

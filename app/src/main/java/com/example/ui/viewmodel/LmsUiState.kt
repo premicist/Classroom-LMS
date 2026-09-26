@@ -4,10 +4,12 @@ import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.ClassroomEntity
+import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.InterventionType
+import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -235,5 +237,13 @@ data class LmsUiState(
     // App Update State
     val isCheckingForUpdates: Boolean = false,
     val updateInfo: AppUpdateInfo? = null,
-    val isUpdateDialogOpen: Boolean = false
+    val isUpdateDialogOpen: Boolean = false,
+
+    // Lesson Planner & Daily Diary State
+    val lessonPlans: List<LessonPlanEntity> = emptyList(),
+    val dailyLogs: List<DailyLogEntity> = emptyList(),
+    val isAddEditLessonPlanOpen: Boolean = false,
+    val editingLessonPlan: LessonPlanEntity? = null,
+    val isAddEditDailyLogOpen: Boolean = false,
+    val editingDailyLog: DailyLogEntity? = null
 )

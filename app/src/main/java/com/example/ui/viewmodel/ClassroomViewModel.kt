@@ -10,10 +10,12 @@ import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.AttendanceStatus
 import com.example.data.entity.ClassroomEntity
+import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.InterventionType
+import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -91,7 +93,9 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                         repository.getSubmissionsByClassroom(id),
                         repository.getAllHomeworkRecordsForClassroom(id),
                         repository.getAttendanceForClassroom(id),
-                        repository.getInterventionsByClassroom(id)
+                        repository.getInterventionsByClassroom(id),
+                        repository.getLessonPlans(id),
+                        repository.getDailyLogs(id)
                     ) { args: Array<Any?> ->
                         @Suppress("UNCHECKED_CAST")
                         CombinedClassData(
@@ -101,7 +105,9 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             submissions = args[3] as List<SubmissionEntity>,
                             homeworks = args[4] as List<HomeworkRecordEntity>,
                             attendance = args[5] as List<AttendanceRecordEntity>,
-                            interventions = args[6] as List<InterventionEntity>
+                            interventions = args[6] as List<InterventionEntity>,
+                            lessonPlans = args[7] as List<LessonPlanEntity>,
+                            dailyLogs = args[8] as List<DailyLogEntity>
                         )
                     }
                 }
@@ -114,6 +120,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                     val homeworks = combined.homeworks
                     val attendance = combined.attendance
                     val interventions = combined.interventions
+                    val lessonPlans = combined.lessonPlans
+                    val dailyLogs = combined.dailyLogs
 
                     // Compute Grade Summaries
                     val studentSummaries = computeStudentGrades(students, assignments, submissions, homeworks, attendance)
@@ -131,6 +139,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             homeworkRecords = homeworks,
                             attendanceRecords = attendance,
                             interventions = interventions,
+                            lessonPlans = lessonPlans,
+                            dailyLogs = dailyLogs,
                             studentGradeSummaries = studentSummaries,
                             analytics = analytics,
                             attendanceReport = attendanceReport,
@@ -149,7 +159,9 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val submissions: List<SubmissionEntity>,
         val homeworks: List<HomeworkRecordEntity>,
         val attendance: List<AttendanceRecordEntity>,
-        val interventions: List<InterventionEntity>
+        val interventions: List<InterventionEntity>,
+        val lessonPlans: List<LessonPlanEntity>,
+        val dailyLogs: List<DailyLogEntity>
     )
 
     // --- NAVIGATION & TABS ---
@@ -448,6 +460,181 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun closeUpdateDialog() {
         _uiState.update { it.copy(isUpdateDialogOpen = false) }
+    }
+
+    // --- LESSON PLANNER & DAILY DIARY ACTIONS ---
+    fun openAddLessonPlan() {
+        _uiState.update { it.copy(isAddEditLessonPlanOpen = true, editingLessonPlan = null) }
+    }
+
+    fun openEditLessonPlan(plan: LessonPlanEntity) {
+        _uiState.update { it.copy(isAddEditLessonPlanOpen = true, editingLessonPlan = plan) }
+    }
+
+    fun closeLessonPlanDialog() {
+        _uiState.update { it.copy(isAddEditLessonPlanOpen = false, editingLessonPlan = null) }
+    }
+
+    fun saveLessonPlan(
+        unitTitle: String,
+        description: String,
+        targetDate: Long,
+        status: String
+    ) {
+        val activeClassId = uiState.value.activeClassroom?.id ?: return
+        viewModelScope.launch {
+            val editing = uiState.value.editingLessonPlan
+            if (editing != null) {
+                val updated = editing.copy(
+                    unitTitle = unitTitle,
+                    description = description,
+                    targetDate = targetDate,
+                    status = status
+                )
+                repository.updateLessonPlan(updated)
+                showToast("Lesson plan updated")
+            } else {
+                val newPlan = LessonPlanEntity(
+                    classroomId = activeClassId,
+                    unitTitle = unitTitle,
+                    description = description,
+                    targetDate = targetDate,
+                    status = status
+                )
+                repository.saveLessonPlan(newPlan)
+                showToast("Lesson plan created")
+            }
+            closeLessonPlanDialog()
+        }
+    }
+
+    fun updateLessonPlanStatus(plan: LessonPlanEntity, newStatus: String) {
+        viewModelScope.launch {
+            repository.updateLessonPlan(plan.copy(status = newStatus))
+            showToast("Plan status set to $newStatus")
+        }
+    }
+
+    fun deleteLessonPlan(plan: LessonPlanEntity) {
+        viewModelScope.launch {
+            repository.deleteLessonPlan(plan)
+            showToast("Lesson plan deleted")
+        }
+    }
+
+    fun openAddDailyLog() {
+        _uiState.update { it.copy(isAddEditDailyLogOpen = true, editingDailyLog = null) }
+    }
+
+    fun openEditDailyLog(log: DailyLogEntity) {
+        _uiState.update { it.copy(isAddEditDailyLogOpen = true, editingDailyLog = log) }
+    }
+
+    fun closeDailyLogDialog() {
+        _uiState.update { it.copy(isAddEditDailyLogOpen = false, editingDailyLog = null) }
+    }
+
+    fun saveDailyLog(
+        date: Long,
+        reflectionNotes: String,
+        wasProxyClass: Boolean
+    ) {
+        val activeClassId = uiState.value.activeClassroom?.id ?: return
+        viewModelScope.launch {
+            val editing = uiState.value.editingDailyLog
+            if (editing != null) {
+                val updated = editing.copy(
+                    date = date,
+                    reflectionNotes = reflectionNotes,
+                    wasProxyClass = wasProxyClass
+                )
+                repository.updateDailyLog(updated)
+                showToast("Daily diary log updated")
+            } else {
+                val newLog = DailyLogEntity(
+                    classroomId = activeClassId,
+                    date = date,
+                    reflectionNotes = reflectionNotes,
+                    wasProxyClass = wasProxyClass
+                )
+                repository.saveDailyLog(newLog)
+                showToast("Daily diary entry added")
+            }
+            closeDailyLogDialog()
+        }
+    }
+
+    fun deleteDailyLog(log: DailyLogEntity) {
+        viewModelScope.launch {
+            repository.deleteDailyLog(log)
+            showToast("Daily diary entry deleted")
+        }
+    }
+
+    fun generateLessonPlansReportText(): String {
+        val activeClass = uiState.value.activeClassroom
+        val plans = uiState.value.lessonPlans
+        val df = SimpleDateFormat("MMM dd, yyyy", Locale.US)
+
+        val sb = StringBuilder()
+        sb.appendLine("TEACHER LESSON PLANNER REPORT")
+        sb.appendLine("Classroom: ${activeClass?.name ?: "All Classes"} (${activeClass?.subject ?: ""})")
+        sb.appendLine("Total Plans: ${plans.size}")
+        sb.appendLine("==========================================")
+        sb.appendLine()
+
+        if (plans.isEmpty()) {
+            sb.appendLine("No lesson plans recorded.")
+        } else {
+            plans.forEachIndexed { idx, plan ->
+                sb.appendLine("${idx + 1}. [${plan.status}] ${plan.unitTitle}")
+                sb.appendLine("   Target Date: ${df.format(Date(plan.targetDate))}")
+                sb.appendLine("   Objectives & Notes:")
+                sb.appendLine("   ${plan.description}")
+                sb.appendLine("------------------------------------------")
+            }
+        }
+        return sb.toString()
+    }
+
+    fun generateDailyDiaryReportText(): String {
+        val activeClass = uiState.value.activeClassroom
+        val logs = uiState.value.dailyLogs
+        val df = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.US)
+
+        val sb = StringBuilder()
+        sb.appendLine("TEACHER DAILY DIARY LOG")
+        sb.appendLine("Classroom: ${activeClass?.name ?: "All Classes"} (${activeClass?.subject ?: ""})")
+        sb.appendLine("Total Entries: ${logs.size}")
+        sb.appendLine("==========================================")
+        sb.appendLine()
+
+        if (logs.isEmpty()) {
+            sb.appendLine("No diary entries recorded.")
+        } else {
+            logs.forEachIndexed { idx, log ->
+                val proxyTag = if (log.wasProxyClass) " [PROXY CLASS]" else ""
+                sb.appendLine("${idx + 1}. ${df.format(Date(log.date))}$proxyTag")
+                sb.appendLine("   Reflection & Observations:")
+                sb.appendLine("   ${log.reflectionNotes}")
+                sb.appendLine("------------------------------------------")
+            }
+        }
+        return sb.toString()
+    }
+
+    fun exportLessonPlansPdf(context: Context) {
+        val activeClass = uiState.value.activeClassroom
+        val reportText = generateLessonPlansReportText()
+        val title = "Lesson Plans - ${activeClass?.name ?: "Classroom"}"
+        PdfReportExporter.exportAndShare(context, title, reportText, "LessonPlans_${activeClass?.name ?: "Class"}")
+    }
+
+    fun exportDailyDiaryPdf(context: Context) {
+        val activeClass = uiState.value.activeClassroom
+        val reportText = generateDailyDiaryReportText()
+        val title = "Daily Diary - ${activeClass?.name ?: "Classroom"}"
+        PdfReportExporter.exportAndShare(context, title, reportText, "DailyDiary_${activeClass?.name ?: "Class"}")
     }
 
     fun showToast(message: String) {
