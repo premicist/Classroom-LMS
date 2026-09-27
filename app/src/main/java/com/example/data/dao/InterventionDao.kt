@@ -14,6 +14,9 @@ interface InterventionDao {
     @Query("SELECT * FROM interventions WHERE classroomId = :classroomId ORDER BY date DESC, createdAt DESC")
     fun getInterventionsByClassroom(classroomId: Long): Flow<List<InterventionEntity>>
 
+    @Query("SELECT * FROM interventions WHERE classroomId = :classroomId ORDER BY date DESC, createdAt DESC")
+    suspend fun getInterventionsByClassroomOnce(classroomId: Long): List<InterventionEntity>
+
     @Query("SELECT * FROM interventions WHERE studentId = :studentId ORDER BY date DESC, createdAt DESC")
     fun getInterventionsByStudent(studentId: Long): Flow<List<InterventionEntity>>
 

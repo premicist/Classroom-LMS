@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.EventAvailable
@@ -87,6 +88,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.BuildConfig
+import com.example.ui.screens.ClassroomScheduleScreen
+import com.example.ui.screens.LinkGoogleSheetDialog
 import com.example.ui.screens.PlannerScreen
 import com.example.ui.screens.StudentRosterScreen
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -221,6 +224,17 @@ fun LmsMainScreen(
                 )
 
                 NavigationDrawerItem(
+                    label = { Text("Classroom Schedule") },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { drawerState.close() }
+                        viewModel.openScheduleScreen()
+                    },
+                    icon = { Icon(Icons.Default.Schedule, contentDescription = "Classroom Schedule") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
                     label = { Text("Generate Reports") },
                     selected = false,
                     onClick = { 
@@ -288,7 +302,17 @@ fun LmsMainScreen(
                 classrooms = uiState.classrooms,
                 onSelectClassroom = { viewModel.selectClassroom(it.id) },
                 onMenuClick = { scope.launch { drawerState.open() } },
-                onManageClassrooms = { viewModel.openClassroomManagement() }
+                onManageClassrooms = { viewModel.openClassroomManagement() },
+                onSyncClick = {
+                    val classroom = uiState.activeClassroom
+                    if (classroom != null) {
+                        if (classroom.linkedSpreadsheetId.isNullOrBlank()) {
+                            showLinkSheetDialog = true
+                        } else {
+                            viewModel.syncGoogleSheet(classroom.id)
+                        }
+                    }
+                }
             )
         },
         bottomBar = {
@@ -362,6 +386,31 @@ fun LmsMainScreen(
     }
 
     // --- MODAL DIALOGS & BOTTOM SHEETS ---
+
+    if (uiState.isScheduleScreenOpen) {
+        ClassroomScheduleScreen(
+            uiState = uiState,
+            viewModel = viewModel,
+            onBack = { viewModel.closeScheduleScreen() }
+        )
+    }
+
+    // Link Google Sheet Dialog
+    if (showLinkSheetDialog && uiState.activeClassroom != null) {
+        val currentClassroom = uiState.activeClassroom!!
+        LinkGoogleSheetDialog(
+            classroom = currentClassroom,
+            onDismiss = { showLinkSheetDialog = false },
+            onLinkAndSync = { spreadsheetId ->
+                showLinkSheetDialog = false
+                viewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
+            },
+            onUnlink = {
+                showLinkSheetDialog = false
+                viewModel.linkSpreadsheet(currentClassroom.id, "")
+            }
+        )
+    }
 
     // 1. Add / Edit Classroom Dialog
     if (uiState.isAddEditClassroomOpen) {

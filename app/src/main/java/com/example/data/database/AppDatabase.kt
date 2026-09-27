@@ -7,22 +7,23 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.data.dao.AssignmentDao
 import com.example.data.dao.AttendanceDao
+import com.example.data.dao.ClassScheduleDao
 import com.example.data.dao.ClassroomDao
 import com.example.data.dao.HomeworkRecordDao
 import com.example.data.dao.InterventionDao
+import com.example.data.dao.PlannerDao
 import com.example.data.dao.StudentDao
 import com.example.data.dao.SubmissionDao
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AttendanceRecordEntity
+import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
+import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
+import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
-
-import com.example.data.entity.LessonPlanEntity
-import com.example.data.entity.DailyLogEntity
-import com.example.data.dao.PlannerDao
 
 @Database(
     entities = [
@@ -34,9 +35,10 @@ import com.example.data.dao.PlannerDao
         AttendanceRecordEntity::class,
         InterventionEntity::class,
         LessonPlanEntity::class,
-        DailyLogEntity::class
+        DailyLogEntity::class,
+        ClassScheduleEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 @TypeConverters(Converters::class, com.example.data.entity.Converters::class)
@@ -49,6 +51,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun attendanceDao(): AttendanceDao
     abstract fun interventionDao(): InterventionDao
     abstract fun plannerDao(): PlannerDao
+    abstract fun classScheduleDao(): ClassScheduleDao
 
     companion object {
         @Volatile

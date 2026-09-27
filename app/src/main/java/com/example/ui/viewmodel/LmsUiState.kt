@@ -3,6 +3,7 @@ package com.example.ui.viewmodel
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceRecordEntity
+import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.HomeworkRecordEntity
@@ -192,6 +193,7 @@ data class LmsUiState(
     val homeworkRecords: List<HomeworkRecordEntity> = emptyList(),
     val attendanceRecords: List<AttendanceRecordEntity> = emptyList(),
     val interventions: List<InterventionEntity> = emptyList(),
+    val schedules: List<ClassScheduleEntity> = emptyList(),
     
     // Computed analytics
     val studentGradeSummaries: List<StudentGradeSummary> = emptyList(),
@@ -233,6 +235,7 @@ data class LmsUiState(
     val exportReportTitle: String = "Class Progress & Intervention Report",
     val userNotificationMessage: String? = null,
     val isPlannerOpen: Boolean = false,
+    val isScheduleScreenOpen: Boolean = false,
 
     // App Update State
     val isCheckingForUpdates: Boolean = false,

@@ -67,6 +67,15 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import java.util.TimeZone
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeworkCheckScreen(
     uiState: LmsUiState,
@@ -84,6 +93,33 @@ fun HomeworkCheckScreen(
     var selectedDate by remember { mutableStateOf(todayStr) }
     var topicText by remember { mutableStateOf(uiState.activeHomeworkTopic.ifEmpty { "Daily Homework Check" }) }
     var isEditingTopic by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                        cal.timeInMillis = millis
+                        selectedDate = dateFormat.format(cal.time)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Select")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     val recordsForDate = uiState.homeworkRecords.filter { it.date == selectedDate && it.topic == topicText }
     val recordMap = recordsForDate.associateBy { it.studentId }
@@ -127,7 +163,7 @@ fun HomeworkCheckScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Homework Date",
+                                text = "Date: $selectedDate",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -135,7 +171,10 @@ fun HomeworkCheckScreen(
                         }
 
                         // Quick date chips
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             DatePill(
                                 label = "Today",
                                 isSelected = selectedDate == todayStr,
@@ -146,6 +185,17 @@ fun HomeworkCheckScreen(
                                 isSelected = selectedDate == yesterdayStr,
                                 onClick = { selectedDate = yesterdayStr }
                             )
+                            IconButton(
+                                onClick = { showDatePicker = true },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = "Pick Date",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
 

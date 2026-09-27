@@ -36,14 +36,20 @@ import com.example.data.repository.UpdateRepository
 import com.example.ui.screens.DateRangeOption
 import com.example.ui.screens.ReportType
 import com.example.util.PdfReportExporter
+import com.example.util.SpreadsheetUtils
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+
+import com.example.data.entity.ClassScheduleEntity
+import com.example.data.repository.ScheduleRepository
+import java.util.Calendar
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClassroomViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: ClassroomRepository
+    private val scheduleRepository: ScheduleRepository
     private val db = AppDatabase.getInstance(application)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val authManager = AuthManager(application)
@@ -61,6 +67,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
     init {
         repository = ClassroomRepository(db)
+        scheduleRepository = ScheduleRepository(db.classScheduleDao())
 
         viewModelScope.launch {
             repository.checkAndSeedInitialData()
@@ -97,7 +104,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                         repository.getAttendanceForClassroom(id),
                         repository.getInterventionsByClassroom(id),
                         repository.getLessonPlans(id),
-                        repository.getDailyLogs(id)
+                        repository.getDailyLogs(id),
+                        scheduleRepository.getSchedulesByClassroom(id)
                     ) { args: Array<Any?> ->
                         @Suppress("UNCHECKED_CAST")
                         CombinedClassData(
@@ -109,7 +117,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             attendance = args[5] as List<AttendanceRecordEntity>,
                             interventions = args[6] as List<InterventionEntity>,
                             lessonPlans = args[7] as List<LessonPlanEntity>,
-                            dailyLogs = args[8] as List<DailyLogEntity>
+                            dailyLogs = args[8] as List<DailyLogEntity>,
+                            schedules = args[9] as List<ClassScheduleEntity>
                         )
                     }
                 }
@@ -124,6 +133,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                     val interventions = combined.interventions
                     val lessonPlans = combined.lessonPlans
                     val dailyLogs = combined.dailyLogs
+                    val schedules = combined.schedules
 
                     // Compute Grade Summaries
                     val studentSummaries = computeStudentGrades(students, assignments, submissions, homeworks, attendance)
@@ -143,6 +153,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             interventions = interventions,
                             lessonPlans = lessonPlans,
                             dailyLogs = dailyLogs,
+                            schedules = schedules,
                             studentGradeSummaries = studentSummaries,
                             analytics = analytics,
                             attendanceReport = attendanceReport,
@@ -163,7 +174,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val attendance: List<AttendanceRecordEntity>,
         val interventions: List<InterventionEntity>,
         val lessonPlans: List<LessonPlanEntity>,
-        val dailyLogs: List<DailyLogEntity>
+        val dailyLogs: List<DailyLogEntity>,
+        val schedules: List<ClassScheduleEntity>
     )
 
     // --- NAVIGATION & TABS ---
@@ -173,33 +185,40 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun syncGoogleSheet(classroomId: Long) {
         val classroom = uiState.value.activeClassroom ?: return
-        if (classroom.linkedSpreadsheetId == null) {
+        if (classroom.linkedSpreadsheetId.isNullOrBlank()) {
             _uiState.update { it.copy(userNotificationMessage = "No Google Sheet linked to this classroom") }
             return
         }
 
+        val cleanSpreadsheetId = SpreadsheetUtils.extractSpreadsheetId(classroom.linkedSpreadsheetId)
+
         viewModelScope.launch {
             try {
+                if (!authManager.isUserSignedIn()) {
+                    _uiState.update { it.copy(userNotificationMessage = "Please sign in with Google first (open navigation menu).") }
+                    return@launch
+                }
+
                 val token = authManager.getAccessToken()
                 if (token == null) {
-                    _uiState.update { it.copy(userNotificationMessage = "Failed to get Google Token. Please sign in.") }
+                    _uiState.update { it.copy(userNotificationMessage = "Failed to get Google Token. Please sign out and sign in again to grant Sheets permission.") }
                     return@launch
                 }
                 
-                _uiState.update { it.copy(userNotificationMessage = "Syncing with Google Sheets...") }
+                _uiState.update { it.copy(userNotificationMessage = "Syncing roster with Google Sheets...") }
                 
                 val syncRepo = SyncRepository(db, token)
                 // 1. Pull Students (Roster)
-                val pullResult = syncRepo.syncClassroomRoster(classroomId, classroom.linkedSpreadsheetId)
+                val pullResult = syncRepo.syncClassroomRoster(classroomId, cleanSpreadsheetId)
                 
                 // Trigger a refresh of the UI state to ensure the new students show up immediately
                 _selectedClassroomId.value = null
                 _selectedClassroomId.value = classroomId
                 
-                _uiState.update { it.copy(userNotificationMessage = "Pushing data to Google Sheets...") }
+                _uiState.update { it.copy(userNotificationMessage = "Pushing attendance, homework & grades to Google Sheets...") }
                 
                 // 2. Push Grades, Attendance, and Homework
-                val pushResult = syncRepo.exportToSheets(classroomId, classroom.linkedSpreadsheetId)
+                val pushResult = syncRepo.exportToSheets(classroomId, cleanSpreadsheetId)
                 
                 _uiState.update { it.copy(userNotificationMessage = "Sync Complete: $pullResult | $pushResult") }
             } catch (e: Exception) {
@@ -211,9 +230,14 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     fun linkSpreadsheet(classroomId: Long, spreadsheetId: String) {
         viewModelScope.launch {
             val classroom = db.classroomDao().getClassroomByIdOnce(classroomId) ?: return@launch
-            val updated = classroom.copy(linkedSpreadsheetId = spreadsheetId)
+            val cleanId = SpreadsheetUtils.extractSpreadsheetId(spreadsheetId).ifBlank { null }
+            val updated = classroom.copy(linkedSpreadsheetId = cleanId)
             repository.updateClassroom(updated)
-            syncGoogleSheet(classroomId)
+            if (cleanId != null) {
+                syncGoogleSheet(classroomId)
+            } else {
+                _uiState.update { it.copy(userNotificationMessage = "Unlinked Google Sheet from classroom") }
+            }
         }
     }
 
@@ -228,6 +252,79 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     fun selectClassroom(id: Long) {
         _selectedClassroomId.value = id
         _uiState.update { it.copy(isClassroomModalOpen = false) }
+    }
+
+    // --- SCHEDULE ACTIONS ---
+
+    fun openScheduleScreen() {
+        _uiState.update { it.copy(isScheduleScreenOpen = true) }
+    }
+
+    fun closeScheduleScreen() {
+        _uiState.update { it.copy(isScheduleScreenOpen = false) }
+    }
+
+    fun saveScheduleEntry(
+        entry: ClassScheduleEntity,
+        onOverlapConflict: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val daySchedules = uiState.value.schedules.filter {
+                it.weekNumber == entry.weekNumber && it.dayOfWeek.equals(entry.dayOfWeek, ignoreCase = true)
+            }
+            if (scheduleRepository.hasTimeOverlap(daySchedules, entry.startMinutes, entry.endMinutes, entry.id)) {
+                _uiState.update { it.copy(userNotificationMessage = "Warning: Class time overlaps with another entry on ${entry.dayOfWeek}!") }
+                onOverlapConflict()
+            }
+            scheduleRepository.insertScheduleEntry(entry)
+            _uiState.update { it.copy(userNotificationMessage = "Class schedule entry saved") }
+        }
+    }
+
+    fun deleteScheduleEntry(entry: ClassScheduleEntity) {
+        viewModelScope.launch {
+            scheduleRepository.deleteScheduleEntry(entry)
+            _uiState.update { it.copy(userNotificationMessage = "Schedule entry deleted") }
+        }
+    }
+
+    /**
+     * Returns Pair(isHoliday, summaryMessage)
+     */
+    fun getTodayClassesSummary(): Pair<Boolean, String> {
+        val cal = Calendar.getInstance()
+        val dayOfWeek = when (cal.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "MONDAY"
+            Calendar.TUESDAY -> "TUESDAY"
+            Calendar.WEDNESDAY -> "WEDNESDAY"
+            Calendar.THURSDAY -> "THURSDAY"
+            Calendar.FRIDAY -> "FRIDAY"
+            Calendar.SATURDAY -> "SATURDAY"
+            Calendar.SUNDAY -> "SUNDAY"
+            else -> "MONDAY"
+        }
+
+        if (dayOfWeek == "SATURDAY" || dayOfWeek == "SUNDAY") {
+            return Pair(true, "Today is Holiday, Relax 😊")
+        }
+
+        if (uiState.value.activeClassroom == null) {
+            return Pair(false, "No active classroom selected.")
+        }
+
+        // Find today's classes
+        val todaySchedules = uiState.value.schedules
+            .filter { it.dayOfWeek.equals(dayOfWeek, ignoreCase = true) }
+            .sortedBy { it.startMinutes }
+
+        if (todaySchedules.isEmpty()) {
+            return Pair(false, "No classes today.")
+        }
+
+        val formattedClasses = todaySchedules.joinToString(", ") { entry ->
+            "\"${entry.classroomName}\" @ ${entry.startTime}"
+        }
+        return Pair(false, "Today you have classes in $formattedClasses.")
     }
 
     fun closeDialogs() {

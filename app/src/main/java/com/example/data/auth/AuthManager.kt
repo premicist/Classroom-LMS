@@ -1,5 +1,6 @@
 package com.example.data.auth
 
+import android.accounts.Account
 import android.content.Context
 import android.content.Intent
 import com.google.android.gms.auth.GoogleAuthUtil
@@ -22,8 +23,10 @@ class AuthManager(private val context: Context) {
     suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
         val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@withContext null
         return@withContext try {
+            val androidAccount = account.account ?: account.email?.let { Account(it, "com.google") }
+            if (androidAccount == null) return@withContext null
             val scope = "oauth2:https://www.googleapis.com/auth/spreadsheets"
-            GoogleAuthUtil.getToken(context, account.account!!, scope)
+            GoogleAuthUtil.getToken(context, androidAccount, scope)
         } catch (e: Exception) {
             e.printStackTrace()
             null

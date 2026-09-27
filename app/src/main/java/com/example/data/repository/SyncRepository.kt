@@ -1,18 +1,32 @@
 package com.example.data.repository
 
+import android.util.Log
 import com.example.data.database.AppDatabase
+import com.example.data.entity.AssignmentEntity
+import com.example.data.entity.AttendanceRecordEntity
+import com.example.data.entity.AttendanceStatus
+import com.example.data.entity.HomeworkRecordEntity
+import com.example.data.entity.HomeworkStatus
+import com.example.data.entity.InterventionEntity
+import com.example.data.entity.InterventionType
 import com.example.data.entity.StudentEntity
+import com.example.data.entity.SubmissionEntity
+import com.example.data.entity.SubmissionStatus
+import com.example.data.network.AddSheetRequest
+import com.example.data.network.BatchUpdateSpreadsheetRequest
 import com.example.data.network.GoogleSheetsApi
+import com.example.data.network.Request
+import com.example.data.network.SheetProperties
+import com.example.data.network.ValueRange
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-
-import android.util.Log
-import com.example.data.entity.SubmissionStatus
-import com.example.data.network.ValueRange
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SyncRepository(
     private val database: AppDatabase,
@@ -30,22 +44,37 @@ class SyncRepository(
 
     private val api = retrofit.create(GoogleSheetsApi::class.java)
 
+    /**
+     * Performs a full 2-way sync:
+     * 1. Pulls & merges Roster from Sheets.
+     * 2. Pulls & merges Attendance from Sheets.
+     * 3. Pulls & merges Homework records from Sheets.
+     * 4. Pulls & merges Grades/Assignments from Sheets.
+     * 5. Pulls & merges Interventions from Sheets.
+     */
     suspend fun syncClassroomRoster(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
         val authHeader = "Bearer $accessToken"
         
-        // Fetch metadata to find the first sheet (usually Sheet1, which is the Roster)
-        val spreadsheet = api.getSpreadsheet(spreadsheetId, authHeader)
-        val rosterSheetTitle = spreadsheet.sheets.firstOrNull()?.properties?.title ?: "Sheet1"
-        
+        // Fetch metadata to find the main sheet tab
+        val spreadsheet = try {
+            api.getSpreadsheet(spreadsheetId, authHeader)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to connect to spreadsheet", e)
+            return@withContext "Failed to connect to Google Sheet. Check Sheet ID and permissions."
+        }
+
+        val rosterSheetTitle = spreadsheet.sheets?.firstOrNull()?.properties?.title ?: "Sheet1"
         val range = "$rosterSheetTitle!A:Z"
+
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            return@withContext "Failed to read sheet. Ensure it is not empty."
+            Log.e(TAG, "Failed to read sheet values", e)
+            return@withContext "Failed to read sheet '$rosterSheetTitle'."
         }
         
-        val rows = response.values ?: return@withContext "Sheet is empty."
-        if (rows.isEmpty()) return@withContext "Sheet is empty."
+        val rows = response.values ?: return@withContext "Sheet '$rosterSheetTitle' is empty."
+        if (rows.isEmpty()) return@withContext "Sheet '$rosterSheetTitle' is empty."
             
         // Assume Row 0 is headers
         val headers = rows[0]
@@ -54,7 +83,7 @@ class SyncRepository(
         val emailIndex = headers.indexOfFirst { it.equals("Email", ignoreCase = true) }
 
         if (nameIndex == -1) {
-            return@withContext "Sync failed: Could not find a 'Name' column in row 1."
+            return@withContext "Sync failed: Could not find a 'Name' column in row 1 of '$rosterSheetTitle'."
         }
 
         val parsedStudents = mutableListOf<StudentEntity>()
@@ -63,14 +92,11 @@ class SyncRepository(
             val row = rows[i]
             if (row.isEmpty()) continue
             
-            // Extract core fields if columns were found
             val studentNumber = if (studentNumberIndex >= 0) row.getOrNull(studentNumberIndex) ?: "" else ""
             val name = if (nameIndex >= 0) row.getOrNull(nameIndex) ?: "" else ""
             val email = if (emailIndex >= 0) row.getOrNull(emailIndex) ?: "" else ""
             
-            if (name.isBlank()) {
-                continue // Require at least a name
-            }
+            if (name.isBlank()) continue
             
             val customAttributes = mutableMapOf<String, String>()
             for (j in headers.indices) {
@@ -91,26 +117,19 @@ class SyncRepository(
                 customAttributes = customAttributes
             ))
         }
-        
-        if (parsedStudents.isEmpty()) {
-            return@withContext "No students found to sync from the sheet."
-        }
 
         // Smart Sync (Upsert) - DO NOT DELETE ANYONE
         val existingStudents = database.studentDao().getStudentsByClassroomOnce(classroomId)
-        
         var addedCount = 0
         var updatedCount = 0
         
         for (parsed in parsedStudents) {
-            // Match by Student ID, or fallback to exact Name match
             val existing = existingStudents.find { 
                 (it.studentNumber.isNotBlank() && it.studentNumber == parsed.studentNumber) || 
                 (it.name.equals(parsed.name, ignoreCase = true)) 
             }
             
             if (existing != null) {
-                // Did anything change?
                 if (existing.name != parsed.name || 
                     existing.studentNumber != parsed.studentNumber || 
                     existing.email != parsed.email ||
@@ -131,10 +150,342 @@ class SyncRepository(
             }
         }
 
+        val allStudents = database.studentDao().getStudentsByClassroomOnce(classroomId)
+
+        // 2-Way Sync Attendance, Homework, Grades, and Interventions from Sheets
+        syncAttendanceFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
+        syncHomeworkFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
+        syncGradesFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
+        syncInterventionsFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
+
         if (addedCount == 0 && updatedCount == 0) {
-            return@withContext "Sync is up to date (no changes found)."
+            return@withContext "Roster up to date."
         } else {
-            return@withContext "Sync successful: Added $addedCount, Updated $updatedCount."
+            return@withContext "Roster synced: Added $addedCount, Updated $updatedCount."
+        }
+    }
+
+    private suspend fun syncAttendanceFromSheet(classroomId: Long, spreadsheetId: String, authHeader: String, students: List<StudentEntity>) {
+        val range = "Attendance!A:Z"
+        val response = try {
+            api.getSheetValues(spreadsheetId, range, authHeader)
+        } catch (e: Exception) {
+            Log.d(TAG, "Attendance tab not found or unreadable: ${e.message}")
+            return
+        }
+        val rows = response.values ?: return
+        if (rows.size < 2) return
+
+        val headers = rows[0]
+        val studentIdIdx = headers.indexOfFirst { it.equals("Student ID", ignoreCase = true) || it.equals("Student Number", ignoreCase = true) }
+        val nameIdx = headers.indexOfFirst { it.equals("Student Name", ignoreCase = true) || it.equals("Name", ignoreCase = true) }
+
+        val dateIndices = mutableListOf<Pair<Int, String>>()
+        for (j in headers.indices) {
+            if (j != studentIdIdx && j != nameIdx) {
+                val header = headers[j].trim()
+                if (header.isNotBlank()) {
+                    dateIndices.add(j to header)
+                }
+            }
+        }
+
+        val existingRecords = database.attendanceDao().getAttendanceForClassroomOnce(classroomId)
+
+        for (i in 1 until rows.size) {
+            val row = rows[i]
+            if (row.isEmpty()) continue
+            val studentIdStr = if (studentIdIdx >= 0) row.getOrNull(studentIdIdx) ?: "" else ""
+            val nameStr = if (nameIdx >= 0) row.getOrNull(nameIdx) ?: "" else ""
+
+            val student = students.find {
+                (studentIdStr.isNotBlank() && it.studentNumber == studentIdStr) ||
+                (nameStr.isNotBlank() && it.name.equals(nameStr, ignoreCase = true))
+            } ?: continue
+
+            for ((colIdx, dateStr) in dateIndices) {
+                val cellVal = row.getOrNull(colIdx)?.trim() ?: ""
+                if (cellVal.isBlank()) continue
+
+                val status = parseAttendanceStatus(cellVal)
+                val existing = existingRecords.find { it.studentId == student.id && it.date == dateStr }
+
+                if (existing != null) {
+                    if (existing.status != status) {
+                        database.attendanceDao().updateAttendanceRecord(existing.copy(status = status))
+                    }
+                } else {
+                    database.attendanceDao().insertAttendanceRecord(
+                        AttendanceRecordEntity(
+                            classroomId = classroomId,
+                            studentId = student.id,
+                            date = dateStr,
+                            status = status
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun parseAttendanceStatus(value: String): AttendanceStatus {
+        return when (value.uppercase(Locale.US)) {
+            "P", "PRESENT", "1" -> AttendanceStatus.PRESENT
+            "A", "ABSENT", "0" -> AttendanceStatus.ABSENT
+            "T", "TARDY" -> AttendanceStatus.TARDY
+            "E", "EXCUSED" -> AttendanceStatus.EXCUSED
+            else -> AttendanceStatus.PRESENT
+        }
+    }
+
+    private suspend fun syncHomeworkFromSheet(classroomId: Long, spreadsheetId: String, authHeader: String, students: List<StudentEntity>) {
+        val range = "Homework!A:Z"
+        val response = try {
+            api.getSheetValues(spreadsheetId, range, authHeader)
+        } catch (e: Exception) {
+            Log.d(TAG, "Homework tab not found or unreadable: ${e.message}")
+            return
+        }
+        val rows = response.values ?: return
+        if (rows.size < 2) return
+
+        val headers = rows[0]
+        val studentIdIdx = headers.indexOfFirst { it.equals("Student ID", ignoreCase = true) || it.equals("Student Number", ignoreCase = true) }
+        val nameIdx = headers.indexOfFirst { it.equals("Student Name", ignoreCase = true) || it.equals("Name", ignoreCase = true) }
+
+        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
+        val taskIndices = mutableListOf<Triple<Int, String, String>>()
+        for (j in headers.indices) {
+            if (j != studentIdIdx && j != nameIdx) {
+                val header = headers[j].trim()
+                if (header.isNotBlank()) {
+                    val parts = header.split(" - ", limit = 2)
+                    val dateStr = if (parts.size == 2 && parts[0].matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) parts[0] else todayStr
+                    val topicStr = if (parts.size == 2 && parts[0].matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) parts[1] else header
+                    taskIndices.add(Triple(j, dateStr, topicStr))
+                }
+            }
+        }
+
+        val existingRecords = database.homeworkRecordDao().getAllHomeworkRecordsForClassroomOnce(classroomId)
+
+        for (i in 1 until rows.size) {
+            val row = rows[i]
+            if (row.isEmpty()) continue
+            val studentIdStr = if (studentIdIdx >= 0) row.getOrNull(studentIdIdx) ?: "" else ""
+            val nameStr = if (nameIdx >= 0) row.getOrNull(nameIdx) ?: "" else ""
+
+            val student = students.find {
+                (studentIdStr.isNotBlank() && it.studentNumber == studentIdStr) ||
+                (nameStr.isNotBlank() && it.name.equals(nameStr, ignoreCase = true))
+            } ?: continue
+
+            for ((colIdx, dateStr, topicStr) in taskIndices) {
+                val cellVal = row.getOrNull(colIdx)?.trim() ?: ""
+                if (cellVal.isBlank()) continue
+
+                val status = parseHomeworkStatus(cellVal)
+                val existing = existingRecords.find {
+                    it.studentId == student.id && it.date == dateStr && it.topic.equals(topicStr, ignoreCase = true)
+                }
+
+                if (existing != null) {
+                    if (existing.status != status) {
+                        database.homeworkRecordDao().updateHomeworkRecord(existing.copy(status = status))
+                    }
+                } else {
+                    database.homeworkRecordDao().insertHomeworkRecord(
+                        HomeworkRecordEntity(
+                            classroomId = classroomId,
+                            studentId = student.id,
+                            date = dateStr,
+                            topic = topicStr,
+                            status = status
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun parseHomeworkStatus(value: String): HomeworkStatus {
+        return when (value.uppercase(Locale.US)) {
+            "DONE", "D", "1", "1.0", "P", "PRESENT" -> HomeworkStatus.DONE
+            "PARTIAL", "PART", "0.5", "HALF" -> HomeworkStatus.PARTIAL
+            "MISSING", "M", "0", "0.0", "ABSENT" -> HomeworkStatus.MISSING
+            "EXCUSED", "E", "EX" -> HomeworkStatus.EXCUSED
+            else -> HomeworkStatus.DONE
+        }
+    }
+
+    private suspend fun syncGradesFromSheet(classroomId: Long, spreadsheetId: String, authHeader: String, students: List<StudentEntity>) {
+        val range = "Grades!A:Z"
+        val response = try {
+            api.getSheetValues(spreadsheetId, range, authHeader)
+        } catch (e: Exception) {
+            Log.d(TAG, "Grades tab not found or unreadable: ${e.message}")
+            return
+        }
+        val rows = response.values ?: return
+        if (rows.size < 2) return
+
+        val headers = rows[0]
+        val studentIdIdx = headers.indexOfFirst { it.equals("Student ID", ignoreCase = true) || it.equals("Student Number", ignoreCase = true) }
+        val nameIdx = headers.indexOfFirst { it.equals("Student Name", ignoreCase = true) || it.equals("Name", ignoreCase = true) }
+
+        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
+        val existingAssignments = database.assignmentDao().getAssignmentsByClassroomOnce(classroomId).toMutableList()
+        val assignmentColMap = mutableListOf<Pair<Int, AssignmentEntity>>()
+
+        for (j in headers.indices) {
+            if (j != studentIdIdx && j != nameIdx) {
+                val header = headers[j].trim()
+                if (header.isNotBlank()) {
+                    val title = header.substringBefore("(").trim()
+                    val maxPts = if (header.contains("(") && header.contains("pts")) {
+                        header.substringAfter("(").substringBefore("pts").trim().toDoubleOrNull() ?: 100.0
+                    } else 100.0
+
+                    var assignment = existingAssignments.find { it.title.equals(title, ignoreCase = true) }
+                    if (assignment == null) {
+                        val newAssign = AssignmentEntity(
+                            classroomId = classroomId,
+                            title = title,
+                            maxPoints = maxPts,
+                            dueDate = todayStr,
+                            isGraded = true
+                        )
+                        val newId = database.assignmentDao().insertAssignment(newAssign)
+                        assignment = newAssign.copy(id = newId)
+                        existingAssignments.add(assignment)
+                    }
+                    assignmentColMap.add(j to assignment)
+                }
+            }
+        }
+
+        val existingSubmissions = database.submissionDao().getSubmissionsByClassroomOnce(classroomId)
+
+        for (i in 1 until rows.size) {
+            val row = rows[i]
+            if (row.isEmpty()) continue
+            val studentIdStr = if (studentIdIdx >= 0) row.getOrNull(studentIdIdx) ?: "" else ""
+            val nameStr = if (nameIdx >= 0) row.getOrNull(nameIdx) ?: "" else ""
+
+            val student = students.find {
+                (studentIdStr.isNotBlank() && it.studentNumber == studentIdStr) ||
+                (nameStr.isNotBlank() && it.name.equals(nameStr, ignoreCase = true))
+            } ?: continue
+
+            for ((colIdx, assignment) in assignmentColMap) {
+                val cellVal = row.getOrNull(colIdx)?.trim() ?: ""
+                if (cellVal.isBlank()) continue
+
+                val scoreDouble = cellVal.toDoubleOrNull()
+                val status = when {
+                    scoreDouble != null -> SubmissionStatus.GRADED
+                    cellVal.equals("MISSING", ignoreCase = true) || cellVal.equals("M", ignoreCase = true) -> SubmissionStatus.MISSING
+                    cellVal.equals("LATE", ignoreCase = true) -> SubmissionStatus.LATE
+                    cellVal.equals("SUBMITTED", ignoreCase = true) -> SubmissionStatus.SUBMITTED
+                    else -> SubmissionStatus.GRADED
+                }
+
+                val existing = existingSubmissions.find { it.assignmentId == assignment.id && it.studentId == student.id }
+
+                if (existing != null) {
+                    val updated = existing.copy(
+                        score = scoreDouble ?: existing.score,
+                        status = status
+                    )
+                    database.submissionDao().updateSubmission(updated)
+                } else {
+                    database.submissionDao().insertSubmission(
+                        SubmissionEntity(
+                            assignmentId = assignment.id,
+                            studentId = student.id,
+                            classroomId = classroomId,
+                            status = status,
+                            score = scoreDouble
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun syncInterventionsFromSheet(classroomId: Long, spreadsheetId: String, authHeader: String, students: List<StudentEntity>) {
+        val range = "Interventions!A:Z"
+        val response = try {
+            api.getSheetValues(spreadsheetId, range, authHeader)
+        } catch (e: Exception) {
+            Log.d(TAG, "Interventions tab not found or unreadable: ${e.message}")
+            return
+        }
+        val rows = response.values ?: return
+        if (rows.size < 2) return
+
+        val headers = rows[0]
+        val studentIdIdx = headers.indexOfFirst { it.equals("Student ID", ignoreCase = true) || it.equals("Student Number", ignoreCase = true) }
+        val nameIdx = headers.indexOfFirst { it.equals("Student Name", ignoreCase = true) || it.equals("Name", ignoreCase = true) }
+        val dateIdx = headers.indexOfFirst { it.equals("Date", ignoreCase = true) }
+        val typeIdx = headers.indexOfFirst { it.equals("Type", ignoreCase = true) }
+        val titleIdx = headers.indexOfFirst { it.equals("Title", ignoreCase = true) }
+        val notesIdx = headers.indexOfFirst { it.equals("Notes", ignoreCase = true) }
+        val resolvedIdx = headers.indexOfFirst { it.equals("Resolved", ignoreCase = true) }
+
+        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val existingInterventions = database.interventionDao().getInterventionsByClassroomOnce(classroomId)
+
+        for (i in 1 until rows.size) {
+            val row = rows[i]
+            if (row.isEmpty()) continue
+            val studentIdStr = if (studentIdIdx >= 0) row.getOrNull(studentIdIdx) ?: "" else ""
+            val nameStr = if (nameIdx >= 0) row.getOrNull(nameIdx) ?: "" else ""
+
+            val student = students.find {
+                (studentIdStr.isNotBlank() && it.studentNumber == studentIdStr) ||
+                (nameStr.isNotBlank() && it.name.equals(nameStr, ignoreCase = true))
+            } ?: continue
+
+            val dateStr = if (dateIdx >= 0) row.getOrNull(dateIdx)?.trim()?.ifBlank { todayStr } ?: todayStr else todayStr
+            val titleStr = if (titleIdx >= 0) row.getOrNull(titleIdx)?.trim() ?: "" else ""
+            if (titleStr.isBlank()) continue
+
+            val typeStr = if (typeIdx >= 0) row.getOrNull(typeIdx)?.trim() ?: "" else ""
+            val notesStr = if (notesIdx >= 0) row.getOrNull(notesIdx)?.trim() ?: "" else ""
+            val resolvedBool = if (resolvedIdx >= 0) row.getOrNull(resolvedIdx)?.trim()?.equals("true", ignoreCase = true) == true || row.getOrNull(resolvedIdx)?.trim()?.equals("yes", ignoreCase = true) == true else false
+
+            val typeEnum = InterventionType.entries.find {
+                it.displayName.equals(typeStr, ignoreCase = true) || it.name.equals(typeStr, ignoreCase = true)
+            } ?: InterventionType.TUTORING
+
+            val existing = existingInterventions.find {
+                it.studentId == student.id && it.date == dateStr && it.title.equals(titleStr, ignoreCase = true)
+            }
+
+            if (existing != null) {
+                database.interventionDao().updateIntervention(
+                    existing.copy(
+                        type = typeEnum,
+                        notes = notesStr,
+                        resolved = resolvedBool
+                    )
+                )
+            } else {
+                database.interventionDao().insertIntervention(
+                    InterventionEntity(
+                        studentId = student.id,
+                        classroomId = classroomId,
+                        date = dateStr,
+                        type = typeEnum,
+                        title = titleStr,
+                        notes = notesStr,
+                        resolved = resolvedBool
+                    )
+                )
+            }
         }
     }
 
@@ -143,7 +494,28 @@ class SyncRepository(
         val students = database.studentDao().getStudentsByClassroomOnce(classroomId).sortedBy { it.name }
         if (students.isEmpty()) return@withContext "No students to export."
 
-        val studentIdToName = students.associate { it.id to it.name }
+        // Fetch sheet metadata and auto-create missing required tabs
+        val spreadsheet = try {
+            api.getSpreadsheet(spreadsheetId, authHeader)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get spreadsheet metadata", e)
+            return@withContext "Export failed: Cannot access Google Sheet."
+        }
+
+        val existingTitles = spreadsheet.sheets?.map { it.properties.title }?.toSet() ?: emptySet()
+        val requiredSheets = listOf("Attendance", "Homework", "Grades", "Interventions")
+        val missingSheets = requiredSheets.filter { !existingTitles.contains(it) }
+
+        if (missingSheets.isNotEmpty()) {
+            try {
+                val requests = missingSheets.map { title ->
+                    Request(addSheet = AddSheetRequest(properties = SheetProperties(title = title)))
+                }
+                api.batchUpdate(spreadsheetId, authHeader, BatchUpdateSpreadsheetRequest(requests))
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to auto-create missing tabs, attempting export anyway: ${e.message}")
+            }
+        }
 
         try {
             // 1. Export Attendance
@@ -160,7 +532,7 @@ class SyncRepository(
                 val studentAtt = attendanceRecords.filter { it.studentId == student.id }
                 for (date in distinctDates) {
                     val record = studentAtt.find { it.date == date }
-                    row.add(record?.status?.name ?: "")
+                    row.add(record?.status?.displayName ?: "")
                 }
                 attendanceRows.add(row)
             }
@@ -174,7 +546,6 @@ class SyncRepository(
 
             // 2. Export Homework
             val homeworkRecords = database.homeworkRecordDao().getAllHomeworkRecordsForClassroomOnce(classroomId)
-            // Composite key for homework columns: "Date - Topic"
             val distinctHomeworkTasks = homeworkRecords.map { "${it.date} - ${it.topic}" }.distinct().sorted()
 
             val homeworkRows = mutableListOf<List<String>>()
@@ -189,8 +560,8 @@ class SyncRepository(
                     val parts = task.split(" - ", limit = 2)
                     val date = parts.getOrNull(0) ?: ""
                     val topic = parts.getOrNull(1) ?: ""
-                    val record = studentHw.find { it.date == date && it.topic == topic }
-                    row.add(record?.status?.name ?: "")
+                    val record = studentHw.find { it.date == date && it.topic.equals(topic, ignoreCase = true) }
+                    row.add(record?.status?.displayName ?: "")
                 }
                 homeworkRows.add(row)
             }
@@ -208,7 +579,6 @@ class SyncRepository(
 
             val gradesRows = mutableListOf<List<String>>()
             val gradeHeaderRow = mutableListOf("Student Name", "Student ID")
-            // Column format: "Assignment Title (Max Pts)"
             assignments.forEach { gradeHeaderRow.add("${it.title} (${it.maxPoints} pts)") }
             gradesRows.add(gradeHeaderRow)
 
@@ -237,11 +607,37 @@ class SyncRepository(
                 body = ValueRange("Grades!A1", "ROWS", gradesRows)
             )
 
-            return@withContext "Export successful"
+            // 4. Export Interventions
+            val interventions = database.interventionDao().getInterventionsByClassroomOnce(classroomId)
+            val interventionRows = mutableListOf<List<String>>()
+            val intHeaderRow = listOf("Student Name", "Student ID", "Date", "Type", "Title", "Notes", "Resolved")
+            interventionRows.add(intHeaderRow)
+
+            for (intervention in interventions) {
+                val student = students.find { it.id == intervention.studentId }
+                val row = listOf(
+                    student?.name ?: "Unknown",
+                    student?.studentNumber ?: "",
+                    intervention.date,
+                    intervention.type.displayName,
+                    intervention.title,
+                    intervention.notes,
+                    if (intervention.resolved) "Yes" else "No"
+                )
+                interventionRows.add(row)
+            }
+
+            api.updateSheetValues(
+                spreadsheetId = spreadsheetId,
+                range = "Interventions!A1",
+                authHeader = authHeader,
+                body = ValueRange("Interventions!A1", "ROWS", interventionRows)
+            )
+
+            return@withContext "Sync & Export successful."
         } catch (e: Exception) {
-            e.printStackTrace()
-            // If the tabs don't exist, Google Sheets API throws 400 Bad Request.
-            return@withContext "Export failed: Make sure 'Attendance', 'Homework', and 'Grades' tabs exist in your sheet."
+            Log.e(TAG, "Export error", e)
+            return@withContext "Export failed: ${e.message}"
         }
     }
 }
