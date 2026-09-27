@@ -69,9 +69,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.ui.platform.LocalContext
 import com.example.ui.dialogs.UpdateAlertDialog
+import com.example.ui.screens.GenerateReportDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
@@ -96,6 +100,7 @@ fun LmsMainScreen(
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -187,15 +192,37 @@ fun LmsMainScreen(
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
+
+                NavigationDrawerItem(
+                    label = { Text("Student Roster") },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { drawerState.close() }
+                        viewModel.openStudentRoster()
+                    },
+                    icon = { Icon(Icons.Default.People, contentDescription = "Student Roster") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
                 
                 NavigationDrawerItem(
-                    label = { Text("Teacher Planner") },
+                    label = { Text("Teacher Planner & Diary") },
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
                         viewModel.openPlanner()
                     },
                     icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "Planner") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Generate Reports") },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { drawerState.close() }
+                        viewModel.openGenerateReportDialog()
+                    },
+                    icon = { Icon(Icons.Default.Assessment, contentDescription = "Generate Reports") },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
@@ -539,6 +566,40 @@ fun LmsMainScreen(
         UpdateAlertDialog(
             updateInfo = uiState.updateInfo!!,
             onDismiss = { viewModel.closeUpdateDialog() }
+        )
+    }
+
+    // Generate Custom Report Dialog Center
+    if (uiState.isGenerateReportDialogOpen) {
+        GenerateReportDialog(
+            classrooms = uiState.classrooms,
+            activeClassroomId = uiState.activeClassroom?.id,
+            onDismiss = { viewModel.closeGenerateReportDialog() },
+            onGeneratePdf = { reportType, targetClassId, dateRange, atRisk, diff, dist, att ->
+                viewModel.generateAndShareCustomPdf(
+                    context = context,
+                    reportType = reportType,
+                    targetClassroomId = targetClassId,
+                    dateRange = dateRange,
+                    includeAtRisk = atRisk,
+                    includeDifficulty = diff,
+                    includeDistribution = dist,
+                    includeAttendance = att
+                )
+            },
+            onPreviewText = { reportType, targetClassId, dateRange, atRisk, diff, dist, att ->
+                val reportText = viewModel.generateCustomReportText(
+                    reportType = reportType,
+                    targetClassroomId = targetClassId,
+                    dateRange = dateRange,
+                    includeAtRisk = atRisk,
+                    includeDifficulty = diff,
+                    includeDistribution = dist,
+                    includeAttendance = att
+                )
+                viewModel.closeGenerateReportDialog()
+                viewModel.openExportReport(reportText, "${reportType.title} Preview")
+            }
         )
     }
 }

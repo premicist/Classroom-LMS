@@ -33,6 +33,8 @@ import java.text.SimpleDateFormat
 import com.example.data.auth.AuthManager
 import com.example.data.repository.SyncRepository
 import com.example.data.repository.UpdateRepository
+import com.example.ui.screens.DateRangeOption
+import com.example.ui.screens.ReportType
 import com.example.util.PdfReportExporter
 import java.util.Date
 import java.util.Locale
@@ -479,13 +481,15 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         unitTitle: String,
         description: String,
         targetDate: Long,
-        status: String
+        status: String,
+        targetClassroomId: Long? = null
     ) {
-        val activeClassId = uiState.value.activeClassroom?.id ?: return
+        val classId = targetClassroomId ?: uiState.value.activeClassroom?.id ?: return
         viewModelScope.launch {
             val editing = uiState.value.editingLessonPlan
             if (editing != null) {
                 val updated = editing.copy(
+                    classroomId = classId,
                     unitTitle = unitTitle,
                     description = description,
                     targetDate = targetDate,
@@ -495,7 +499,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 showToast("Lesson plan updated")
             } else {
                 val newPlan = LessonPlanEntity(
-                    classroomId = activeClassId,
+                    classroomId = classId,
                     unitTitle = unitTitle,
                     description = description,
                     targetDate = targetDate,
@@ -537,13 +541,15 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     fun saveDailyLog(
         date: Long,
         reflectionNotes: String,
-        wasProxyClass: Boolean
+        wasProxyClass: Boolean,
+        targetClassroomId: Long? = null
     ) {
-        val activeClassId = uiState.value.activeClassroom?.id ?: return
+        val classId = targetClassroomId ?: uiState.value.activeClassroom?.id ?: return
         viewModelScope.launch {
             val editing = uiState.value.editingDailyLog
             if (editing != null) {
                 val updated = editing.copy(
+                    classroomId = classId,
                     date = date,
                     reflectionNotes = reflectionNotes,
                     wasProxyClass = wasProxyClass
@@ -552,7 +558,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 showToast("Daily diary log updated")
             } else {
                 val newLog = DailyLogEntity(
-                    classroomId = activeClassId,
+                    classroomId = classId,
                     date = date,
                     reflectionNotes = reflectionNotes,
                     wasProxyClass = wasProxyClass
@@ -635,6 +641,123 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val reportText = generateDailyDiaryReportText()
         val title = "Daily Diary - ${activeClass?.name ?: "Classroom"}"
         PdfReportExporter.exportAndShare(context, title, reportText, "DailyDiary_${activeClass?.name ?: "Class"}")
+    }
+
+    // --- CUSTOM REPORT GENERATOR CENTER ---
+    fun openGenerateReportDialog() {
+        _uiState.update { it.copy(isGenerateReportDialogOpen = true) }
+    }
+
+    fun closeGenerateReportDialog() {
+        _uiState.update { it.copy(isGenerateReportDialogOpen = false) }
+    }
+
+    fun setPlannerClassroomFilter(classroomId: Long?) {
+        _uiState.update { it.copy(plannerClassroomFilterId = classroomId) }
+    }
+
+    fun generateCustomReportText(
+        reportType: ReportType,
+        targetClassroomId: Long?,
+        dateRange: DateRangeOption,
+        includeAtRisk: Boolean,
+        includeDifficulty: Boolean,
+        includeDistribution: Boolean,
+        includeAttendance: Boolean
+    ): String {
+        val targetClass = targetClassroomId?.let { id -> uiState.value.classrooms.find { it.id == id } }
+            ?: uiState.value.activeClassroom
+
+        val className = if (targetClassroomId == null) "All Classrooms" else "${targetClass?.name ?: "Classroom"} (${targetClass?.subject ?: ""})"
+
+        val sb = StringBuilder()
+        sb.appendLine("CLASSROOM LMS CUSTOM REPORT")
+        sb.appendLine("Report Type: ${reportType.title}")
+        sb.appendLine("Target Scope: $className")
+        sb.appendLine("Date Filter: ${dateRange.label}")
+        sb.appendLine("==========================================")
+        sb.appendLine()
+
+        when (reportType) {
+            ReportType.ANALYTICS_SUMMARY -> {
+                sb.append(generateProgressAnalyticsReportText())
+            }
+            ReportType.GRADEBOOK_FULL -> {
+                sb.append(generateFormattedGradebookReportText())
+            }
+            ReportType.ATTENDANCE_LOG -> {
+                sb.append(generateFormattedAttendanceReportText())
+            }
+            ReportType.LESSON_PLANS -> {
+                sb.append(generateLessonPlansReportText())
+            }
+            ReportType.DAILY_DIARY -> {
+                sb.append(generateDailyDiaryReportText())
+            }
+        }
+
+        if (includeAtRisk) {
+            sb.appendLine()
+            sb.appendLine("== AT-RISK & SUPPORT NEEDED ALERTS ==")
+            val atRisk = uiState.value.analytics.atRiskStudents
+            if (atRisk.isEmpty()) {
+                sb.appendLine("All students currently on track.")
+            } else {
+                atRisk.forEach { s ->
+                    sb.appendLine("• ${s.student.name}: ${s.riskReasons.joinToString(", ")}")
+                }
+            }
+        }
+
+        if (includeDifficulty) {
+            sb.appendLine()
+            sb.appendLine("== HIGH DIFFICULTY ASSIGNMENT AREAS ==")
+            val diffs = uiState.value.analytics.difficultyAreas
+            if (diffs.isEmpty()) {
+                sb.appendLine("No high difficulty assignments flagged.")
+            } else {
+                diffs.forEach { area ->
+                    sb.appendLine("• ${area.assignment.title}: Avg ${area.averagePercentage.toInt()}% - ${area.teacherActionRecommendation}")
+                }
+            }
+        }
+
+        if (includeDistribution) {
+            sb.appendLine()
+            sb.appendLine("== GRADE DISTRIBUTION BREAKDOWN ==")
+            val dist = uiState.value.analytics.distribution
+            sb.appendLine("A: ${dist.aCount} | B: ${dist.bCount} | C: ${dist.cCount} | D: ${dist.dCount} | F: ${dist.fCount}")
+        }
+
+        if (includeAttendance) {
+            sb.appendLine()
+            sb.appendLine("== ATTENDANCE SUMMARY ==")
+            val att = uiState.value.attendanceReport
+            if (att != null) {
+                sb.appendLine("Overall Attendance Rate: ${att.overallAttendanceRate.toInt()}%")
+                sb.appendLine("Present: ${att.totalPresent} | Absent: ${att.totalAbsent} | Tardy: ${att.totalTardy} | Excused: ${att.totalExcused}")
+            }
+        }
+
+        return sb.toString()
+    }
+
+    fun generateAndShareCustomPdf(
+        context: Context,
+        reportType: ReportType,
+        targetClassroomId: Long?,
+        dateRange: DateRangeOption,
+        includeAtRisk: Boolean,
+        includeDifficulty: Boolean,
+        includeDistribution: Boolean,
+        includeAttendance: Boolean
+    ) {
+        val reportText = generateCustomReportText(
+            reportType, targetClassroomId, dateRange, includeAtRisk, includeDifficulty, includeDistribution, includeAttendance
+        )
+        val title = "${reportType.title} Report"
+        PdfReportExporter.exportAndShare(context, title, reportText, "CustomReport_${reportType.name}")
+        closeGenerateReportDialog()
     }
 
     fun showToast(message: String) {

@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -27,6 +30,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.LessonPlanEntity
 import com.example.ui.theme.StatusError
@@ -72,9 +77,20 @@ fun PlannerScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    val filteredPlans = remember(uiState.lessonPlans, uiState.plannerClassroomFilterId) {
+        if (uiState.plannerClassroomFilterId == null) uiState.lessonPlans
+        else uiState.lessonPlans.filter { it.classroomId == uiState.plannerClassroomFilterId }
+    }
+
+    val filteredLogs = remember(uiState.dailyLogs, uiState.plannerClassroomFilterId) {
+        if (uiState.plannerClassroomFilterId == null) uiState.dailyLogs
+        else uiState.dailyLogs.filter { it.classroomId == uiState.plannerClassroomFilterId }
+    }
+
     val tabs = listOf(
-        "Lesson Plans (${uiState.lessonPlans.size})",
-        "Daily Diary (${uiState.dailyLogs.size})"
+        "Lesson Plans (${filteredPlans.size})",
+        "Daily Diary (${filteredLogs.size})"
     )
 
     var planToDelete by remember { mutableStateOf<LessonPlanEntity?>(null) }
@@ -91,13 +107,15 @@ fun PlannerScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            uiState.activeClassroom?.let { cls ->
-                                Text(
-                                    text = "${cls.name} • ${cls.subject}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            val filterName = when (uiState.plannerClassroomFilterId) {
+                                null -> "All Classrooms"
+                                else -> uiState.classrooms.find { it.id == uiState.plannerClassroomFilterId }?.name ?: "All Classrooms"
                             }
+                            Text(
+                                text = "Filtered by: $filterName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     },
                     navigationIcon = {
@@ -126,12 +144,37 @@ fun PlannerScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
+
+                // Tabs
                 TabRow(selectedTabIndex = selectedTabIndex) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTabIndex == index,
                             onClick = { selectedTabIndex = index },
                             text = { Text(title, fontWeight = FontWeight.SemiBold) }
+                        )
+                    }
+                }
+
+                // Classroom Filter Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilterChip(
+                        selected = uiState.plannerClassroomFilterId == null,
+                        onClick = { viewModel.setPlannerClassroomFilter(null) },
+                        label = { Text("All Classrooms", style = MaterialTheme.typography.labelSmall) }
+                    )
+                    uiState.classrooms.forEach { cls ->
+                        FilterChip(
+                            selected = uiState.plannerClassroomFilterId == cls.id,
+                            onClick = { viewModel.setPlannerClassroomFilter(cls.id) },
+                            label = { Text(cls.name, style = MaterialTheme.typography.labelSmall) }
                         )
                     }
                 }
@@ -160,7 +203,8 @@ fun PlannerScreen(
         ) {
             when (selectedTabIndex) {
                 0 -> LessonPlansTab(
-                    plans = uiState.lessonPlans,
+                    plans = filteredPlans,
+                    classrooms = uiState.classrooms,
                     onEdit = { viewModel.openEditLessonPlan(it) },
                     onDelete = { planToDelete = it },
                     onCycleStatus = { plan ->
@@ -173,7 +217,8 @@ fun PlannerScreen(
                     }
                 )
                 1 -> DailyDiaryTab(
-                    logs = uiState.dailyLogs,
+                    logs = filteredLogs,
+                    classrooms = uiState.classrooms,
                     onEdit = { viewModel.openEditDailyLog(it) },
                     onDelete = { logToDelete = it }
                 )
@@ -185,9 +230,11 @@ fun PlannerScreen(
     if (uiState.isAddEditLessonPlanOpen) {
         AddEditLessonPlanDialog(
             initialPlan = uiState.editingLessonPlan,
+            classrooms = uiState.classrooms,
+            activeClassroomId = uiState.activeClassroom?.id,
             onDismiss = { viewModel.closeLessonPlanDialog() },
-            onSave = { unitTitle, description, targetDate, status ->
-                viewModel.saveLessonPlan(unitTitle, description, targetDate, status)
+            onSave = { unitTitle, description, targetDate, status, targetClassroomId ->
+                viewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId)
             }
         )
     }
@@ -195,9 +242,11 @@ fun PlannerScreen(
     if (uiState.isAddEditDailyLogOpen) {
         AddEditDailyLogDialog(
             initialLog = uiState.editingDailyLog,
+            classrooms = uiState.classrooms,
+            activeClassroomId = uiState.activeClassroom?.id,
             onDismiss = { viewModel.closeDailyLogDialog() },
-            onSave = { date, reflectionNotes, wasProxyClass ->
-                viewModel.saveDailyLog(date, reflectionNotes, wasProxyClass)
+            onSave = { date, reflectionNotes, wasProxyClass, targetClassroomId ->
+                viewModel.saveDailyLog(date, reflectionNotes, wasProxyClass, targetClassroomId)
             }
         )
     }
@@ -255,6 +304,7 @@ fun PlannerScreen(
 @Composable
 fun LessonPlansTab(
     plans: List<LessonPlanEntity>,
+    classrooms: List<ClassroomEntity>,
     onEdit: (LessonPlanEntity) -> Unit,
     onDelete: (LessonPlanEntity) -> Unit,
     onCycleStatus: (LessonPlanEntity) -> Unit
@@ -280,13 +330,13 @@ fun LessonPlansTab(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "No Lesson Plans Yet",
+                            text = "No Lesson Plans Found",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Tap the '+' button below to create your first lesson plan for this classroom.",
+                            text = "Tap the '+' button below to create a lesson plan for your classroom.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -300,6 +350,8 @@ fun LessonPlansTab(
                     "COMPLETED" -> StatusSuccess to "Completed"
                     else -> StatusInfo to "Planned"
                 }
+
+                val classroomName = classrooms.find { it.id == plan.classroomId }?.name ?: "Classroom #${plan.classroomId}"
 
                 Card(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -328,11 +380,22 @@ fun LessonPlansTab(
                             )
                         }
 
-                        Text(
-                            text = "Target Date: ${df.format(Date(plan.targetDate))}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Classroom Badge Chip
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AssistChip(
+                                onClick = {},
+                                label = { Text(classroomName, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold) },
+                                leadingIcon = { Icon(Icons.Default.Class, contentDescription = null, modifier = Modifier.height(14.dp)) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Target: ${df.format(Date(plan.targetDate))}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
@@ -374,6 +437,7 @@ fun LessonPlansTab(
 @Composable
 fun DailyDiaryTab(
     logs: List<DailyLogEntity>,
+    classrooms: List<ClassroomEntity>,
     onEdit: (DailyLogEntity) -> Unit,
     onDelete: (DailyLogEntity) -> Unit
 ) {
@@ -398,7 +462,7 @@ fun DailyDiaryTab(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "No Daily Diary Entries Yet",
+                            text = "No Daily Diary Entries Found",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -413,6 +477,8 @@ fun DailyDiaryTab(
             }
         } else {
             items(logs, key = { it.id }) { log ->
+                val classroomName = classrooms.find { it.id == log.classroomId }?.name ?: "Classroom #${log.classroomId}"
+
                 Card(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -441,6 +507,14 @@ fun DailyDiaryTab(
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(classroomName, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold) },
+                            leadingIcon = { Icon(Icons.Default.Class, contentDescription = null, modifier = Modifier.height(14.dp)) }
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
 

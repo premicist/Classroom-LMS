@@ -245,5 +245,9 @@ data class LmsUiState(
     val isAddEditLessonPlanOpen: Boolean = false,
     val editingLessonPlan: LessonPlanEntity? = null,
     val isAddEditDailyLogOpen: Boolean = false,
-    val editingDailyLog: DailyLogEntity? = null
+    val editingDailyLog: DailyLogEntity? = null,
+    val plannerClassroomFilterId: Long? = null, // null = All Classrooms
+
+    // Custom Report Generator State
+    val isGenerateReportDialogOpen: Boolean = false
 )
