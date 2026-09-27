@@ -11,6 +11,8 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 import android.util.Log
+import com.example.data.entity.SubmissionStatus
+import com.example.data.network.ValueRange
 
 class SyncRepository(
     private val database: AppDatabase,
@@ -133,6 +135,113 @@ class SyncRepository(
             return@withContext "Sync is up to date (no changes found)."
         } else {
             return@withContext "Sync successful: Added $addedCount, Updated $updatedCount."
+        }
+    }
+
+    suspend fun exportToSheets(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
+        val authHeader = "Bearer $accessToken"
+        val students = database.studentDao().getStudentsByClassroomOnce(classroomId).sortedBy { it.name }
+        if (students.isEmpty()) return@withContext "No students to export."
+
+        val studentIdToName = students.associate { it.id to it.name }
+
+        try {
+            // 1. Export Attendance
+            val attendanceRecords = database.attendanceDao().getAttendanceForClassroomOnce(classroomId)
+            val distinctDates = attendanceRecords.map { it.date }.distinct().sorted()
+
+            val attendanceRows = mutableListOf<List<String>>()
+            val attHeaderRow = mutableListOf("Student Name", "Student ID")
+            attHeaderRow.addAll(distinctDates)
+            attendanceRows.add(attHeaderRow)
+
+            for (student in students) {
+                val row = mutableListOf(student.name, student.studentNumber)
+                val studentAtt = attendanceRecords.filter { it.studentId == student.id }
+                for (date in distinctDates) {
+                    val record = studentAtt.find { it.date == date }
+                    row.add(record?.status?.name ?: "")
+                }
+                attendanceRows.add(row)
+            }
+
+            api.updateSheetValues(
+                spreadsheetId = spreadsheetId,
+                range = "Attendance!A1",
+                authHeader = authHeader,
+                body = ValueRange("Attendance!A1", "ROWS", attendanceRows)
+            )
+
+            // 2. Export Homework
+            val homeworkRecords = database.homeworkRecordDao().getAllHomeworkRecordsForClassroomOnce(classroomId)
+            // Composite key for homework columns: "Date - Topic"
+            val distinctHomeworkTasks = homeworkRecords.map { "${it.date} - ${it.topic}" }.distinct().sorted()
+
+            val homeworkRows = mutableListOf<List<String>>()
+            val hwHeaderRow = mutableListOf("Student Name", "Student ID")
+            hwHeaderRow.addAll(distinctHomeworkTasks)
+            homeworkRows.add(hwHeaderRow)
+
+            for (student in students) {
+                val row = mutableListOf(student.name, student.studentNumber)
+                val studentHw = homeworkRecords.filter { it.studentId == student.id }
+                for (task in distinctHomeworkTasks) {
+                    val parts = task.split(" - ", limit = 2)
+                    val date = parts.getOrNull(0) ?: ""
+                    val topic = parts.getOrNull(1) ?: ""
+                    val record = studentHw.find { it.date == date && it.topic == topic }
+                    row.add(record?.status?.name ?: "")
+                }
+                homeworkRows.add(row)
+            }
+
+            api.updateSheetValues(
+                spreadsheetId = spreadsheetId,
+                range = "Homework!A1",
+                authHeader = authHeader,
+                body = ValueRange("Homework!A1", "ROWS", homeworkRows)
+            )
+
+            // 3. Export Grades
+            val assignments = database.assignmentDao().getAssignmentsByClassroomOnce(classroomId)
+            val submissions = database.submissionDao().getSubmissionsByClassroomOnce(classroomId)
+
+            val gradesRows = mutableListOf<List<String>>()
+            val gradeHeaderRow = mutableListOf("Student Name", "Student ID")
+            // Column format: "Assignment Title (Max Pts)"
+            assignments.forEach { gradeHeaderRow.add("${it.title} (${it.maxPoints} pts)") }
+            gradesRows.add(gradeHeaderRow)
+
+            for (student in students) {
+                val row = mutableListOf(student.name, student.studentNumber)
+                val studentSubs = submissions.filter { it.studentId == student.id }
+                for (assignment in assignments) {
+                    val sub = studentSubs.find { it.assignmentId == assignment.id }
+                    if (sub?.status == SubmissionStatus.GRADED && sub.score != null) {
+                        row.add(sub.score.toString())
+                    } else if (sub?.status == SubmissionStatus.MISSING) {
+                        row.add("MISSING")
+                    } else if (sub?.status == SubmissionStatus.EXCUSED) {
+                        row.add("EXCUSED")
+                    } else {
+                        row.add("")
+                    }
+                }
+                gradesRows.add(row)
+            }
+
+            api.updateSheetValues(
+                spreadsheetId = spreadsheetId,
+                range = "Grades!A1",
+                authHeader = authHeader,
+                body = ValueRange("Grades!A1", "ROWS", gradesRows)
+            )
+
+            return@withContext "Export successful"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // If the tabs don't exist, Google Sheets API throws 400 Bad Request.
+            return@withContext "Export failed: Make sure 'Attendance', 'Homework', and 'Grades' tabs exist in your sheet."
         }
     }
 }

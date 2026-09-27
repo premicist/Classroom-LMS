@@ -20,6 +20,9 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance_records WHERE classroomId = :classroomId ORDER BY date DESC")
     fun getAttendanceForClassroom(classroomId: Long): Flow<List<AttendanceRecordEntity>>
 
+    @Query("SELECT * FROM attendance_records WHERE classroomId = :classroomId ORDER BY date DESC")
+    suspend fun getAttendanceForClassroomOnce(classroomId: Long): List<AttendanceRecordEntity>
+
     @Query("SELECT * FROM attendance_records WHERE studentId = :studentId ORDER BY date DESC")
     fun getAttendanceForStudent(studentId: Long): Flow<List<AttendanceRecordEntity>>
 

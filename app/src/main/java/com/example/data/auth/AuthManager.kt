@@ -14,7 +14,7 @@ class AuthManager(private val context: Context) {
 
     private val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestEmail()
-        .requestScopes(Scope("https://www.googleapis.com/auth/spreadsheets.readonly"))
+        .requestScopes(Scope("https://www.googleapis.com/auth/spreadsheets"))
         .build()
 
     val signInClient: GoogleSignInClient = GoogleSignIn.getClient(context, gso)
@@ -22,7 +22,7 @@ class AuthManager(private val context: Context) {
     suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
         val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@withContext null
         return@withContext try {
-            val scope = "oauth2:https://www.googleapis.com/auth/spreadsheets.readonly"
+            val scope = "oauth2:https://www.googleapis.com/auth/spreadsheets"
             GoogleAuthUtil.getToken(context, account.account!!, scope)
         } catch (e: Exception) {
             e.printStackTrace()

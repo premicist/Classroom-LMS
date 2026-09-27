@@ -4,6 +4,8 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
 import com.squareup.moshi.JsonClass
+import retrofit2.http.Body
+import retrofit2.http.PUT
 
 @JsonClass(generateAdapter = true)
 data class Spreadsheet(
@@ -42,4 +44,12 @@ interface GoogleSheetsApi {
         @Path("range") range: String,
         @Header("Authorization") authHeader: String
     ): ValueRange
+
+    @PUT("v4/spreadsheets/{spreadsheetId}/values/{range}?valueInputOption=USER_ENTERED")
+    suspend fun updateSheetValues(
+        @Path("spreadsheetId") spreadsheetId: String,
+        @Path("range") range: String,
+        @Header("Authorization") authHeader: String,
+        @Body body: ValueRange
+    ): Any
 }

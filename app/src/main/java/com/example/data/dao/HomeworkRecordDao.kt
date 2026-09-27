@@ -20,6 +20,9 @@ interface HomeworkRecordDao {
     @Query("SELECT * FROM homework_records WHERE classroomId = :classroomId ORDER BY date DESC")
     fun getAllHomeworkRecordsForClassroom(classroomId: Long): Flow<List<HomeworkRecordEntity>>
 
+    @Query("SELECT * FROM homework_records WHERE classroomId = :classroomId ORDER BY date DESC")
+    suspend fun getAllHomeworkRecordsForClassroomOnce(classroomId: Long): List<HomeworkRecordEntity>
+
     @Query("SELECT * FROM homework_records WHERE studentId = :studentId ORDER BY date DESC")
     fun getHomeworkRecordsForStudent(studentId: Long): Flow<List<HomeworkRecordEntity>>
 
