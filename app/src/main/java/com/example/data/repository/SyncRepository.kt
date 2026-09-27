@@ -221,7 +221,7 @@ class SyncRepository(
                         row.add(sub.score.toString())
                     } else if (sub?.status == SubmissionStatus.MISSING) {
                         row.add("MISSING")
-                    } else if (sub?.status == SubmissionStatus.EXCUSED) {
+                    } else if (sub?.status?.name == "EXCUSED") {
                         row.add("EXCUSED")
                     } else {
                         row.add("")

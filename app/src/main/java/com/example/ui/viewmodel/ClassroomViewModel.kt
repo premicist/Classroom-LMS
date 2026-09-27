@@ -189,13 +189,19 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 _uiState.update { it.copy(userNotificationMessage = "Syncing with Google Sheets...") }
                 
                 val syncRepo = SyncRepository(db, token)
-                val resultMsg = syncRepo.syncClassroomRoster(classroomId, classroom.linkedSpreadsheetId)
+                // 1. Pull Students (Roster)
+                val pullResult = syncRepo.syncClassroomRoster(classroomId, classroom.linkedSpreadsheetId)
                 
                 // Trigger a refresh of the UI state to ensure the new students show up immediately
                 _selectedClassroomId.value = null
                 _selectedClassroomId.value = classroomId
                 
-                _uiState.update { it.copy(userNotificationMessage = resultMsg) }
+                _uiState.update { it.copy(userNotificationMessage = "Pushing data to Google Sheets...") }
+                
+                // 2. Push Grades, Attendance, and Homework
+                val pushResult = syncRepo.exportToSheets(classroomId, classroom.linkedSpreadsheetId)
+                
+                _uiState.update { it.copy(userNotificationMessage = "Sync Complete: $pullResult | $pushResult") }
             } catch (e: Exception) {
                 _uiState.update { it.copy(userNotificationMessage = "Sync failed: ${e.message}") }
             }

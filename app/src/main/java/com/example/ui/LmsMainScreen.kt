@@ -83,6 +83,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.BuildConfig
@@ -110,7 +111,11 @@ fun LmsMainScreen(
     // Display messages via Snackbar
     LaunchedEffect(uiState.userNotificationMessage) {
         uiState.userNotificationMessage?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
+            snackbarHostState.showSnackbar(
+                message = msg,
+                withDismissAction = true,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearNotificationMessage()
         }
     }
