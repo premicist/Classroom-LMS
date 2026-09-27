@@ -22,10 +22,7 @@ data class AppUpdateInfo(
     val publishedAt: String = ""
 )
 
-class UpdateRepository(
-    private val owner: String = "premicist",
-    private val repo: String = "Classroom-LMS"
-) {
+class UpdateRepository {
     private val gitHubService: GitHubReleaseService by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -42,7 +39,7 @@ class UpdateRepository(
             .build()
 
         Retrofit.Builder()
-            .baseUrl("https://api.github.com/")
+            .baseUrl("https://gist.githubusercontent.com/")
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -50,28 +47,25 @@ class UpdateRepository(
     }
 
     suspend fun checkLatestRelease(
-        currentVersion: String = BuildConfig.VERSION_NAME
+        currentVersion: String = BuildConfig.VERSION_NAME,
+        currentVersionCode: Int = BuildConfig.VERSION_CODE
     ): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
         try {
-            val release = gitHubService.getLatestRelease(owner, repo)
-            val latestVersionTag = release.tagName.trim()
+            val versionInfo = gitHubService.getVersionInfo()
+            val latestVersionTag = versionInfo.latestVersionName.trim()
             val cleanLatestVersion = latestVersionTag.trimStart('v', 'V')
             val cleanCurrentVersion = currentVersion.trim().trimStart('v', 'V')
 
-            val hasNewerVersion = isVersionHigher(cleanLatestVersion, cleanCurrentVersion)
-
-            // Find an APK asset if uploaded with the release, otherwise use GitHub release page
-            val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
-            val downloadUrl = apkAsset?.browserDownloadUrl ?: release.htmlUrl
+            val hasNewerCode = versionInfo.latestVersionCode > currentVersionCode
+            val hasNewerVersion = hasNewerCode || isVersionHigher(cleanLatestVersion, cleanCurrentVersion)
 
             val updateInfo = AppUpdateInfo(
                 isUpdateAvailable = hasNewerVersion,
                 currentVersionName = currentVersion,
                 latestVersionName = latestVersionTag,
-                releaseTitle = release.name ?: latestVersionTag,
-                releaseNotes = release.body ?: "No release notes provided.",
-                downloadUrl = downloadUrl,
-                publishedAt = release.publishedAt ?: ""
+                releaseTitle = "Classroom LMS v$latestVersionTag",
+                releaseNotes = versionInfo.releaseNotes.ifBlank { "New features and enhancements available." },
+                downloadUrl = versionInfo.downloadUrl
             )
 
             Result.success(updateInfo)
