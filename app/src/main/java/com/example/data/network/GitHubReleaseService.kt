@@ -11,6 +11,6 @@ interface GitHubReleaseService {
     ): VersionInfo
 
     companion object {
-        const val VERSION_JSON_URL = "https://gist.githubusercontent.com/premicist/c37235585c59b215e5b5ee147bd73c1f/raw/classroom_lms_version.json"
+        const val VERSION_JSON_URL = "premicist/c37235585c59b215e5b5ee147bd73c1f/raw/classroom_lms_version.json"
     }
 }
