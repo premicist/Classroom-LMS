@@ -10,6 +10,8 @@ import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.StudentEntity
 import com.example.ui.viewmodel.StudentGradeSummary
 import java.io.File
 import java.io.FileOutputStream
@@ -180,6 +182,147 @@ object PdfReportExporter {
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, "Could not create PDF: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun exportDisciplineIncidentSlip(
+        context: Context,
+        student: StudentEntity,
+        record: DisciplineRecordEntity,
+        classroomName: String
+    ) {
+        try {
+            val document = PdfDocument()
+
+            val paint = Paint().apply {
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+                textSize = BODY_SIZE
+                color = Color.BLACK
+            }
+            val titlePaint = Paint(paint).apply {
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                textSize = TITLE_SIZE
+            }
+            val headingPaint = Paint(paint).apply {
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                textSize = HEADING_SIZE
+            }
+            val rulePaint = Paint().apply {
+                color = Color.LTGRAY
+                strokeWidth = 1f
+            }
+
+            val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+
+            var currentY = MARGIN
+
+            // 1. Header Box
+            canvas.drawText("BEHAVIOR & INCIDENT REPORT SLIP", MARGIN, currentY, titlePaint)
+            currentY += LINE_HEIGHT * 1.5f
+            canvas.drawText("Classroom / Course: $classroomName", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Date of Incident: ${record.date}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT * 1.5f
+
+            canvas.drawLine(MARGIN, currentY, PAGE_WIDTH - MARGIN, currentY, rulePaint)
+            currentY += LINE_HEIGHT
+
+            // 2. Student Info
+            canvas.drawText("Student Information", MARGIN, currentY, headingPaint)
+            currentY += LINE_HEIGHT * 1.5f
+            canvas.drawText("Student Name: ${student.name}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Student ID: ${student.studentNumber}", MARGIN, currentY, paint)
+            if (student.email.isNotBlank()) {
+                currentY += LINE_HEIGHT
+                canvas.drawText("Student Email: ${student.email}", MARGIN, currentY, paint)
+            }
+            currentY += LINE_HEIGHT * 1.5f
+
+            canvas.drawLine(MARGIN, currentY, PAGE_WIDTH - MARGIN, currentY, rulePaint)
+            currentY += LINE_HEIGHT
+
+            // 3. Incident Details
+            canvas.drawText("Incident & Behavior Details", MARGIN, currentY, headingPaint)
+            currentY += LINE_HEIGHT * 1.5f
+            canvas.drawText("Category: ${record.category.displayName}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Severity Level: ${record.severity.displayName}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Incident Title: ${record.title}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT * 1.5f
+
+            if (record.description.isNotBlank()) {
+                canvas.drawText("Description:", MARGIN, currentY, headingPaint)
+                currentY += LINE_HEIGHT
+                val descLines = wrapText(record.description, paint, PAGE_WIDTH - MARGIN * 2)
+                for (line in descLines) {
+                    canvas.drawText(line, MARGIN + 12f, currentY, paint)
+                    currentY += LINE_HEIGHT
+                }
+                currentY += LINE_HEIGHT * 0.5f
+            }
+
+            if (record.actionTaken.isNotBlank()) {
+                canvas.drawText("Action Taken:", MARGIN, currentY, headingPaint)
+                currentY += LINE_HEIGHT
+                val actionLines = wrapText(record.actionTaken, paint, PAGE_WIDTH - MARGIN * 2)
+                for (line in actionLines) {
+                    canvas.drawText(line, MARGIN + 12f, currentY, paint)
+                    currentY += LINE_HEIGHT
+                }
+                currentY += LINE_HEIGHT * 0.5f
+            }
+
+            canvas.drawText("Parent / Guardian Notified: ${if (record.parentNotified) "YES" else "NO"}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+            canvas.drawText("Resolution Status: ${if (record.resolved) "RESOLVED" else "OPEN / PENDING"}", MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT * 2.5f
+
+            // 4. Signature Section
+            canvas.drawLine(MARGIN, currentY, PAGE_WIDTH - MARGIN, currentY, rulePaint)
+            currentY += LINE_HEIGHT * 1.5f
+
+            canvas.drawText("Signatures & Acknowledgment", MARGIN, currentY, headingPaint)
+            currentY += LINE_HEIGHT * 3f
+
+            val colWidth = (PAGE_WIDTH - MARGIN * 2) / 2f
+            canvas.drawLine(MARGIN, currentY, MARGIN + colWidth - 20f, currentY, paint)
+            canvas.drawLine(MARGIN + colWidth + 20f, currentY, PAGE_WIDTH - MARGIN, currentY, paint)
+            currentY += LINE_HEIGHT
+
+            canvas.drawText("Teacher / Educator Signature & Date", MARGIN, currentY, paint)
+            canvas.drawText("Parent / Guardian Signature & Date", MARGIN + colWidth + 20f, currentY, paint)
+
+            document.finishPage(page)
+
+            val dir = File(context.cacheDir, "reports").apply { mkdirs() }
+            val file = File(dir, "Incident_Slip_${student.name.replace(" ", "_")}_${record.date}.pdf")
+            FileOutputStream(file).use { out ->
+                document.writeTo(out)
+            }
+            document.close()
+
+            val uri: Uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Incident Slip - ${student.name}")
+                putExtra(Intent.EXTRA_TEXT, "Incident Report Slip for ${student.name}")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(
+                Intent.createChooser(shareIntent, "Share Incident Report Slip")
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Failed to export incident slip: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

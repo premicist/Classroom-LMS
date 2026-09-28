@@ -9,6 +9,7 @@ import com.example.data.dao.AssignmentDao
 import com.example.data.dao.AttendanceDao
 import com.example.data.dao.ClassScheduleDao
 import com.example.data.dao.ClassroomDao
+import com.example.data.dao.DisciplineDao
 import com.example.data.dao.HomeworkRecordDao
 import com.example.data.dao.InterventionDao
 import com.example.data.dao.PlannerDao
@@ -19,6 +20,7 @@ import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
+import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.LessonPlanEntity
@@ -36,9 +38,10 @@ import com.example.data.entity.SubmissionEntity
         InterventionEntity::class,
         LessonPlanEntity::class,
         DailyLogEntity::class,
-        ClassScheduleEntity::class
+        ClassScheduleEntity::class,
+        DisciplineRecordEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 @TypeConverters(Converters::class, com.example.data.entity.Converters::class)
@@ -52,6 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun interventionDao(): InterventionDao
     abstract fun plannerDao(): PlannerDao
     abstract fun classScheduleDao(): ClassScheduleDao
+    abstract fun disciplineDao(): DisciplineDao
 
     companion object {
         @Volatile

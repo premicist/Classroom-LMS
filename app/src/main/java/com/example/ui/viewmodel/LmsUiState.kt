@@ -6,6 +6,7 @@ import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
+import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
@@ -231,6 +232,10 @@ data class LmsUiState(
     val isAddInterventionOpen: Boolean = false,
     val editingIntervention: InterventionEntity? = null,
     val interventionStudent: StudentEntity? = null,
+    val disciplineRecords: List<DisciplineRecordEntity> = emptyList(),
+    val isAddEditDisciplineOpen: Boolean = false,
+    val editingDisciplineRecord: DisciplineRecordEntity? = null,
+    val disciplineStudent: StudentEntity? = null,
     val isExportReportOpen: Boolean = false,
     val exportReportContent: String = "",
     val exportReportTitle: String = "Class Progress & Intervention Report",

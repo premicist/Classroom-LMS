@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -80,6 +81,7 @@ fun StudentRosterScreen(
     onEditStudent: (StudentEntity) -> Unit,
     onDeleteStudent: (StudentEntity) -> Unit,
     onReassignClassroom: (StudentEntity, Long) -> Unit,
+    onLogDiscipline: (StudentEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -260,7 +262,8 @@ fun StudentRosterScreen(
                             classroomName = classroomMap[student.classroomId]?.name ?: "—",
                             onEdit = { onEditStudent(student) },
                             onDelete = { studentToDelete = student },
-                            onReassign = { studentToReassign = student }
+                            onReassign = { studentToReassign = student },
+                            onLogDiscipline = { onLogDiscipline(student) }
                         )
                     }
                 }
@@ -309,7 +312,8 @@ private fun StudentRosterRow(
     classroomName: String,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onReassign: () -> Unit
+    onReassign: () -> Unit,
+    onLogDiscipline: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -363,6 +367,13 @@ private fun StudentRosterRow(
                 )
             }
 
+            IconButton(onClick = onLogDiscipline) {
+                Icon(
+                    Icons.Default.AddComment,
+                    contentDescription = "Log Behavior / Discipline",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             IconButton(onClick = onReassign) {
                 Icon(
                     Icons.Default.SwapHoriz,

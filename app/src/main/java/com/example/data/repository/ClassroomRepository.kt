@@ -6,6 +6,7 @@ import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
+import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.LessonPlanEntity
@@ -25,6 +26,7 @@ class ClassroomRepository(private val database: AppDatabase) {
     private val attendanceDao = database.attendanceDao()
     private val interventionDao = database.interventionDao()
     private val plannerDao = database.plannerDao()
+    private val disciplineDao = database.disciplineDao()
 
     // Classrooms
     fun getAllClassrooms(): Flow<List<ClassroomEntity>> = classroomDao.getAllClassrooms()
@@ -104,6 +106,14 @@ class ClassroomRepository(private val database: AppDatabase) {
     suspend fun saveIntervention(intervention: InterventionEntity): Long = interventionDao.insertIntervention(intervention)
     suspend fun updateIntervention(intervention: InterventionEntity) = interventionDao.updateIntervention(intervention)
     suspend fun deleteIntervention(id: Long) = interventionDao.deleteInterventionById(id)
+
+    // Behavior & Discipline Records
+    fun getDisciplineRecordsByClassroom(classroomId: Long): Flow<List<DisciplineRecordEntity>> = disciplineDao.getDisciplineRecordsByClassroom(classroomId)
+    suspend fun getDisciplineRecordsByClassroomOnce(classroomId: Long): List<DisciplineRecordEntity> = disciplineDao.getDisciplineRecordsByClassroomOnce(classroomId)
+    fun getDisciplineRecordsByStudent(studentId: Long): Flow<List<DisciplineRecordEntity>> = disciplineDao.getDisciplineRecordsByStudent(studentId)
+    suspend fun getDisciplineRecordsByStudentOnce(studentId: Long): List<DisciplineRecordEntity> = disciplineDao.getDisciplineRecordsByStudentOnce(studentId)
+    suspend fun saveDisciplineRecord(record: DisciplineRecordEntity): Long = disciplineDao.insertDisciplineRecord(record)
+    suspend fun deleteDisciplineRecord(record: DisciplineRecordEntity) = disciplineDao.deleteDisciplineRecord(record)
 
     // Lesson Plans & Daily Diary
     fun getLessonPlans(classroomId: Long): Flow<List<LessonPlanEntity>> = plannerDao.getLessonPlansForClassroom(classroomId)

@@ -42,6 +42,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 import com.example.data.entity.ClassScheduleEntity
+import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.repository.ScheduleRepository
 import java.util.Calendar
 
@@ -112,7 +113,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                         repository.getInterventionsByClassroom(id),
                         repository.getLessonPlans(id),
                         repository.getDailyLogs(id),
-                        scheduleRepository.getSchedulesByClassroom(id)
+                        scheduleRepository.getSchedulesByClassroom(id),
+                        repository.getDisciplineRecordsByClassroom(id)
                     ) { args: Array<Any?> ->
                         @Suppress("UNCHECKED_CAST")
                         CombinedClassData(
@@ -125,7 +127,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             interventions = args[6] as List<InterventionEntity>,
                             lessonPlans = args[7] as List<LessonPlanEntity>,
                             dailyLogs = args[8] as List<DailyLogEntity>,
-                            schedules = args[9] as List<ClassScheduleEntity>
+                            schedules = args[9] as List<ClassScheduleEntity>,
+                            disciplineRecords = args[10] as List<DisciplineRecordEntity>
                         )
                     }
                 }
@@ -141,6 +144,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                     val lessonPlans = combined.lessonPlans
                     val dailyLogs = combined.dailyLogs
                     val schedules = combined.schedules
+                    val disciplineRecords = combined.disciplineRecords
 
                     // Compute Grade Summaries
                     val studentSummaries = computeStudentGrades(students, assignments, submissions, homeworks, attendance)
@@ -161,6 +165,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             lessonPlans = lessonPlans,
                             dailyLogs = dailyLogs,
                             schedules = schedules,
+                            disciplineRecords = disciplineRecords,
                             studentGradeSummaries = studentSummaries,
                             analytics = analytics,
                             attendanceReport = attendanceReport,
@@ -182,7 +187,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val interventions: List<InterventionEntity>,
         val lessonPlans: List<LessonPlanEntity>,
         val dailyLogs: List<DailyLogEntity>,
-        val schedules: List<ClassScheduleEntity>
+        val schedules: List<ClassScheduleEntity>,
+        val disciplineRecords: List<com.example.data.entity.DisciplineRecordEntity>
     )
 
     // --- NAVIGATION & TABS ---
@@ -503,6 +509,59 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 editingIntervention = null,
                 interventionStudent = null
             )
+        }
+    }
+
+    // --- DISCIPLINE & BEHAVIOR LOGGING ACTIONS ---
+
+    fun openAddDiscipline(student: StudentEntity) {
+        _uiState.update {
+            it.copy(
+                isAddEditDisciplineOpen = true,
+                editingDisciplineRecord = null,
+                disciplineStudent = student
+            )
+        }
+    }
+
+    fun openEditDiscipline(record: DisciplineRecordEntity, student: StudentEntity?) {
+        _uiState.update {
+            it.copy(
+                isAddEditDisciplineOpen = true,
+                editingDisciplineRecord = record,
+                disciplineStudent = student ?: it.students.find { s -> s.id == record.studentId }
+            )
+        }
+    }
+
+    fun closeDisciplineDialog() {
+        _uiState.update {
+            it.copy(
+                isAddEditDisciplineOpen = false,
+                editingDisciplineRecord = null,
+                disciplineStudent = null
+            )
+        }
+    }
+
+    fun saveDisciplineRecord(record: DisciplineRecordEntity) {
+        viewModelScope.launch {
+            repository.saveDisciplineRecord(record)
+            _uiState.update {
+                it.copy(
+                    isAddEditDisciplineOpen = false,
+                    editingDisciplineRecord = null,
+                    disciplineStudent = null,
+                    userNotificationMessage = "Discipline / behavior record saved"
+                )
+            }
+        }
+    }
+
+    fun deleteDisciplineRecord(record: DisciplineRecordEntity) {
+        viewModelScope.launch {
+            repository.deleteDisciplineRecord(record)
+            _uiState.update { it.copy(userNotificationMessage = "Discipline record deleted") }
         }
     }
 

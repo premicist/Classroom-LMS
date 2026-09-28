@@ -5,6 +5,9 @@ import com.example.data.database.AppDatabase
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.AttendanceStatus
+import com.example.data.entity.BehaviorCategory
+import com.example.data.entity.BehaviorSeverity
+import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
@@ -152,11 +155,12 @@ class SyncRepository(
 
         val allStudents = database.studentDao().getStudentsByClassroomOnce(classroomId)
 
-        // 2-Way Sync Attendance, Homework, Grades, and Interventions from Sheets
+        // 2-Way Sync Attendance, Homework, Grades, Interventions, and Discipline from Sheets
         syncAttendanceFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
         syncHomeworkFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
         syncGradesFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
         syncInterventionsFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
+        syncDisciplineFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
 
         if (addedCount == 0 && updatedCount == 0) {
             return@withContext "Roster up to date."
@@ -489,6 +493,96 @@ class SyncRepository(
         }
     }
 
+    private suspend fun syncDisciplineFromSheet(classroomId: Long, spreadsheetId: String, authHeader: String, students: List<StudentEntity>) {
+        val range = "Discipline_Log!A:Z"
+        val response = try {
+            api.getSheetValues(spreadsheetId, range, authHeader)
+        } catch (e: Exception) {
+            Log.d(TAG, "Discipline_Log tab not found or unreadable: ${e.message}")
+            return
+        }
+        val rows = response.values ?: return
+        if (rows.size < 2) return
+
+        val headers = rows[0]
+        val studentIdIdx = headers.indexOfFirst { it.equals("Student ID", ignoreCase = true) || it.equals("Student Number", ignoreCase = true) }
+        val nameIdx = headers.indexOfFirst { it.equals("Student Name", ignoreCase = true) || it.equals("Name", ignoreCase = true) }
+        val dateIdx = headers.indexOfFirst { it.equals("Date", ignoreCase = true) }
+        val categoryIdx = headers.indexOfFirst { it.equals("Category", ignoreCase = true) }
+        val severityIdx = headers.indexOfFirst { it.equals("Severity", ignoreCase = true) }
+        val titleIdx = headers.indexOfFirst { it.equals("Title", ignoreCase = true) }
+        val descIdx = headers.indexOfFirst { it.equals("Description", ignoreCase = true) }
+        val actionIdx = headers.indexOfFirst { it.equals("Action Taken", ignoreCase = true) }
+        val parentNotifiedIdx = headers.indexOfFirst { it.equals("Parent Notified", ignoreCase = true) }
+        val resolvedIdx = headers.indexOfFirst { it.equals("Resolved", ignoreCase = true) }
+
+        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val existingDiscipline = database.disciplineDao().getDisciplineRecordsByClassroomOnce(classroomId)
+
+        for (i in 1 until rows.size) {
+            val row = rows[i]
+            if (row.isEmpty()) continue
+            val studentIdStr = if (studentIdIdx >= 0) row.getOrNull(studentIdIdx) ?: "" else ""
+            val nameStr = if (nameIdx >= 0) row.getOrNull(nameIdx) ?: "" else ""
+
+            val student = students.find {
+                (studentIdStr.isNotBlank() && it.studentNumber == studentIdStr) ||
+                (nameStr.isNotBlank() && it.name.equals(nameStr, ignoreCase = true))
+            } ?: continue
+
+            val dateStr = if (dateIdx >= 0) row.getOrNull(dateIdx)?.trim()?.ifBlank { todayStr } ?: todayStr else todayStr
+            val titleStr = if (titleIdx >= 0) row.getOrNull(titleIdx)?.trim() ?: "" else ""
+            if (titleStr.isBlank()) continue
+
+            val categoryStr = if (categoryIdx >= 0) row.getOrNull(categoryIdx)?.trim() ?: "" else ""
+            val severityStr = if (severityIdx >= 0) row.getOrNull(severityIdx)?.trim() ?: "" else ""
+            val descStr = if (descIdx >= 0) row.getOrNull(descIdx)?.trim() ?: "" else ""
+            val actionStr = if (actionIdx >= 0) row.getOrNull(actionIdx)?.trim() ?: "" else ""
+            val parentNotifiedBool = if (parentNotifiedIdx >= 0) row.getOrNull(parentNotifiedIdx)?.trim()?.equals("true", ignoreCase = true) == true || row.getOrNull(parentNotifiedIdx)?.trim()?.equals("yes", ignoreCase = true) == true else false
+            val resolvedBool = if (resolvedIdx >= 0) row.getOrNull(resolvedIdx)?.trim()?.equals("true", ignoreCase = true) == true || row.getOrNull(resolvedIdx)?.trim()?.equals("yes", ignoreCase = true) == true else false
+
+            val categoryEnum = BehaviorCategory.entries.find {
+                it.displayName.equals(categoryStr, ignoreCase = true) || it.name.equals(categoryStr, ignoreCase = true)
+            } ?: BehaviorCategory.CLASSROOM_DISRUPTION
+
+            val severityEnum = BehaviorSeverity.entries.find {
+                it.displayName.equals(severityStr, ignoreCase = true) || it.name.equals(severityStr, ignoreCase = true)
+            } ?: BehaviorSeverity.LOW_WARNING
+
+            val existing = existingDiscipline.find {
+                it.studentId == student.id && it.date == dateStr && it.title.equals(titleStr, ignoreCase = true)
+            }
+
+            if (existing != null) {
+                database.disciplineDao().updateDisciplineRecord(
+                    existing.copy(
+                        category = categoryEnum,
+                        severity = severityEnum,
+                        description = descStr,
+                        actionTaken = actionStr,
+                        parentNotified = parentNotifiedBool,
+                        resolved = resolvedBool
+                    )
+                )
+            } else {
+                database.disciplineDao().insertDisciplineRecord(
+                    DisciplineRecordEntity(
+                        studentId = student.id,
+                        classroomId = classroomId,
+                        date = dateStr,
+                        category = categoryEnum,
+                        severity = severityEnum,
+                        title = titleStr,
+                        description = descStr,
+                        actionTaken = actionStr,
+                        parentNotified = parentNotifiedBool,
+                        resolved = resolvedBool
+                    )
+                )
+            }
+        }
+    }
+
     suspend fun exportToSheets(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
         val authHeader = "Bearer $accessToken"
         val students = database.studentDao().getStudentsByClassroomOnce(classroomId).sortedBy { it.name }
@@ -503,7 +597,7 @@ class SyncRepository(
         }
 
         val existingTitles = spreadsheet.sheets?.map { it.properties.title }?.toSet() ?: emptySet()
-        val requiredSheets = listOf("Attendance", "Homework", "Grades", "Interventions")
+        val requiredSheets = listOf("Attendance", "Homework", "Grades", "Interventions", "Discipline_Log")
         val missingSheets = requiredSheets.filter { !existingTitles.contains(it) }
 
         if (missingSheets.isNotEmpty()) {
@@ -632,6 +726,36 @@ class SyncRepository(
                 range = "Interventions!A1",
                 authHeader = authHeader,
                 body = ValueRange("Interventions!A1", "ROWS", interventionRows)
+            )
+
+            // 5. Export Discipline Log
+            val disciplineRecords = database.disciplineDao().getDisciplineRecordsByClassroomOnce(classroomId)
+            val disciplineRows = mutableListOf<List<String>>()
+            val discHeaderRow = listOf("Student Name", "Student ID", "Date", "Category", "Severity", "Title", "Description", "Action Taken", "Parent Notified", "Resolved")
+            disciplineRows.add(discHeaderRow)
+
+            for (record in disciplineRecords) {
+                val student = students.find { it.id == record.studentId }
+                val row = listOf(
+                    student?.name ?: "Unknown",
+                    student?.studentNumber ?: "",
+                    record.date,
+                    record.category.displayName,
+                    record.severity.displayName,
+                    record.title,
+                    record.description,
+                    record.actionTaken,
+                    if (record.parentNotified) "Yes" else "No",
+                    if (record.resolved) "Yes" else "No"
+                )
+                disciplineRows.add(row)
+            }
+
+            api.updateSheetValues(
+                spreadsheetId = spreadsheetId,
+                range = "Discipline_Log!A1",
+                authHeader = authHeader,
+                body = ValueRange("Discipline_Log!A1", "ROWS", disciplineRows)
             )
 
             return@withContext "Sync & Export successful."

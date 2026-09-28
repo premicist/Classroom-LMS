@@ -89,6 +89,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.BuildConfig
 import com.example.ui.screens.ClassroomScheduleScreen
+import com.example.ui.screens.DisciplineLogDialog
 import com.example.ui.screens.LinkGoogleSheetDialog
 import com.example.ui.screens.PlannerScreen
 import com.example.ui.screens.StudentRosterScreen
@@ -98,6 +99,7 @@ import kotlinx.coroutines.launch
 import com.example.ui.theme.StatusError
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsTab
+import com.example.util.PdfReportExporter
 
 @Composable
 fun LmsMainScreen(
@@ -468,10 +470,13 @@ fun LmsMainScreen(
         val trajectory = uiState.analytics.studentTrajectories.find { it.student.id == student.id }
         val studentInterventions = uiState.interventions.filter { it.studentId == student.id }
 
+        val studentDiscipline = uiState.disciplineRecords.filter { it.studentId == student.id }
+
         StudentDetailDialog(
             summary = uiState.selectedStudentProfile!!,
             trajectory = trajectory,
             interventions = studentInterventions,
+            disciplineRecords = studentDiscipline,
             onDismiss = { viewModel.closeStudentProfile() },
             onEditStudent = {
                 viewModel.closeStudentProfile()
@@ -483,6 +488,12 @@ fun LmsMainScreen(
             },
             onLogIntervention = {
                 viewModel.openAddIntervention(student)
+            },
+            onLogDiscipline = {
+                viewModel.openAddDiscipline(student)
+            },
+            onExportDisciplineIncidentSlip = { record ->
+                PdfReportExporter.exportDisciplineIncidentSlip(context, student, record, uiState.activeClassroom?.name ?: "Classroom")
             },
             onExportReport = {
                 val report = viewModel.generateStudentPortfolioReportText(student.id)
@@ -553,7 +564,24 @@ fun LmsMainScreen(
             onDeleteStudent = { viewModel.deleteStudent(it.id) },
             onReassignClassroom = { student, newId ->
                 viewModel.reassignStudentClassroom(student, newId)
+            },
+            onLogDiscipline = { student ->
+                viewModel.openAddDiscipline(student)
             }
+        )
+    }
+
+    // Discipline & Behavior Logging Dialog
+    if (uiState.isAddEditDisciplineOpen && uiState.disciplineStudent != null) {
+        val student = uiState.disciplineStudent!!
+        val activeClassId = uiState.activeClassroom?.id ?: 1L
+        DisciplineLogDialog(
+            student = student,
+            initialRecord = uiState.editingDisciplineRecord,
+            classroomId = activeClassId,
+            onDismiss = { viewModel.closeDisciplineDialog() },
+            onSave = { record -> viewModel.saveDisciplineRecord(record) },
+            onDelete = { record -> viewModel.deleteDisciplineRecord(record) }
         )
     }
 

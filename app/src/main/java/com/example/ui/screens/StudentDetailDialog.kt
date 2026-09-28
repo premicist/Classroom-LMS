@@ -62,6 +62,8 @@ import com.example.ui.components.StudentAvatar
 import com.example.ui.theme.EduPrimary
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusErrorBg
+import com.example.data.entity.BehaviorCategory
+import com.example.data.entity.DisciplineRecordEntity
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusSuccessBg
 import com.example.ui.theme.StatusWarning
@@ -77,10 +79,13 @@ fun StudentDetailDialog(
     summary: StudentGradeSummary,
     trajectory: StudentProgressTrajectory?,
     interventions: List<InterventionEntity>,
+    disciplineRecords: List<DisciplineRecordEntity> = emptyList(),
     onDismiss: () -> Unit,
     onEditStudent: () -> Unit,
     onDeleteStudent: () -> Unit,
     onLogIntervention: () -> Unit,
+    onLogDiscipline: () -> Unit = {},
+    onExportDisciplineIncidentSlip: (DisciplineRecordEntity) -> Unit = {},
     onExportReport: () -> Unit,
     isClassroomLinked: Boolean = false,
     modifier: Modifier = Modifier
@@ -152,6 +157,60 @@ fun StudentDetailDialog(
                         letterGrade = summary.letterGrade,
                         percentage = summary.percentage
                     )
+                }
+            }
+
+            // Behavior & Discipline Summary Badges Row
+            item {
+                val meritCount = disciplineRecords.count { it.category == BehaviorCategory.PRAISE_MERIT }
+                val infractionCount = disciplineRecords.count { it.category != BehaviorCategory.PRAISE_MERIT }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        color = StatusSuccessBg,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.Star, contentDescription = null, tint = StatusSuccess, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("+$meritCount Merits", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
+                        }
+                    }
+
+                    Surface(
+                        color = if (infractionCount > 0) StatusErrorBg else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (infractionCount > 0) StatusError else MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "$infractionCount Infraction${if (infractionCount == 1) "" else "s"}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (infractionCount > 0) StatusError else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
@@ -383,6 +442,124 @@ fun StudentDetailDialog(
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Behavior & Discipline Section Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Behavior & Discipline Logs (${disciplineRecords.size})",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Surface(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onLogDiscipline() },
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AddComment,
+                                        contentDescription = "Log Behavior",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Log Behavior", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (disciplineRecords.isEmpty()) {
+                            Text(
+                                text = "No discipline or merit records logged.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            disciplineRecords.forEach { disc ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "${disc.category.displayName} • ${disc.severity.displayName}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (disc.category.isPositive) StatusSuccess else StatusError
+                                        )
+                                        Text(
+                                            text = disc.date,
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = disc.title,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (disc.description.isNotEmpty()) {
+                                        Text(
+                                            text = disc.description,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = if (disc.parentNotified) "Parent Notified: YES" else "Parent Notified: NO",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        OutlinedButton(
+                                            onClick = { onExportDisciplineIncidentSlip(disc) },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(12.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Incident Slip", fontSize = 10.sp)
+                                        }
                                     }
                                 }
                             }
