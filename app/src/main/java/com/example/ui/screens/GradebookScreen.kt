@@ -63,6 +63,11 @@ import com.example.ui.theme.StatusWarning
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsUiState
 import com.example.ui.viewmodel.StudentGradeSummary
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.FilterChip
 
 @Composable
 fun GradebookScreen(
@@ -72,6 +77,7 @@ fun GradebookScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var expandedStudentId by remember { mutableStateOf<Long?>(null) }
+    var isInlineGradeMode by remember { mutableStateOf(false) }
 
     val filteredSummaries = if (searchQuery.isNotEmpty()) {
         uiState.studentGradeSummaries.filter {
@@ -194,6 +200,17 @@ fun GradebookScreen(
             }
         }
 
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Inline Quick-Grade Mode", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Switch(checked = isInlineGradeMode, onCheckedChange = { isInlineGradeMode = it })
+            }
+        }
+
         // Student Grade Cards List
         itemsIndexed(filteredSummaries) { index, summary ->
             val isExpanded = expandedStudentId == summary.student.id
@@ -299,7 +316,7 @@ fun GradebookScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Assignments & Exam Scores",
+                                text = if (isInlineGradeMode) "Quick Grade Tasks" else "Assignments & Exam Scores",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -308,7 +325,7 @@ fun GradebookScreen(
 
                             if (summary.submissions.isEmpty()) {
                                 Text(
-                                    text = "No graded assignments recorded.",
+                                    text = "No assignments recorded.",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -316,32 +333,69 @@ fun GradebookScreen(
                                 summary.submissions.forEach { sub ->
                                     val assign = assignMap[sub.assignmentId]
                                     if (assign != null) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = assign.title,
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            Text(
-                                                text = if (sub.status == SubmissionStatus.GRADED && sub.score != null) {
-                                                    "${sub.score.toInt()}/${assign.maxPoints.toInt()} pts"
-                                                } else sub.status.displayName,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = when (sub.status) {
-                                                    SubmissionStatus.GRADED -> StatusSuccess
-                                                    SubmissionStatus.MISSING -> StatusError
-                                                    SubmissionStatus.LATE -> StatusWarning
-                                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        if (isInlineGradeMode) {
+                                            var scoreInput by remember(sub.id) { mutableStateOf(sub.score?.toInt()?.toString() ?: "") }
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(assign.title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                                    Text("Max: ${assign.maxPoints.toInt()}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 }
-                                            )
+                                                OutlinedTextField(
+                                                    value = scoreInput,
+                                                    onValueChange = { scoreInput = it },
+                                                    label = { Text("Score") },
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                                                    modifier = Modifier.width(80.dp),
+                                                    singleLine = true
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Button(
+                                                    onClick = {
+                                                        val s = scoreInput.toDoubleOrNull()
+                                                        if (s != null) {
+                                                            viewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
+                                                        }
+                                                    },
+                                                    contentPadding = PaddingValues(horizontal = 8.dp),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    modifier = Modifier.height(36.dp)
+                                                ) {
+                                                    Text("Save")
+                                                }
+                                            }
+                                        } else {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = assign.title,
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Text(
+                                                    text = if (sub.status == SubmissionStatus.GRADED && sub.score != null) {
+                                                        "${sub.score.toInt()}/${assign.maxPoints.toInt()} pts"
+                                                    } else sub.status.displayName,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = when (sub.status) {
+                                                        SubmissionStatus.GRADED -> StatusSuccess
+                                                        SubmissionStatus.MISSING -> StatusError
+                                                        SubmissionStatus.LATE -> StatusWarning
+                                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
                                 }

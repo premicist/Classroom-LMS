@@ -23,11 +23,17 @@ interface DisciplineDao {
     @Query("SELECT * FROM discipline_records WHERE studentId = :studentId ORDER BY date DESC, timestamp DESC")
     suspend fun getDisciplineRecordsByStudentOnce(studentId: Long): List<DisciplineRecordEntity>
 
+    @Query("SELECT * FROM discipline_records ORDER BY date DESC, timestamp DESC")
+    fun getAllDisciplineRecordsOnce(): List<DisciplineRecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDisciplineRecord(record: DisciplineRecordEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDisciplineRecords(records: List<DisciplineRecordEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertDisciplineRecordsSync(records: List<DisciplineRecordEntity>)
 
     @Update
     suspend fun updateDisciplineRecord(record: DisciplineRecordEntity)

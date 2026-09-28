@@ -17,6 +17,9 @@ interface HomeworkRecordDao {
     @Query("SELECT * FROM homework_records WHERE classroomId = :classroomId AND date = :date")
     suspend fun getHomeworkRecordsOnce(classroomId: Long, date: String): List<HomeworkRecordEntity>
 
+    @Query("SELECT * FROM homework_records ORDER BY date DESC")
+    fun getAllHomeworkRecordsOnce(): List<HomeworkRecordEntity>
+
     @Query("SELECT * FROM homework_records WHERE classroomId = :classroomId ORDER BY date DESC")
     fun getAllHomeworkRecordsForClassroom(classroomId: Long): Flow<List<HomeworkRecordEntity>>
 
@@ -34,6 +37,9 @@ interface HomeworkRecordDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHomeworkRecords(records: List<HomeworkRecordEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertHomeworkRecordsSync(records: List<HomeworkRecordEntity>)
 
     @Update
     suspend fun updateHomeworkRecord(record: HomeworkRecordEntity)

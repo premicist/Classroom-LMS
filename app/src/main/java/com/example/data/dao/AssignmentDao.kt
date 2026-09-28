@@ -17,6 +17,9 @@ interface AssignmentDao {
     @Query("SELECT * FROM assignments WHERE classroomId = :classroomId ORDER BY dueDate ASC, createdAt DESC")
     suspend fun getAssignmentsByClassroomOnce(classroomId: Long): List<AssignmentEntity>
 
+    @Query("SELECT * FROM assignments ORDER BY dueDate ASC, createdAt DESC")
+    fun getAllAssignmentsOnce(): List<AssignmentEntity>
+
     @Query("SELECT * FROM assignments WHERE id = :id")
     fun getAssignmentById(id: Long): Flow<AssignmentEntity?>
 
@@ -28,6 +31,9 @@ interface AssignmentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAssignments(assignments: List<AssignmentEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAssignmentsSync(assignments: List<AssignmentEntity>)
 
     @Update
     suspend fun updateAssignment(assignment: AssignmentEntity)

@@ -17,6 +17,9 @@ interface SubmissionDao {
     @Query("SELECT * FROM submissions WHERE assignmentId = :assignmentId")
     suspend fun getSubmissionsByAssignmentOnce(assignmentId: Long): List<SubmissionEntity>
 
+    @Query("SELECT * FROM submissions")
+    fun getAllSubmissionsOnce(): List<SubmissionEntity>
+
     @Query("SELECT * FROM submissions WHERE classroomId = :classroomId")
     fun getSubmissionsByClassroom(classroomId: Long): Flow<List<SubmissionEntity>>
 
@@ -40,6 +43,9 @@ interface SubmissionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubmissions(submissions: List<SubmissionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertSubmissionsSync(submissions: List<SubmissionEntity>)
 
     @Update
     suspend fun updateSubmission(submission: SubmissionEntity)

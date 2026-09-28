@@ -41,10 +41,13 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+import com.example.data.database.PreferencesManager
 import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.repository.ScheduleRepository
 import java.util.Calendar
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClassroomViewModel(application: Application) : AndroidViewModel(application) {
@@ -55,6 +58,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val authManager = AuthManager(application)
     private val updateRepository = UpdateRepository()
+    private val preferencesManager = PreferencesManager(application)
 
     private val _uiState = MutableStateFlow(
         LmsUiState(
@@ -74,14 +78,25 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             repository.checkAndSeedInitialData()
         }
 
-        // Observe classrooms
+        // Initialize active classroom from DataStore or first available
         viewModelScope.launch {
-            repository.getAllClassrooms().collect { classrooms ->
+            combine(
+                preferencesManager.activeClassroomIdFlow,
+                repository.getAllClassrooms()
+            ) { savedId, classrooms ->
                 _uiState.update { it.copy(classrooms = classrooms) }
-                if ((_selectedClassroomId.value == null) && classrooms.isNotEmpty()) {
-                    _selectedClassroomId.value = classrooms.first().id
+                if (classrooms.isNotEmpty()) {
+                    if (savedId != null && classrooms.any { it.id == savedId }) {
+                        if (_selectedClassroomId.value != savedId) {
+                            _selectedClassroomId.value = savedId
+                        }
+                    } else if (_selectedClassroomId.value == null) {
+                        val firstId = classrooms.first().id
+                        _selectedClassroomId.value = firstId
+                        preferencesManager.saveActiveClassroomId(firstId)
+                    }
                 }
-            }
+            }.collect {}
         }
 
         // Full roster across all classrooms
@@ -146,11 +161,11 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                     val schedules = combined.schedules
                     val disciplineRecords = combined.disciplineRecords
 
-                    // Compute Grade Summaries
-                    val studentSummaries = computeStudentGrades(students, assignments, submissions, homeworks, attendance)
-                    val analytics = computeClassAnalytics(studentSummaries, assignments, submissions, attendance, interventions)
-                    val attendanceReport = computeAttendanceReport(activeClassroom, students, attendance)
-                    val homeworkDays = computeHomeworkDays(students, homeworks)
+                    // Compute Grade Summaries (Offloaded to Dispatchers.Default)
+                    val studentSummaries = withContext(Dispatchers.Default) { computeStudentGrades(students, assignments, submissions, homeworks, attendance) }
+                    val analytics = withContext(Dispatchers.Default) { computeClassAnalytics(studentSummaries, assignments, submissions, attendance, interventions) }
+                    val attendanceReport = withContext(Dispatchers.Default) { computeAttendanceReport(activeClassroom, students, attendance) }
+                    val homeworkDays = withContext(Dispatchers.Default) { computeHomeworkDays(students, homeworks) }
 
                     _uiState.update { state ->
                         state.copy(
@@ -265,6 +280,9 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     fun selectClassroom(id: Long) {
         _selectedClassroomId.value = id
         _uiState.update { it.copy(isClassroomModalOpen = false) }
+        viewModelScope.launch {
+            preferencesManager.saveActiveClassroomId(id)
+        }
     }
 
     // --- SCHEDULE ACTIONS ---

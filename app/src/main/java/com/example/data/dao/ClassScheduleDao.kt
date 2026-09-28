@@ -39,6 +39,9 @@ interface ClassScheduleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertScheduleEntries(entries: List<ClassScheduleEntity>): List<Long>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertScheduleEntriesSync(entries: List<ClassScheduleEntity>)
+
     @Update
     suspend fun updateScheduleEntry(entry: ClassScheduleEntity)
 

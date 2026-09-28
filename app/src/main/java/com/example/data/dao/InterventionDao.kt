@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InterventionDao {
+    @Query("SELECT * FROM interventions ORDER BY date DESC, createdAt DESC")
+    fun getAllInterventionsOnce(): List<InterventionEntity>
+
     @Query("SELECT * FROM interventions WHERE classroomId = :classroomId ORDER BY date DESC, createdAt DESC")
     fun getInterventionsByClassroom(classroomId: Long): Flow<List<InterventionEntity>>
 
@@ -25,6 +28,9 @@ interface InterventionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInterventions(interventions: List<InterventionEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertInterventionsSync(interventions: List<InterventionEntity>)
 
     @Update
     suspend fun updateIntervention(intervention: InterventionEntity)

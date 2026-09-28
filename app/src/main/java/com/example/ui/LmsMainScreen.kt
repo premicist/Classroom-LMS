@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -325,6 +326,7 @@ fun LmsMainScreen(
                 val tabs = listOf(
                     Triple(LmsTab.DASHBOARD, Icons.Filled.Dashboard to Icons.Outlined.Dashboard, "Overview"),
                     Triple(LmsTab.ANALYTICS, Icons.Filled.AutoGraph to Icons.Outlined.AutoGraph, "Analytics"),
+                    Triple(LmsTab.STUDENTS, Icons.Filled.People to Icons.Outlined.People, "Students"),
                     Triple(LmsTab.GRADEBOOK, Icons.AutoMirrored.Filled.Grading to Icons.AutoMirrored.Outlined.Grading, "Grades"),
                     Triple(LmsTab.ASSIGNMENTS, Icons.AutoMirrored.Filled.Assignment to Icons.AutoMirrored.Outlined.Assignment, "Tasks"),
                     Triple(LmsTab.HOMEWORK, Icons.AutoMirrored.Filled.MenuBook to Icons.AutoMirrored.Outlined.MenuBook, "HW"),
@@ -378,6 +380,7 @@ fun LmsMainScreen(
                 when (uiState.selectedTab) {
                     LmsTab.DASHBOARD -> DashboardScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.ANALYTICS -> AnalyticsScreen(uiState = uiState, viewModel = viewModel)
+                    LmsTab.STUDENTS -> com.example.ui.screens.StudentDirectoryScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.GRADEBOOK -> GradebookScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.ASSIGNMENTS -> AssignmentsScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.HOMEWORK -> HomeworkCheckScreen(uiState = uiState, viewModel = viewModel)

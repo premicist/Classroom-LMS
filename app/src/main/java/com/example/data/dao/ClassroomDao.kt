@@ -14,6 +14,9 @@ interface ClassroomDao {
     @Query("SELECT * FROM classrooms ORDER BY createdAt ASC")
     fun getAllClassrooms(): Flow<List<ClassroomEntity>>
 
+    @Query("SELECT * FROM classrooms ORDER BY createdAt DESC")
+    suspend fun getAllClassroomsOnce(): List<ClassroomEntity>
+
     @Query("SELECT * FROM classrooms WHERE id = :id")
     fun getClassroomById(id: Long): Flow<ClassroomEntity?>
 
@@ -22,6 +25,9 @@ interface ClassroomDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertClassroom(classroom: ClassroomEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertClassroomsSync(classrooms: List<ClassroomEntity>)
 
     @Update
     suspend fun updateClassroom(classroom: ClassroomEntity)

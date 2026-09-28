@@ -42,7 +42,7 @@ import com.example.data.entity.SubmissionEntity
         DisciplineRecordEntity::class
     ],
     version = 7,
-    exportSchema = false,
+    exportSchema = true,
 )
 @TypeConverters(Converters::class, com.example.data.entity.Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -68,7 +68,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "classroom_lms_db"
                 )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .addMigrations(com.example.data.database.Migrations.MIGRATION_6_7)
                     .build()
                 INSTANCE = instance
                 instance

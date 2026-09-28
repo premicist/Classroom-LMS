@@ -20,6 +20,9 @@ interface StudentDao {
     @Query("SELECT * FROM students ORDER BY name ASC")
     fun getAllStudents(): Flow<List<StudentEntity>>
 
+    @Query("SELECT * FROM students ORDER BY name ASC")
+    fun getAllStudentsOnce(): List<StudentEntity>
+
     @Query("SELECT * FROM students WHERE id = :id")
     fun getStudentById(id: Long): Flow<StudentEntity?>
 
@@ -28,6 +31,9 @@ interface StudentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudents(students: List<StudentEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertStudentsSync(students: List<StudentEntity>)
 
     @Update
     suspend fun updateStudent(student: StudentEntity)

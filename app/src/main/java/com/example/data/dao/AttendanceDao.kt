@@ -17,6 +17,9 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance_records WHERE classroomId = :classroomId AND date = :date")
     suspend fun getAttendanceByDateOnce(classroomId: Long, date: String): List<AttendanceRecordEntity>
 
+    @Query("SELECT * FROM attendance_records ORDER BY date DESC")
+    fun getAllAttendanceRecordsOnce(): List<AttendanceRecordEntity>
+
     @Query("SELECT * FROM attendance_records WHERE classroomId = :classroomId ORDER BY date DESC")
     fun getAttendanceForClassroom(classroomId: Long): Flow<List<AttendanceRecordEntity>>
 
@@ -34,6 +37,9 @@ interface AttendanceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAttendanceRecords(records: List<AttendanceRecordEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAttendanceRecordsSync(records: List<AttendanceRecordEntity>)
 
     @Update
     suspend fun updateAttendanceRecord(record: AttendanceRecordEntity)
