@@ -15,6 +15,7 @@ import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
+import com.example.data.entity.TermWeightConfig
 import com.example.data.repository.AppUpdateInfo
 
 enum class TrajectoryTrend(val label: String) {
@@ -259,5 +260,9 @@ data class LmsUiState(
     val plannerClassroomFilterId: Long? = null, // null = All Classrooms
 
     // Custom Report Generator State
-    val isGenerateReportDialogOpen: Boolean = false
+    val isGenerateReportDialogOpen: Boolean = false,
+
+    // Term Weighting Configuration State
+    val termWeightConfig: TermWeightConfig = TermWeightConfig(),
+    val isTermWeightingDialogOpen: Boolean = false
 )

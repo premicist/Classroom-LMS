@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +37,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -65,9 +67,12 @@ import com.example.ui.viewmodel.LmsUiState
 import com.example.ui.viewmodel.StudentGradeSummary
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.TextButton
+import com.example.data.entity.TermWeightConfig
 
 @Composable
 fun GradebookScreen(
@@ -122,17 +127,29 @@ fun GradebookScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Button(
-                            onClick = {
-                                val text = viewModel.generateFormattedGradebookReportText()
-                                viewModel.openExportReport(text)
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Export", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedButton(
+                                onClick = { viewModel.openTermWeightingDialog() },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Weights", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    val text = viewModel.generateFormattedGradebookReportText()
+                                    viewModel.openExportReport(text)
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Export", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 
@@ -419,6 +436,14 @@ fun GradebookScreen(
             }
         }
     }
+
+    if (uiState.isTermWeightingDialogOpen) {
+        TermWeightingDialog(
+            initialConfig = uiState.termWeightConfig,
+            onDismiss = { viewModel.closeTermWeightingDialog() },
+            onSave = { config -> viewModel.saveTermWeightConfig(config) }
+        )
+    }
 }
 
 @Composable
@@ -439,4 +464,105 @@ private fun MiniMetricPill(
             Text(text = label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+fun TermWeightingDialog(
+    initialConfig: TermWeightConfig,
+    onDismiss: () -> Unit,
+    onSave: (TermWeightConfig) -> Unit
+) {
+    var term1 by remember { mutableStateOf(initialConfig.term1Weight.toInt().toString()) }
+    var term2 by remember { mutableStateOf(initialConfig.term2Weight.toInt().toString()) }
+    var finalExam by remember { mutableStateOf(initialConfig.finalExamWeight.toInt().toString()) }
+    var isEnabled by remember { mutableStateOf(initialConfig.isEnabled) }
+
+    val t1Val = term1.toDoubleOrNull() ?: 0.0
+    val t2Val = term2.toDoubleOrNull() ?: 0.0
+    val finalVal = finalExam.toDoubleOrNull() ?: 0.0
+    val totalSum = t1Val + t2Val + finalVal
+    val isValidSum = totalSum == 100.0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Term & Semester Weighting", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Configure composite percentage weights for calculating NEB final academic standing.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isEnabled = !isEnabled }
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Enable Weighted Calculation", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Switch(checked = isEnabled, onCheckedChange = { isEnabled = it })
+                }
+
+                if (isEnabled) {
+                    OutlinedTextField(
+                        value = term1,
+                        onValueChange = { term1 = it },
+                        label = { Text("Term 1 Weight (%)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = term2,
+                        onValueChange = { term2 = it },
+                        label = { Text("Term 2 Weight (%)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = finalExam,
+                        onValueChange = { finalExam = it },
+                        label = { Text("Final Exam / Assessment Weight (%)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        text = "Total Weight Sum: ${totalSum.toInt()}% (Must equal 100%)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isValidSum) StatusSuccess else StatusError
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val config = TermWeightConfig(
+                        term1Weight = t1Val,
+                        term2Weight = t2Val,
+                        finalExamWeight = finalVal,
+                        isEnabled = isEnabled
+                    )
+                    onSave(config)
+                },
+                enabled = !isEnabled || isValidSum
+            ) {
+                Text("Save Configuration")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

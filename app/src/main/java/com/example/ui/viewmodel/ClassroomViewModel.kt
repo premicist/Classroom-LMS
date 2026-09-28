@@ -46,6 +46,7 @@ import android.net.Uri
 import com.example.data.database.PreferencesManager
 import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.TermWeightConfig
 import com.example.data.repository.DatabaseBackupManager
 import com.example.data.repository.ScheduleRepository
 import java.util.Calendar
@@ -286,6 +287,30 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(isClassroomModalOpen = false) }
         viewModelScope.launch {
             preferencesManager.saveActiveClassroomId(id)
+        }
+    }
+
+    // --- TERM WEIGHTING ACTIONS ---
+
+    fun openTermWeightingDialog() {
+        _uiState.update { it.copy(isTermWeightingDialogOpen = true) }
+    }
+
+    fun closeTermWeightingDialog() {
+        _uiState.update { it.copy(isTermWeightingDialogOpen = false) }
+    }
+
+    fun saveTermWeightConfig(config: TermWeightConfig) {
+        if (!config.isValid()) {
+            _uiState.update { it.copy(userNotificationMessage = "Term weights must sum to 100%") }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                termWeightConfig = config,
+                isTermWeightingDialogOpen = false,
+                userNotificationMessage = "Term weighting configuration updated"
+            )
         }
     }
 
