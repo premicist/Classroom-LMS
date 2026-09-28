@@ -137,7 +137,7 @@ private fun DailyAttendanceCheckInView(
 
     val presCount = dateRecords.count { it.status == AttendanceStatus.PRESENT }
     val absCount = dateRecords.count { it.status == AttendanceStatus.ABSENT }
-    val tardyCount = dateRecords.count { it.status == AttendanceStatus.TARDY }
+    val lateCount = dateRecords.count { it.status == AttendanceStatus.LATE }
     val excusCount = dateRecords.count { it.status == AttendanceStatus.EXCUSED }
     val totalStudents = uiState.students.size.coerceAtLeast(1)
     val attendanceRate = (((presCount + excusCount).toDouble() / totalStudents) * 100.0).toInt()
@@ -218,8 +218,8 @@ private fun DailyAttendanceCheckInView(
                             Text(text = "$absCount", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
                         }
                         Column {
-                            Text(text = "Tardy", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$tardyCount", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusWarning)
+                            Text(text = "Late", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "$lateCount", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusWarning)
                         }
                     }
 
@@ -407,7 +407,7 @@ private fun AutomatedAttendanceReportsView(
                             ReportStatLine("Total Sessions", "${report.totalDaysRecorded} days", EduPrimary)
                             ReportStatLine("Present Logged", "${report.totalPresent}", StatusSuccess)
                             ReportStatLine("Absent Logged", "${report.totalAbsent}", StatusError)
-                            ReportStatLine("Tardy Logged", "${report.totalTardy}", StatusWarning)
+                            ReportStatLine("Late Logged", "${report.totalLate}", StatusWarning)
                         }
                     }
                 }
@@ -544,7 +544,7 @@ private fun AutomatedAttendanceReportsView(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Pres: ${s.presentCount} • Abs: ${s.absentCount} • Tardy: ${s.tardyCount}",
+                            text = "Pres: ${s.presentCount} • Abs: ${s.absentCount} • Late: ${s.lateCount}",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

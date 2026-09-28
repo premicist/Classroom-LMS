@@ -40,7 +40,7 @@ import com.example.data.entity.ClassroomEntity
 enum class ReportType(val title: String, val description: String) {
     ANALYTICS_SUMMARY("Progress & Analytics Summary", "Overview of grades, risk alerts, and performance trends"),
     GRADEBOOK_FULL("Comprehensive Gradebook Report", "Full breakdown of all assignments, scores, and averages"),
-    ATTENDANCE_LOG("Attendance & Absence Log", "Detailed records of present, absent, tardy, and excused days"),
+    ATTENDANCE_LOG("Attendance & Absence Log", "Detailed records of present, absent, late, and excused days"),
     LESSON_PLANS("Lesson Plans & Objectives", "Unit titles, target dates, and planning statuses"),
     DAILY_DIARY("Teacher Daily Diary Log", "Classroom reflections, observations, and proxy class notes")
 }

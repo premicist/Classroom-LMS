@@ -236,7 +236,7 @@ class SyncRepository(
         return when (value.uppercase(Locale.US)) {
             "P", "PRESENT", "1" -> AttendanceStatus.PRESENT
             "A", "ABSENT", "0" -> AttendanceStatus.ABSENT
-            "T", "TARDY" -> AttendanceStatus.TARDY
+            "T", "TARDY", "L", "LATE" -> AttendanceStatus.LATE
             "E", "EXCUSED" -> AttendanceStatus.EXCUSED
             else -> AttendanceStatus.PRESENT
         }

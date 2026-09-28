@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 enum class AttendanceStatus(val displayName: String, val shortCode: String) {
     PRESENT("Present", "P"),
     ABSENT("Absent", "A"),
-    TARDY("Tardy", "T"),
+    LATE("Late", "L"),
     EXCUSED("Excused", "E")
 }
 

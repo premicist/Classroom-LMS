@@ -81,7 +81,7 @@ fun DisciplineLogDialog(
         BehaviorPreset("Talking During Instruction", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.LOW_WARNING, "Verbal Warning Given"),
         BehaviorPreset("Off-Task / Distracting Classmates", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.LOW_WARNING, "Seating Moved"),
         BehaviorPreset("Unprepared / Missing Book/Laptop", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Borrowed Classroom Supplies"),
-        BehaviorPreset("Tardy / Late Entry to Class", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Tardy Logged"),
+        BehaviorPreset("Late Entry to Class", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Late Logged"),
         BehaviorPreset("Phone / Device Distraction", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.MEDIUM_DETENTION, "Phone Stored on Teacher Desk"),
         BehaviorPreset("Academic Dishonesty / Copying", BehaviorCategory.ACADEMIC_DISHONESTY, BehaviorSeverity.HIGH_ADMIN_REFERRAL, "Zero on Task & Parent Contact")
     )

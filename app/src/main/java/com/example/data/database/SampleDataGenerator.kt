@@ -262,7 +262,7 @@ object SampleDataGenerator {
             val date = getPastDate(day)
             mathStudentIds.forEachIndexed { sIdx, sId ->
                 val status = when {
-                    (sIdx == 3 && (day == 2 || day == 5)) -> AttendanceStatus.TARDY
+                    (sIdx == 3 && (day == 2 || day == 5)) -> AttendanceStatus.LATE
                     (sIdx == 4 && day == 3) -> AttendanceStatus.ABSENT
                     (sIdx == 2 && day == 6) -> AttendanceStatus.EXCUSED
                     else -> AttendanceStatus.PRESENT
@@ -273,7 +273,7 @@ object SampleDataGenerator {
                         studentId = sId,
                         date = date,
                         status = status,
-                        remarks = if (status == AttendanceStatus.TARDY) "Arrived 12 min late with pass" else if (status == AttendanceStatus.ABSENT) "Unexcused absence - guardian notified" else if (status == AttendanceStatus.EXCUSED) "Field trip excused" else ""
+                        remarks = if (status == AttendanceStatus.LATE) "Arrived 12 min late with pass" else if (status == AttendanceStatus.ABSENT) "Unexcused absence - guardian notified" else if (status == AttendanceStatus.EXCUSED) "Field trip excused" else ""
                     )
                 )
             }

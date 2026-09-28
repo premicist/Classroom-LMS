@@ -97,7 +97,7 @@ fun AttendanceBadge(
     val (bgColor, textColor, icon) = when (status) {
         AttendanceStatus.PRESENT -> Triple(StatusSuccessBg, StatusSuccess, Icons.Default.Check)
         AttendanceStatus.ABSENT -> Triple(StatusErrorBg, StatusError, Icons.Default.Close)
-        AttendanceStatus.TARDY -> Triple(StatusWarningBg, StatusWarning, Icons.Default.HourglassEmpty)
+        AttendanceStatus.LATE -> Triple(StatusWarningBg, StatusWarning, Icons.Default.HourglassEmpty)
         AttendanceStatus.EXCUSED -> Triple(StatusInfoBg, StatusInfo, Icons.Default.Remove)
     }
 

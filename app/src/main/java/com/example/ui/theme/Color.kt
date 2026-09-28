@@ -45,7 +45,7 @@ val StatusSuccessBg = Color(0xFFC4EED0)
 val StatusSuccessDark = Color(0xFF81C995)
 val StatusSuccessBgDark = Color(0xFF0F5223)
 
-val StatusWarning = Color(0xFF825500)       // Warm Amber - Tardy / Partial / B-C Grade
+val StatusWarning = Color(0xFF825500)       // Warm Amber - Late / Partial / B-C Grade
 val StatusWarningBg = Color(0xFFFFE086)
 val StatusWarningDark = Color(0xFFFDD663)
 val StatusWarningBgDark = Color(0xFF5E3C00)

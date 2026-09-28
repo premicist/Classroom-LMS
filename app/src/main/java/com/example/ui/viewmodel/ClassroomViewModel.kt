@@ -1013,7 +1013,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             val att = uiState.value.attendanceReport
             if (att != null) {
                 sb.appendLine("Overall Attendance Rate: ${att.overallAttendanceRate.toInt()}%")
-                sb.appendLine("Present: ${att.totalPresent} | Absent: ${att.totalAbsent} | Tardy: ${att.totalTardy} | Excused: ${att.totalExcused}")
+                sb.appendLine("Present: ${att.totalPresent} | Absent: ${att.totalAbsent} | Late: ${att.totalLate} | Excused: ${att.totalExcused}")
             }
         }
 
@@ -1328,8 +1328,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             }
             val nextStatus = when (existing?.status) {
                 AttendanceStatus.PRESENT -> AttendanceStatus.ABSENT
-                AttendanceStatus.ABSENT -> AttendanceStatus.TARDY
-                AttendanceStatus.TARDY -> AttendanceStatus.EXCUSED
+                AttendanceStatus.ABSENT -> AttendanceStatus.LATE
+                AttendanceStatus.LATE -> AttendanceStatus.EXCUSED
                 AttendanceStatus.EXCUSED -> AttendanceStatus.PRESENT
                 null -> AttendanceStatus.ABSENT
             }
@@ -1511,9 +1511,9 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         sb.append("Report Date: ${report.reportDate}\n")
         sb.append("Date Range: ${report.dateRangeText}\n")
         sb.append("Overall Rate: ${"%.1f".format(report.overallAttendanceRate)}%\n")
-        sb.append("Total Records: ${report.totalRecords} (Present: ${report.totalPresent}, Absent: ${report.totalAbsent}, Tardy: ${report.totalTardy}, Excused: ${report.totalExcused})\n\n")
+        sb.append("Total Records: ${report.totalRecords} (Present: ${report.totalPresent}, Absent: ${report.totalAbsent}, Late: ${report.totalLate}, Excused: ${report.totalExcused})\n\n")
 
-        sb.append(String.format(Locale.US, "%-22s | %-8s | %-6s | %-4s | %-4s | %-5s | %-7s\n", "Student Name", "ID", "Rate", "Pres", "Abs", "Tardy", "Status"))
+        sb.append(String.format(Locale.US, "%-22s | %-8s | %-6s | %-4s | %-4s | %-5s | %-7s\n", "Student Name", "ID", "Rate", "Pres", "Abs", "Late", "Status"))
         sb.append("-------------------------------------------------------------------------\n")
         report.studentSummaries.forEach { s ->
             val statusStr = if (s.attendanceRate < 85.0) "AT RISK" else if (s.attendanceRate == 100.0) "PERFECT" else "GOOD"
@@ -1523,7 +1523,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 s.attendanceRate,
                 s.presentCount,
                 s.absentCount,
-                s.tardyCount,
+                s.lateCount,
                 statusStr
             ))
         }
@@ -1531,7 +1531,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         if (report.chronicAbsentees.isNotEmpty()) {
             sb.append("\nCHRONIC ABSENTEEISM WATCHLIST (<85%):\n")
             report.chronicAbsentees.forEach { s ->
-                sb.append(" ⚠️ ${s.student.name} (${s.student.studentNumber}) - ${"%.1f".format(s.attendanceRate)}% (${s.absentCount} abs, ${s.tardyCount} tardy)\n")
+                sb.append(" ⚠️ ${s.student.name} (${s.student.studentNumber}) - ${"%.1f".format(s.attendanceRate)}% (${s.absentCount} abs, ${s.lateCount} late)\n")
             }
         }
         sb.append("\n====================================================\n")
@@ -1931,7 +1931,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
         val totalPres = records.count { it.status == AttendanceStatus.PRESENT }
         val totalAbs = records.count { it.status == AttendanceStatus.ABSENT }
-        val totalTardy = records.count { it.status == AttendanceStatus.TARDY }
+        val totalLate = records.count { it.status == AttendanceStatus.LATE }
         val totalExcus = records.count { it.status == AttendanceStatus.EXCUSED }
 
         val overallRate = if (totalRecords > 0) {
@@ -1942,7 +1942,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             val sRecs = records.filter { it.studentId == s.id }
             val pres = sRecs.count { it.status == AttendanceStatus.PRESENT }
             val abs = sRecs.count { it.status == AttendanceStatus.ABSENT }
-            val tardy = sRecs.count { it.status == AttendanceStatus.TARDY }
+            val late = sRecs.count { it.status == AttendanceStatus.LATE }
             val excus = sRecs.count { it.status == AttendanceStatus.EXCUSED }
             val rate = if (sRecs.isNotEmpty()) {
                 ((pres + excus).toDouble() / sRecs.size) * 100.0
@@ -1952,7 +1952,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 student = s,
                 presentCount = pres,
                 absentCount = abs,
-                tardyCount = tardy,
+                lateCount = late,
                 excusedCount = excus,
                 totalDays = sRecs.size,
                 attendanceRate = (rate * 10).roundToInt() / 10.0
@@ -1976,7 +1976,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             overallAttendanceRate = (overallRate * 10).roundToInt() / 10.0,
             totalPresent = totalPres,
             totalAbsent = totalAbs,
-            totalTardy = totalTardy,
+            totalLate = totalLate,
             totalExcused = totalExcus,
             studentSummaries = studentSummaries,
             chronicAbsentees = chronic,

@@ -138,7 +138,7 @@ data class StudentAttendanceSummary(
     val student: StudentEntity,
     val presentCount: Int,
     val absentCount: Int,
-    val tardyCount: Int,
+    val lateCount: Int,
     val excusedCount: Int,
     val totalDays: Int,
     val attendanceRate: Double
@@ -154,7 +154,7 @@ data class AttendanceReport(
     val overallAttendanceRate: Double,
     val totalPresent: Int,
     val totalAbsent: Int,
-    val totalTardy: Int,
+    val totalLate: Int,
     val totalExcused: Int,
     val studentSummaries: List<StudentAttendanceSummary>,
     val chronicAbsentees: List<StudentAttendanceSummary>,
