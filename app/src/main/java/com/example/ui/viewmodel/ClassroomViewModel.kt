@@ -41,9 +41,11 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
+import android.net.Uri
 import com.example.data.database.PreferencesManager
 import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.repository.DatabaseBackupManager
 import com.example.data.repository.ScheduleRepository
 import java.util.Calendar
 import kotlinx.coroutines.withContext
@@ -59,6 +61,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private val authManager = AuthManager(application)
     private val updateRepository = UpdateRepository()
     private val preferencesManager = PreferencesManager(application)
+    private val backupManager = DatabaseBackupManager(application, db)
 
     private val _uiState = MutableStateFlow(
         LmsUiState(
@@ -333,6 +336,39 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             scheduleRepository.replicateWeekSchedule(fromWeek, targetWeeks)
             _uiState.update { it.copy(userNotificationMessage = "Copied Week $fromWeek schedule routine to Weeks 2–5") }
+        }
+    }
+
+    // --- DATABASE BACKUP & RESTORE ACTIONS ---
+
+    fun exportBackup(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = backupManager.exportDatabaseBackup(uri)
+            result.onSuccess {
+                _uiState.update { it.copy(userNotificationMessage = "Backup exported successfully!") }
+            }.onFailure { e ->
+                _uiState.update { it.copy(userNotificationMessage = "Failed to export backup: ${e.message}") }
+            }
+        }
+    }
+
+    fun restoreBackup(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = backupManager.importDatabaseBackup(uri)
+            result.onSuccess {
+                val classrooms = db.classroomDao().getAllClassroomsOnce()
+                if (classrooms.isNotEmpty()) {
+                    val firstId = classrooms.first().id
+                    _selectedClassroomId.value = firstId
+                    preferencesManager.saveActiveClassroomId(firstId)
+                } else {
+                    _selectedClassroomId.value = null
+                    preferencesManager.saveActiveClassroomId(null)
+                }
+                _uiState.update { it.copy(userNotificationMessage = "Database restored successfully!") }
+            }.onFailure { e ->
+                _uiState.update { it.copy(userNotificationMessage = "Restore failed: ${e.message}") }
+            }
         }
     }
 

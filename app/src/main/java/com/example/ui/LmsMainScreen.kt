@@ -13,6 +13,12 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.automirrored.outlined.Grading
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import android.net.Uri
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.EventAvailable
@@ -127,6 +133,24 @@ fun LmsMainScreen(
     }
 
     var showLinkSheetDialog by remember { mutableStateOf(false) }
+
+    val exportBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let { viewModel.exportBackup(it) }
+    }
+
+    var showRestoreWarningDialog by remember { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+
+    val importBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            pendingRestoreUri = uri
+            showRestoreWarningDialog = true
+        }
+    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -253,6 +277,29 @@ fun LmsMainScreen(
                     selected = false,
                     onClick = { scope.launch { drawerState.close() } },
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Export Backup (JSON)") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        val stamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
+                        exportBackupLauncher.launch("classroom_lms_backup_$stamp.json")
+                    },
+                    icon = { Icon(Icons.Default.CloudUpload, contentDescription = "Export Backup") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Restore from Backup") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        importBackupLauncher.launch(arrayOf("application/json", "*/*"))
+                    },
+                    icon = { Icon(Icons.Default.CloudDownload, contentDescription = "Restore Backup") },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
@@ -684,6 +731,40 @@ fun LmsMainScreen(
                 )
                 viewModel.closeGenerateReportDialog()
                 viewModel.openExportReport(reportText, "${reportType.title} Preview")
+            }
+        )
+    }
+
+    // Restore Backup Confirmation Dialog
+    if (showRestoreWarningDialog && pendingRestoreUri != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestoreWarningDialog = false
+                pendingRestoreUri = null
+            },
+            title = { Text("Restore Database Backup?", fontWeight = FontWeight.Bold) },
+            text = { Text("Restoring from a backup file will replace all current classrooms, students, grades, and records with the data from the backup file. This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val uriToRestore = pendingRestoreUri
+                        showRestoreWarningDialog = false
+                        pendingRestoreUri = null
+                        scope.launch { drawerState.close() }
+                        uriToRestore?.let { viewModel.restoreBackup(it) }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                ) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showRestoreWarningDialog = false
+                    pendingRestoreUri = null
+                }) {
+                    Text("Cancel")
+                }
             }
         )
     }
