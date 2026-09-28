@@ -194,6 +194,7 @@ data class LmsUiState(
     val attendanceRecords: List<AttendanceRecordEntity> = emptyList(),
     val interventions: List<InterventionEntity> = emptyList(),
     val schedules: List<ClassScheduleEntity> = emptyList(),
+    val allSchedules: List<ClassScheduleEntity> = emptyList(),
     
     // Computed analytics
     val studentGradeSummaries: List<StudentGradeSummary> = emptyList(),

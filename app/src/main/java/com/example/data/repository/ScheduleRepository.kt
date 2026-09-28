@@ -6,6 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 class ScheduleRepository(private val dao: ClassScheduleDao) {
 
+    fun getAllSchedules(): Flow<List<ClassScheduleEntity>> {
+        return dao.getAllSchedules()
+    }
+
+    suspend fun getAllSchedulesOnce(): List<ClassScheduleEntity> {
+        return dao.getAllSchedulesOnce()
+    }
+
     fun getSchedulesByClassroom(classroomId: Long): Flow<List<ClassScheduleEntity>> {
         return dao.getSchedulesByClassroom(classroomId)
     }
@@ -26,12 +34,32 @@ class ScheduleRepository(private val dao: ClassScheduleDao) {
         return dao.insertScheduleEntry(entry)
     }
 
+    suspend fun saveBatchScheduleEntries(entries: List<ClassScheduleEntity>) {
+        dao.saveBatchScheduleEntries(entries)
+    }
+
     suspend fun deleteScheduleEntry(entry: ClassScheduleEntity) {
         dao.deleteScheduleEntry(entry)
     }
 
     suspend fun deleteScheduleEntryById(id: Long) {
         dao.deleteScheduleEntryById(id)
+    }
+
+    suspend fun deleteSchedulesForWeek(weekNumber: Int) {
+        dao.deleteSchedulesForWeek(weekNumber)
+    }
+
+    suspend fun replicateWeekSchedule(fromWeek: Int = 1, targetWeeks: List<Int> = listOf(2, 3, 4, 5)) {
+        dao.replicateWeekSchedule(fromWeek, targetWeeks)
+    }
+
+    suspend fun updateSubjectScheduleAcrossWeeks(
+        classroomName: String,
+        targetWeeks: List<Int>,
+        templates: List<ClassScheduleEntity>
+    ) {
+        dao.updateSubjectScheduleAcrossWeeks(classroomName, targetWeeks, templates)
     }
 
     /**

@@ -90,6 +90,13 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
 
+        // Master Schedule across ALL classrooms
+        viewModelScope.launch {
+            scheduleRepository.getAllSchedules().collect { masterSchedules ->
+                _uiState.update { it.copy(allSchedules = masterSchedules) }
+            }
+        }
+
         // React to selected classroom changes
         viewModelScope.launch {
             _selectedClassroomId.flatMapLatest { id ->
@@ -264,20 +271,51 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(isScheduleScreenOpen = false) }
     }
 
-    fun saveScheduleEntry(
-        entry: ClassScheduleEntity,
-        onOverlapConflict: () -> Unit = {}
+    fun saveScheduleBatch(
+        baseEntry: ClassScheduleEntity,
+        selectedDays: List<String>,
+        applyToAllWeeks: Boolean,
+        updateAllWeeksForSubject: Boolean = false
     ) {
         viewModelScope.launch {
-            val daySchedules = uiState.value.schedules.filter {
-                it.weekNumber == entry.weekNumber && it.dayOfWeek.equals(entry.dayOfWeek, ignoreCase = true)
+            val targetWeeks = if (applyToAllWeeks || updateAllWeeksForSubject) (1..5).toList() else listOf(baseEntry.weekNumber)
+            val targetDays = selectedDays.ifEmpty { listOf(baseEntry.dayOfWeek) }
+
+            val batchEntries = mutableListOf<ClassScheduleEntity>()
+            for (week in targetWeeks) {
+                for (day in targetDays) {
+                    batchEntries.add(
+                        baseEntry.copy(
+                            id = if (week == baseEntry.weekNumber && day.equals(baseEntry.dayOfWeek, ignoreCase = true)) baseEntry.id else 0,
+                            weekNumber = week,
+                            dayOfWeek = day
+                        )
+                    )
+                }
             }
-            if (scheduleRepository.hasTimeOverlap(daySchedules, entry.startMinutes, entry.endMinutes, entry.id)) {
-                _uiState.update { it.copy(userNotificationMessage = "Warning: Class time overlaps with another entry on ${entry.dayOfWeek}!") }
-                onOverlapConflict()
+
+            if (updateAllWeeksForSubject) {
+                scheduleRepository.updateSubjectScheduleAcrossWeeks(baseEntry.classroomName, targetWeeks, batchEntries)
+                _uiState.update { it.copy(userNotificationMessage = "Updated routine for '${baseEntry.classroomName}' across all weeks") }
+            } else {
+                scheduleRepository.saveBatchScheduleEntries(batchEntries)
+                val msg = if (batchEntries.size > 1) "Saved ${batchEntries.size} class periods across selected days/weeks" else "Class schedule entry saved"
+                _uiState.update { it.copy(userNotificationMessage = msg) }
             }
-            scheduleRepository.insertScheduleEntry(entry)
-            _uiState.update { it.copy(userNotificationMessage = "Class schedule entry saved") }
+        }
+    }
+
+    fun replicateWeekSchedule(fromWeek: Int = 1, targetWeeks: List<Int> = listOf(2, 3, 4, 5)) {
+        viewModelScope.launch {
+            scheduleRepository.replicateWeekSchedule(fromWeek, targetWeeks)
+            _uiState.update { it.copy(userNotificationMessage = "Copied Week $fromWeek schedule routine to Weeks 2–5") }
+        }
+    }
+
+    fun clearWeekSchedule(weekNumber: Int) {
+        viewModelScope.launch {
+            scheduleRepository.deleteSchedulesForWeek(weekNumber)
+            _uiState.update { it.copy(userNotificationMessage = "Cleared Week $weekNumber schedule routine") }
         }
     }
 
@@ -289,7 +327,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /**
-     * Returns Pair(isHoliday, summaryMessage)
+     * Returns Pair(isHoliday, summaryMessage) across ALL master subjects
      */
     fun getTodayClassesSummary(): Pair<Boolean, String> {
         val cal = Calendar.getInstance()
@@ -308,13 +346,11 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             return Pair(true, "Today is Holiday, Relax 😊")
         }
 
-        if (uiState.value.activeClassroom == null) {
-            return Pair(false, "No active classroom selected.")
-        }
-
-        // Find today's classes
-        val todaySchedules = uiState.value.schedules
+        // Find today's classes across ALL classrooms from master schedules
+        val masterSchedules = uiState.value.allSchedules.ifEmpty { uiState.value.schedules }
+        val todaySchedules = masterSchedules
             .filter { it.dayOfWeek.equals(dayOfWeek, ignoreCase = true) }
+            .distinctBy { "${it.classroomName}_${it.startMinutes}" }
             .sortedBy { it.startMinutes }
 
         if (todaySchedules.isEmpty()) {
