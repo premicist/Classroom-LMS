@@ -45,6 +45,7 @@ import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusSuccessBg
 import com.example.ui.theme.StatusWarning
 import com.example.ui.theme.StatusWarningBg
+import java.util.Locale
 
 @Composable
 fun GradeBadge(
@@ -52,11 +53,11 @@ fun GradeBadge(
     modifier: Modifier = Modifier,
     percentage: Double? = null
 ) {
-    val (bgColor, textColor) = when (letterGrade.firstOrNull()) {
-        'A' -> StatusSuccessBg to StatusSuccess
-        'B' -> Color(0xFFE0F2FE) to Color(0xFF0284C7)
-        'C' -> StatusWarningBg to StatusWarning
-        'D' -> Color(0xFFFFEDD5) to Color(0xFFEA580C)
+    val (bgColor, textColor) = when (letterGrade.uppercase(Locale.US)) {
+        "A+", "A" -> StatusSuccessBg to StatusSuccess
+        "B+", "B" -> Color(0xFFE0F2FE) to Color(0xFF0284C7)
+        "C+", "C" -> Color(0xFFFEF3C7) to Color(0xFFD97706)
+        "D", "E" -> StatusErrorBg to StatusError
         else -> StatusErrorBg to StatusError
     }
 

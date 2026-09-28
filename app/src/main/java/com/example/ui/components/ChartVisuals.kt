@@ -75,11 +75,10 @@ fun GradeDistributionBarChart(
     modifier: Modifier = Modifier
 ) {
     val grades = listOf(
-        Triple("A (90-100)", distribution.aCount, StatusSuccess),
-        Triple("B (80-89)", distribution.bCount, Color(0xFF0284C7)),
-        Triple("C (70-79)", distribution.cCount, StatusWarning),
-        Triple("D (60-69)", distribution.dCount, Color(0xFFEA580C)),
-        Triple("F (<60)", distribution.fCount, StatusError)
+        Triple("A+/A (80-100)", distribution.aCount + distribution.bCount, StatusSuccess),
+        Triple("B+/B (60-79)", distribution.cCount, Color(0xFF0284C7)),
+        Triple("C+/C (40-59)", distribution.dCount, Color(0xFFD97706)),
+        Triple("D/E (<40)", distribution.fCount, StatusError)
     )
     val maxCount = grades.maxOf { it.second }.coerceAtLeast(1)
 

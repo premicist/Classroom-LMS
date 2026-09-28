@@ -35,6 +35,7 @@ import com.example.data.repository.SyncRepository
 import com.example.data.repository.UpdateRepository
 import com.example.ui.screens.DateRangeOption
 import com.example.ui.screens.ReportType
+import com.example.util.NebGradingEngine
 import com.example.util.PdfReportExporter
 import com.example.util.SpreadsheetUtils
 import java.util.Date
@@ -1599,22 +1600,22 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
             val attPresent = studentAtt.count { it.status == AttendanceStatus.PRESENT || it.status == AttendanceStatus.EXCUSED }
             val attRate = if (attTotal > 0) (attPresent.toDouble() / attTotal) * 100.0 else 100.0
 
-            // Risk Assessment
+            // Risk Assessment (NEB Standard: <40.0% is D/E - Below Passing)
             val riskReasons = mutableListOf<String>()
-            if (percentage < 70.0 && possiblePoints > 0) riskReasons.add("Low Cumulative Grade (${"%.1f".format(percentage)}%)")
+            if (percentage < 40.0 && possiblePoints > 0) riskReasons.add("Low Cumulative Grade (${"%.1f".format(percentage)}% - Grade ${letterGrade})")
             if (attRate < 85.0 && attTotal >= 3) riskReasons.add("Low Attendance (${"%.1f".format(attRate)}%)")
             if (missingCount >= 2) riskReasons.add("$missingCount Missing Submissions")
             if (hwRate < 70.0 && hwTotal >= 3) riskReasons.add("Low Homework Completion (${"%.1f".format(hwRate)}%)")
 
-            // Enrichment Assessment
+            // Enrichment Assessment (NEB Standard: >=80.0% is Grade A/A+)
             val enrichmentReasons = mutableListOf<String>()
-            if (percentage >= 92.0 && gradedCount >= 2) enrichmentReasons.add("High Academic Mastery (${"%.1f".format(percentage)}%)")
-            if (hwRate >= 95.0 && hwTotal >= 3) enrichmentReasons.add("Exceptional Homework Consistency (${"%.0f".format(hwRate)}%)")
+            if (percentage >= 80.0 && gradedCount >= 2) enrichmentReasons.add("High Academic Mastery (${"%.1f".format(percentage)}% - Grade ${letterGrade})")
+            if (hwRate >= 90.0 && hwTotal >= 3) enrichmentReasons.add("Exceptional Homework Consistency (${"%.0f".format(hwRate)}%)")
             if (missingCount == 0 && gradedCount >= 3) enrichmentReasons.add("Zero Missing Assignments Streak")
 
             val tier = when {
                 riskReasons.isNotEmpty() -> StudentTier.EXTRA_SUPPORT
-                enrichmentReasons.isNotEmpty() && percentage >= 90.0 -> StudentTier.ENRICHMENT_NEEDED
+                enrichmentReasons.isNotEmpty() && percentage >= 80.0 -> StudentTier.ENRICHMENT_NEEDED
                 else -> StudentTier.ON_TRACK
             }
 
@@ -1641,34 +1642,11 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun calculateLetterGrade(percent: Double): String {
-        return when {
-            percent >= 97.0 -> "A+"
-            percent >= 93.0 -> "A"
-            percent >= 90.0 -> "A-"
-            percent >= 87.0 -> "B+"
-            percent >= 83.0 -> "B"
-            percent >= 80.0 -> "B-"
-            percent >= 77.0 -> "C+"
-            percent >= 73.0 -> "C"
-            percent >= 70.0 -> "C-"
-            percent >= 60.0 -> "D"
-            else -> "F"
-        }
+        return NebGradingEngine.calculateLetterGrade(percent)
     }
 
     private fun calculateGpa(percent: Double): Double {
-        return when {
-            percent >= 93.0 -> 4.0
-            percent >= 90.0 -> 3.7
-            percent >= 87.0 -> 3.3
-            percent >= 83.0 -> 3.0
-            percent >= 80.0 -> 2.7
-            percent >= 77.0 -> 2.3
-            percent >= 73.0 -> 2.0
-            percent >= 70.0 -> 1.7
-            percent >= 60.0 -> 1.0
-            else -> 0.0
-        }
+        return NebGradingEngine.calculateGpa(percent)
     }
 
     private fun computeClassAnalytics(
