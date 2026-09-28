@@ -17,8 +17,8 @@ android {
     applicationId = "com.aistudio.classroomlms.kxpyv"
     minSdk = 24
     targetSdk = 36
-    versionCode = 4
-    versionName = "1.2.20260927"
+    versionCode = 5
+    versionName = "1.3.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
