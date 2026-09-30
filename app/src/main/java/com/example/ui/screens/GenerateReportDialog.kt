@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -186,7 +187,9 @@ fun GenerateReportDialog(
                 // 3. Time Period Filter
                 Text("Time Period", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     DateRangeOption.entries.forEach { range ->

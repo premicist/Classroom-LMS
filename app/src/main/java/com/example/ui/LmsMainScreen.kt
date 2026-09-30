@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -84,6 +85,7 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.ui.platform.LocalContext
 import com.example.ui.dialogs.UpdateAlertDialog
 import com.example.ui.screens.GenerateReportDialog
+import com.example.ui.screens.LiveAssessmentDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
@@ -155,6 +157,35 @@ fun LmsMainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val authManager = viewModel.getAuthManager()
+
+    // Handle system back gesture / button on all overlays
+    BackHandler(enabled = drawerState.isOpen) {
+        scope.launch { drawerState.close() }
+    }
+    BackHandler(enabled = uiState.isScheduleScreenOpen) {
+        viewModel.closeScheduleScreen()
+    }
+    BackHandler(enabled = uiState.isPlannerOpen) {
+        viewModel.closePlanner()
+    }
+    BackHandler(enabled = uiState.isStudentRosterOpen) {
+        viewModel.closeStudentRoster()
+    }
+    BackHandler(enabled = uiState.selectedStudentProfile != null) {
+        viewModel.closeStudentProfile()
+    }
+    BackHandler(enabled = uiState.isClassroomModalOpen) {
+        viewModel.closeDialogs()
+    }
+    BackHandler(enabled = uiState.isExportReportOpen) {
+        viewModel.closeExportReport()
+    }
+    BackHandler(enabled = uiState.isGenerateReportDialogOpen) {
+        viewModel.closeGenerateReportDialog()
+    }
+    BackHandler(enabled = uiState.isLiveAssessmentDialogOpen) {
+        viewModel.closeLiveAssessmentDialog()
+    }
     
     // We observe a simple state variable for the Google Account to trigger recomposition when signed in/out
     var googleAccount by remember { mutableStateOf(authManager.getSignedInAccount()) }
@@ -521,12 +552,15 @@ fun LmsMainScreen(
         val studentInterventions = uiState.interventions.filter { it.studentId == student.id }
 
         val studentDiscipline = uiState.disciplineRecords.filter { it.studentId == student.id }
+        val studentLiveAssessments = uiState.liveAssessments.filter { it.studentId == student.id }
 
         StudentDetailDialog(
             summary = uiState.selectedStudentProfile!!,
             trajectory = trajectory,
             interventions = studentInterventions,
             disciplineRecords = studentDiscipline,
+            liveAssessments = studentLiveAssessments,
+            classroomName = uiState.activeClassroom?.name ?: "Classroom",
             onDismiss = { viewModel.closeStudentProfile() },
             onEditStudent = {
                 viewModel.closeStudentProfile()
@@ -541,6 +575,9 @@ fun LmsMainScreen(
             },
             onLogDiscipline = {
                 viewModel.openAddDiscipline(student)
+            },
+            onLogLiveAssessment = {
+                viewModel.openLiveAssessment(student)
             },
             onExportDisciplineIncidentSlip = { record ->
                 PdfReportExporter.exportDisciplineIncidentSlip(context, student, record, uiState.activeClassroom?.name ?: "Classroom")
@@ -632,6 +669,20 @@ fun LmsMainScreen(
             onDismiss = { viewModel.closeDisciplineDialog() },
             onSave = { record -> viewModel.saveDisciplineRecord(record) },
             onDelete = { record -> viewModel.deleteDisciplineRecord(record) }
+        )
+    }
+
+    // Live Class Formative Assessment Dialog
+    if (uiState.isLiveAssessmentDialogOpen) {
+        val activeClassId = uiState.activeClassroom?.id ?: 1L
+        LiveAssessmentDialog(
+            initialStudent = uiState.liveAssessmentStudent,
+            students = uiState.students,
+            initialAssessment = uiState.editingLiveAssessment,
+            classroomId = activeClassId,
+            onDismiss = { viewModel.closeLiveAssessmentDialog() },
+            onSave = { assessment -> viewModel.saveLiveAssessment(assessment) },
+            onDelete = { assessment -> viewModel.deleteLiveAssessment(assessment) }
         )
     }
 

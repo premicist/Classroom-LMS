@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EventAvailable
@@ -30,14 +31,20 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -123,6 +130,7 @@ fun AttendanceScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DailyAttendanceCheckInView(
     uiState: LmsUiState,
@@ -132,6 +140,35 @@ private fun DailyAttendanceCheckInView(
     yesterdayStr: String,
     onDateSelected: (String) -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                        cal.timeInMillis = millis
+                        onDateSelected(dateFormat.format(cal.time))
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Select")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     val dateRecords = uiState.attendanceRecords.filter { it.date == selectedDate }
     val recordMap = dateRecords.associateBy { it.studentId }
 
@@ -180,7 +217,10 @@ private fun DailyAttendanceCheckInView(
                         }
 
                         // Quick date toggles
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             DatePill(
                                 label = "Today",
                                 isSelected = selectedDate == todayStr,
@@ -191,6 +231,17 @@ private fun DailyAttendanceCheckInView(
                                 isSelected = selectedDate == yesterdayStr,
                                 onClick = { onDateSelected(yesterdayStr) }
                             )
+                            IconButton(
+                                onClick = { showDatePicker = true },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = "Pick Date",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
 
@@ -264,7 +315,7 @@ private fun DailyAttendanceCheckInView(
             }
         }
 
-        items(uiState.students) { student ->
+        items(uiState.students, key = { it.id }) { student ->
             val record = recordMap[student.id]
             val currentStatus = record?.status ?: AttendanceStatus.PRESENT
 

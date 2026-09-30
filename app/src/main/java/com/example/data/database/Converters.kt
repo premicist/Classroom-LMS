@@ -5,6 +5,8 @@ import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceStatus
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionType
+import com.example.data.entity.LiveAssessmentTaskType
+import com.example.data.entity.MasteryLevel
 import com.example.data.entity.SubmissionStatus
 
 class Converters {
@@ -65,6 +67,30 @@ class Converters {
             InterventionType.valueOf(it)
         } catch (e: Exception) {
             InterventionType.TUTORING
+        }
+    }
+
+    @TypeConverter
+    fun fromLiveAssessmentTaskType(value: LiveAssessmentTaskType?): String? = value?.name
+
+    @TypeConverter
+    fun toLiveAssessmentTaskType(value: String?): LiveAssessmentTaskType? = value?.let {
+        try {
+            LiveAssessmentTaskType.valueOf(it)
+        } catch (e: Exception) {
+            LiveAssessmentTaskType.CONCEPT_EXPLANATION
+        }
+    }
+
+    @TypeConverter
+    fun fromMasteryLevel(value: MasteryLevel?): String? = value?.name
+
+    @TypeConverter
+    fun toMasteryLevel(value: String?): MasteryLevel? = value?.let {
+        try {
+            MasteryLevel.valueOf(it)
+        } catch (e: Exception) {
+            MasteryLevel.MASTERED
         }
     }
 }

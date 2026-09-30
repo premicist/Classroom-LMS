@@ -67,12 +67,21 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import com.example.data.entity.StudentEntity
+import com.example.ui.theme.StatusErrorBg
+import com.example.ui.theme.StatusInfo
+import com.example.ui.theme.StatusInfoBg
+import com.example.ui.theme.StatusSuccessBg
+import com.example.ui.theme.StatusWarningBg
 import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,6 +103,7 @@ fun HomeworkCheckScreen(
     var topicText by remember { mutableStateOf(uiState.activeHomeworkTopic.ifEmpty { "Daily Homework Check" }) }
     var isEditingTopic by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var selectedStudentForStatus by remember { mutableStateOf<StudentEntity?>(null) }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
@@ -320,16 +330,15 @@ fun HomeworkCheckScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Tap status to toggle",
+                    text = "Tap to select status",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        items(uiState.students) { student ->
+        items(uiState.students, key = { it.id }) { student ->
             val record = recordMap[student.id]
-            val currentStatus = record?.status ?: HomeworkStatus.DONE
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -372,22 +381,42 @@ fun HomeworkCheckScreen(
                         }
                     }
 
-                    // 1-Tap Toggle Status Chip
-                    HomeworkStatusBadge(
-                        status = currentStatus,
-                        onClick = {
-                            viewModel.cycleHomeworkStatus(
-                                studentId = student.id,
-                                date = selectedDate,
-                                topic = topicText
-                            )
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { selectedStudentForStatus = student },
+                        color = when (record?.status) {
+                            HomeworkStatus.DONE -> StatusSuccessBg
+                            HomeworkStatus.PARTIAL -> StatusWarningBg
+                            HomeworkStatus.MISSING -> StatusErrorBg
+                            HomeworkStatus.EXCUSED -> StatusInfoBg
+                            null -> MaterialTheme.colorScheme.surfaceVariant
                         }
-                    )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = record?.status?.displayName ?: "Not Checked",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = when (record?.status) {
+                                    HomeworkStatus.DONE -> StatusSuccess
+                                    HomeworkStatus.PARTIAL -> StatusWarning
+                                    HomeworkStatus.MISSING -> StatusError
+                                    HomeworkStatus.EXCUSED -> StatusInfo
+                                    null -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select status", modifier = Modifier.size(16.dp))
+                        }
+                    }
                 }
             }
         }
 
-        // Past Homework Check History Section
         if (uiState.homeworkCheckDays.isNotEmpty()) {
             item {
                 Spacer(modifier = Modifier.height(10.dp))
@@ -440,6 +469,136 @@ fun HomeworkCheckScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    // Explicit Option-Based Status Dialog (with Undo / Clear Record option)
+    if (selectedStudentForStatus != null) {
+        val student = selectedStudentForStatus!!
+        val currentRec = recordMap[student.id]
+
+        AlertDialog(
+            onDismissRequest = { selectedStudentForStatus = null },
+            title = {
+                Column {
+                    Text(
+                        text = "Set Homework Status",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp
+                    )
+                    Text(
+                        text = "${student.name} (${student.studentNumber})",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    HomeworkOptionRow(
+                        title = "Done (Complete)",
+                        subtitle = "Full completion (100%)",
+                        color = StatusSuccess,
+                        isSelected = currentRec?.status == HomeworkStatus.DONE
+                    ) {
+                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.DONE)
+                        selectedStudentForStatus = null
+                    }
+
+                    HomeworkOptionRow(
+                        title = "Partial (Incomplete)",
+                        subtitle = "Partially completed (50%)",
+                        color = StatusWarning,
+                        isSelected = currentRec?.status == HomeworkStatus.PARTIAL
+                    ) {
+                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.PARTIAL)
+                        selectedStudentForStatus = null
+                    }
+
+                    HomeworkOptionRow(
+                        title = "Missing (Not Done)",
+                        subtitle = "No homework submitted (0%)",
+                        color = StatusError,
+                        isSelected = currentRec?.status == HomeworkStatus.MISSING
+                    ) {
+                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.MISSING)
+                        selectedStudentForStatus = null
+                    }
+
+                    HomeworkOptionRow(
+                        title = "Excused (Exempt)",
+                        subtitle = "Excused absence or medical",
+                        color = StatusInfo,
+                        isSelected = currentRec?.status == HomeworkStatus.EXCUSED
+                    ) {
+                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.EXCUSED)
+                        selectedStudentForStatus = null
+                    }
+
+                    if (currentRec != null) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        HomeworkOptionRow(
+                            title = "Clear Record (Unrecorded)",
+                            subtitle = "Remove status & exclude from stats",
+                            color = MaterialTheme.colorScheme.outline,
+                            isSelected = false
+                        ) {
+                            viewModel.deleteHomeworkRecord(student.id, selectedDate, topicText)
+                            selectedStudentForStatus = null
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { selectedStudentForStatus = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun HomeworkOptionRow(
+    title: String,
+    subtitle: String,
+    color: Color,
+    isSelected: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onClick() },
+        color = if (isSelected) color.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

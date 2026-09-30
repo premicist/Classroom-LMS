@@ -214,7 +214,7 @@ private fun AssignmentsListView(
                     onClick = { onFilterChange(null) }
                 )
             }
-            items(AssignmentType.entries) { type ->
+            items(AssignmentType.entries.toTypedArray(), key = { it.name }) { type ->
                 val count = assignments.count { it.type == type }
                 FilterChipItem(
                     label = "${type.displayName} ($count)",
@@ -260,7 +260,7 @@ private fun AssignmentsListView(
                 contentPadding = PaddingValues(bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(filtered) { assignment ->
+                items(filtered, key = { it.id }) { assignment ->
                     val subs = submissions.filter { it.assignmentId == assignment.id }
                     val total = students.size.coerceAtLeast(1)
                     val graded = subs.count { it.status == SubmissionStatus.GRADED }
@@ -501,7 +501,7 @@ private fun SubmissionsChecklistMatrixView(
             contentPadding = PaddingValues(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(students) { student ->
+            items(students, key = { it.id }) { student ->
                 val sub = subMap[student.id] ?: SubmissionEntity(
                     assignmentId = currentAssign.id,
                     studentId = student.id,

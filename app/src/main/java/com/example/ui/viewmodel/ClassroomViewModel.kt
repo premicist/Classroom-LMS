@@ -16,6 +16,7 @@ import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.InterventionType
 import com.example.data.entity.LessonPlanEntity
+import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -134,7 +135,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                         repository.getLessonPlans(id),
                         repository.getDailyLogs(id),
                         scheduleRepository.getSchedulesByClassroom(id),
-                        repository.getDisciplineRecordsByClassroom(id)
+                        repository.getDisciplineRecordsByClassroom(id),
+                        repository.getLiveAssessmentsByClassroom(id)
                     ) { args: Array<Any?> ->
                         @Suppress("UNCHECKED_CAST")
                         CombinedClassData(
@@ -148,7 +150,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             lessonPlans = args[7] as List<LessonPlanEntity>,
                             dailyLogs = args[8] as List<DailyLogEntity>,
                             schedules = args[9] as List<ClassScheduleEntity>,
-                            disciplineRecords = args[10] as List<DisciplineRecordEntity>
+                            disciplineRecords = args[10] as List<DisciplineRecordEntity>,
+                            liveAssessments = args[11] as List<LiveAssessmentEntity>
                         )
                     }
                 }
@@ -165,6 +168,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                     val dailyLogs = combined.dailyLogs
                     val schedules = combined.schedules
                     val disciplineRecords = combined.disciplineRecords
+                    val liveAssessments = combined.liveAssessments
 
                     // Compute Grade Summaries (Offloaded to Dispatchers.Default)
                     val studentSummaries = withContext(Dispatchers.Default) { computeStudentGrades(students, assignments, submissions, homeworks, attendance) }
@@ -186,6 +190,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             dailyLogs = dailyLogs,
                             schedules = schedules,
                             disciplineRecords = disciplineRecords,
+                            liveAssessments = liveAssessments,
                             studentGradeSummaries = studentSummaries,
                             analytics = analytics,
                             attendanceReport = attendanceReport,
@@ -208,7 +213,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val lessonPlans: List<LessonPlanEntity>,
         val dailyLogs: List<DailyLogEntity>,
         val schedules: List<ClassScheduleEntity>,
-        val disciplineRecords: List<com.example.data.entity.DisciplineRecordEntity>
+        val disciplineRecords: List<com.example.data.entity.DisciplineRecordEntity>,
+        val liveAssessments: List<LiveAssessmentEntity>
     )
 
     // --- NAVIGATION & TABS ---
@@ -642,6 +648,59 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             repository.deleteDisciplineRecord(record)
             _uiState.update { it.copy(userNotificationMessage = "Discipline record deleted") }
+        }
+    }
+
+    // --- LIVE CLASS FORMATIVE ASSESSMENT ACTIONS ---
+
+    fun openLiveAssessment(student: StudentEntity? = null) {
+        _uiState.update {
+            it.copy(
+                isLiveAssessmentDialogOpen = true,
+                editingLiveAssessment = null,
+                liveAssessmentStudent = student ?: it.students.firstOrNull()
+            )
+        }
+    }
+
+    fun openEditLiveAssessment(assessment: LiveAssessmentEntity, student: StudentEntity?) {
+        _uiState.update {
+            it.copy(
+                isLiveAssessmentDialogOpen = true,
+                editingLiveAssessment = assessment,
+                liveAssessmentStudent = student ?: it.students.find { s -> s.id == assessment.studentId }
+            )
+        }
+    }
+
+    fun closeLiveAssessmentDialog() {
+        _uiState.update {
+            it.copy(
+                isLiveAssessmentDialogOpen = false,
+                editingLiveAssessment = null,
+                liveAssessmentStudent = null
+            )
+        }
+    }
+
+    fun saveLiveAssessment(assessment: LiveAssessmentEntity) {
+        viewModelScope.launch {
+            if (assessment.id == 0L) {
+                repository.saveLiveAssessment(assessment)
+                showToast("Live assessment recorded: ${assessment.taskType.displayName}")
+            } else {
+                repository.updateLiveAssessment(assessment)
+                showToast("Updated live assessment record")
+            }
+            closeLiveAssessmentDialog()
+        }
+    }
+
+    fun deleteLiveAssessment(assessment: LiveAssessmentEntity) {
+        viewModelScope.launch {
+            repository.deleteLiveAssessment(assessment)
+            showToast("Live assessment deleted")
+            closeLiveAssessmentDialog()
         }
     }
 
@@ -1191,7 +1250,11 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun saveSubmission(submission: SubmissionEntity) {
         viewModelScope.launch {
-            repository.updateSubmission(submission)
+            if (submission.id == 0L) {
+                repository.insertOrUpdateSubmissions(listOf(submission))
+            } else {
+                repository.updateSubmission(submission)
+            }
             showToast("Grade saved for submission")
             closeGradingDialog()
         }
@@ -1210,7 +1273,11 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 status = if (!submission.isChecked && submission.status == SubmissionStatus.PENDING) SubmissionStatus.SUBMITTED else submission.status,
                 updatedAt = System.currentTimeMillis()
             )
-            repository.updateSubmission(updated)
+            if (updated.id == 0L) {
+                repository.insertOrUpdateSubmissions(listOf(updated))
+            } else {
+                repository.updateSubmission(updated)
+            }
         }
     }
 
@@ -1296,7 +1363,17 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // deleteHomeworkDay(...) removed as it was unused.
+    fun deleteHomeworkRecord(studentId: Long, date: String, topic: String) {
+        viewModelScope.launch {
+            val existing = _uiState.value.homeworkRecords.find {
+                it.studentId == studentId && it.date == date && it.topic == topic
+            }
+            if (existing != null) {
+                repository.deleteHomeworkRecord(existing)
+                showToast("Homework record cleared")
+            }
+        }
+    }
 
     fun recordAttendanceStatus(studentId: Long, date: String, status: AttendanceStatus, remarks: String = "") {
         val classroomId = _selectedClassroomId.value ?: return
@@ -1700,7 +1777,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 'B' -> b++
                 'C' -> c++
                 'D' -> d++
-                'F' -> f++
+                'E', 'F' -> f++
             }
         }
 

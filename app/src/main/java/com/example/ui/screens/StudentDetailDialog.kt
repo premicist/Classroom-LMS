@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -68,9 +71,12 @@ import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusErrorBg
 import com.example.data.entity.BehaviorCategory
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.LiveAssessmentEntity
+import com.example.data.entity.MasteryLevel
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusSuccessBg
 import com.example.ui.theme.StatusWarning
+import com.example.ui.theme.StatusWarningBg
 import com.example.ui.viewmodel.StudentGradeSummary
 import com.example.ui.viewmodel.StudentProgressTrajectory
 import com.example.ui.viewmodel.StudentTier
@@ -86,11 +92,14 @@ fun StudentDetailDialog(
     trajectory: StudentProgressTrajectory?,
     interventions: List<InterventionEntity>,
     disciplineRecords: List<DisciplineRecordEntity> = emptyList(),
+    liveAssessments: List<LiveAssessmentEntity> = emptyList(),
+    classroomName: String = "Classroom",
     onDismiss: () -> Unit,
     onEditStudent: () -> Unit,
     onDeleteStudent: () -> Unit,
     onLogIntervention: () -> Unit,
     onLogDiscipline: () -> Unit = {},
+    onLogLiveAssessment: () -> Unit = {},
     onExportDisciplineIncidentSlip: (DisciplineRecordEntity) -> Unit = {},
     onExportReport: () -> Unit,
     isClassroomLinked: Boolean = false,
@@ -113,6 +122,7 @@ fun StudentDetailDialog(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars)
                 .padding(horizontal = 20.dp),
             contentPadding = PaddingValues(bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -375,6 +385,123 @@ fun StudentDetailDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
+                                text = "Live Class Assessments (${liveAssessments.size})",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Surface(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onLogLiveAssessment() },
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AddComment,
+                                        contentDescription = "Assess",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Assess", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (liveAssessments.isEmpty()) {
+                            Text(
+                                text = "No live formative or board assessments recorded yet.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            liveAssessments.forEach { live ->
+                                val (bg, fg) = when (live.masteryLevel) {
+                                    MasteryLevel.MASTERED -> StatusSuccessBg to StatusSuccess
+                                    MasteryLevel.DEVELOPING -> StatusWarningBg to StatusWarning
+                                    MasteryLevel.NEEDS_SUPPORT -> StatusErrorBg to StatusError
+                                }
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "${live.taskType.iconEmoji} ${live.taskType.displayName}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(bg)
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = live.masteryLevel.displayName,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = fg
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = "Topic: ${live.topic}",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (live.diagnosticTags.isNotBlank()) {
+                                        Text(
+                                            text = "Tags: ${live.diagnosticTags}",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (live.remarks.isNotBlank()) {
+                                        Text(
+                                            text = "Note: ${live.remarks}",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Teacher Interventions & Action Notes
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
                                 text = "Teacher Interventions (${interventions.size})",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
@@ -615,7 +742,6 @@ fun StudentDetailDialog(
             // One-Tap Parent Messenger (WhatsApp & SMS)
             item {
                 val context = LocalContext.current
-                val classroomName = "Classroom"
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),

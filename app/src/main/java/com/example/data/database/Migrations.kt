@@ -33,4 +33,31 @@ object Migrations {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_discipline_records_classroomId` ON `discipline_records` (`classroomId`)")
         }
     }
+
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `live_assessments` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                    `studentId` INTEGER NOT NULL, 
+                    `classroomId` INTEGER NOT NULL, 
+                    `date` TEXT NOT NULL, 
+                    `timestamp` INTEGER NOT NULL, 
+                    `taskType` TEXT NOT NULL, 
+                    `topic` TEXT NOT NULL, 
+                    `masteryLevel` TEXT NOT NULL, 
+                    `diagnosticTags` TEXT NOT NULL, 
+                    `remarks` TEXT NOT NULL, 
+                    `photoEvidencePath` TEXT, 
+                    `includeInCasGrade` INTEGER NOT NULL, 
+                    FOREIGN KEY(`studentId`) REFERENCES `students`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , 
+                    FOREIGN KEY(`classroomId`) REFERENCES `classrooms`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_live_assessments_studentId` ON `live_assessments` (`studentId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_live_assessments_classroomId` ON `live_assessments` (`classroomId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_live_assessments_date` ON `live_assessments` (`date`)")
+        }
+    }
 }

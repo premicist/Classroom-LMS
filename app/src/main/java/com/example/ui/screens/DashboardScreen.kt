@@ -101,6 +101,14 @@ fun DashboardScreen(
                 ) {
                     item {
                         ActionChip(
+                            icon = Icons.Default.Grade,
+                            label = "Live Assessment",
+                            color = Color(0xFFEA580C),
+                            onClick = { viewModel.openLiveAssessment() }
+                        )
+                    }
+                    item {
+                        ActionChip(
                             icon = Icons.Default.EventAvailable,
                             label = "Take Attendance",
                             color = StatusSuccess,
@@ -240,7 +248,7 @@ fun DashboardScreen(
                 ) {
                     QuickStatCard(
                         title = "Class Average",
-                        value = "${analytics.averagePercentage}%",
+                        value = "${"%.1f".format(analytics.averagePercentage)}%",
                         subtitle = "GPA: ${"%.2f".format(analytics.averageGpa)}",
                         icon = Icons.Default.Grade,
                         accentColor = EduPrimary,
@@ -249,7 +257,7 @@ fun DashboardScreen(
                     )
                     QuickStatCard(
                         title = "Attendance Rate",
-                        value = "${analytics.todayAttendanceRate}%",
+                        value = "${"%.1f".format(analytics.todayAttendanceRate)}%",
                         subtitle = "Today's check-in",
                         icon = Icons.Default.EventAvailable,
                         accentColor = StatusSuccess,

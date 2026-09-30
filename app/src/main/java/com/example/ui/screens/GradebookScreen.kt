@@ -229,7 +229,7 @@ fun GradebookScreen(
         }
 
         // Student Grade Cards List
-        itemsIndexed(filteredSummaries) { index, summary ->
+        itemsIndexed(filteredSummaries, key = { _, summary -> summary.student.id }) { index, summary ->
             val isExpanded = expandedStudentId == summary.student.id
             val assignMap = uiState.assignments.associateBy { it.id }
 

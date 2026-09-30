@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -75,10 +77,10 @@ fun GradeDistributionBarChart(
     modifier: Modifier = Modifier
 ) {
     val grades = listOf(
-        Triple("A+/A (80-100)", distribution.aCount + distribution.bCount, StatusSuccess),
-        Triple("B+/B (60-79)", distribution.cCount, Color(0xFF0284C7)),
-        Triple("C+/C (40-59)", distribution.dCount, Color(0xFFD97706)),
-        Triple("D/E (<40)", distribution.fCount, StatusError)
+        Triple("A+/A (80-100)", distribution.aCount, StatusSuccess),
+        Triple("B+/B (60-79)", distribution.bCount, Color(0xFF0284C7)),
+        Triple("C+/C (40-59)", distribution.cCount, Color(0xFFD97706)),
+        Triple("D/E (<40)", distribution.dCount + distribution.fCount, StatusError)
     )
     val maxCount = grades.maxOf { it.second }.coerceAtLeast(1)
 
@@ -86,12 +88,13 @@ fun GradeDistributionBarChart(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp),
+                .height(140.dp)
+                .padding(top = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
         ) {
             grades.forEach { (label, count, color) ->
-                val heightFraction = (count.toFloat() / maxCount).coerceIn(0.12f, 1f)
+                val heightFraction = (count.toFloat() / maxCount).coerceIn(0.10f, 1f)
                 val animatedHeight by animateFloatAsState(
                     targetValue = heightFraction,
                     animationSpec = tween(durationMillis = 600),
@@ -113,7 +116,7 @@ fun GradeDistributionBarChart(
                     Box(
                         modifier = Modifier
                             .width(32.dp)
-                            .height((76 * animatedHeight).dp)
+                            .height((88 * animatedHeight).dp)
                             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                             .background(if (count > 0) color else MaterialTheme.colorScheme.surfaceVariant)
                     )
@@ -268,6 +271,7 @@ fun TieredHorizontalProgressBar(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StudentTierDistributionBar(
     supportCount: Int,
@@ -277,9 +281,9 @@ fun StudentTierDistributionBar(
     modifier: Modifier = Modifier
 ) {
     val total = totalStudents.coerceAtLeast(1).toFloat()
-    val sFrac = supportCount / total
-    val oFrac = onTrackCount / total
-    val eFrac = enrichmentCount / total
+    val sFrac = (supportCount / total).coerceIn(0f, 1f)
+    val oFrac = (onTrackCount / total).coerceIn(0f, 1f)
+    val eFrac = (enrichmentCount / total).coerceIn(0f, 1f)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -289,7 +293,7 @@ fun StudentTierDistributionBar(
                 .clip(CircleShape)
                 .background(Color(0xFFE2E8F0))
         ) {
-            if (sFrac > 0) {
+            if (sFrac > 0.001f) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -297,7 +301,7 @@ fun StudentTierDistributionBar(
                         .background(StatusError)
                 )
             }
-            if (oFrac > 0) {
+            if (oFrac > 0.001f) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -305,7 +309,7 @@ fun StudentTierDistributionBar(
                         .background(Color(0xFF0284C7))
                 )
             }
-            if (eFrac > 0) {
+            if (eFrac > 0.001f) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -315,11 +319,12 @@ fun StudentTierDistributionBar(
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            LegendItem(color = StatusError, label = "Needs Support: $supportCount (${(sFrac * 100).toInt()}%)")
+            LegendItem(color = StatusError, label = "Support: $supportCount (${(sFrac * 100).toInt()}%)")
             LegendItem(color = Color(0xFF0284C7), label = "On Track: $onTrackCount (${(oFrac * 100).toInt()}%)")
             LegendItem(color = StatusSuccess, label = "Enrichment: $enrichmentCount (${(eFrac * 100).toInt()}%)")
         }
@@ -414,17 +419,19 @@ fun PerformanceTimelineChart(
             val height = size.height
             val n = points.size
 
-            val minScore = 40f
+            val minScore = 0f
             val maxScore = 100f
             val scoreRange = maxScore - minScore
+            val innerYPadding = 12.dp.toPx()
+            val drawableHeight = (height - 2 * innerYPadding).coerceAtLeast(1f)
 
             fun getY(score: Float): Float {
-                val normalized = (score - minScore) / scoreRange
-                return height - (normalized * height)
+                val normalized = ((score - minScore) / scoreRange).coerceIn(0f, 1f)
+                return (height - innerYPadding) - (normalized * drawableHeight)
             }
 
-            // Draw horizontal benchmark grid lines (60%, 75%, 90%)
-            val benchmarks = listOf(60f, 75f, 90f)
+            // Draw horizontal benchmark grid lines (40%, 60%, 80%)
+            val benchmarks = listOf(40f, 60f, 80f)
             benchmarks.forEach { bm ->
                 val y = getY(bm)
                 drawLine(

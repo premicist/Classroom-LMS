@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -84,6 +85,8 @@ fun StudentRosterScreen(
     onLogDiscipline: (StudentEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    BackHandler { onBack() }
+
     var searchQuery by remember { mutableStateOf("") }
     var filterClassroomId by remember { mutableStateOf<Long?>(activeClassroomId) }
     var studentToDelete by remember { mutableStateOf<StudentEntity?>(null) }

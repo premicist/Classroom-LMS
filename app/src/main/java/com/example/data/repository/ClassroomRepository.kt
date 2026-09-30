@@ -10,6 +10,7 @@ import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.LessonPlanEntity
+import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -27,6 +28,7 @@ class ClassroomRepository(private val database: AppDatabase) {
     private val interventionDao = database.interventionDao()
     private val plannerDao = database.plannerDao()
     private val disciplineDao = database.disciplineDao()
+    private val liveAssessmentDao = database.liveAssessmentDao()
 
     // Classrooms
     fun getAllClassrooms(): Flow<List<ClassroomEntity>> = classroomDao.getAllClassrooms()
@@ -89,6 +91,7 @@ class ClassroomRepository(private val database: AppDatabase) {
     suspend fun saveHomeworkRecord(record: HomeworkRecordEntity) = homeworkDao.insertHomeworkRecord(record)
     suspend fun saveHomeworkBatch(records: List<HomeworkRecordEntity>) = homeworkDao.insertHomeworkRecords(records)
     suspend fun updateHomeworkRecord(record: HomeworkRecordEntity) = homeworkDao.updateHomeworkRecord(record)
+    suspend fun deleteHomeworkRecord(record: HomeworkRecordEntity) = homeworkDao.deleteHomeworkRecord(record)
     suspend fun deleteHomeworkBatch(classroomId: Long, date: String, topic: String) = homeworkDao.deleteHomeworkBatch(classroomId, date, topic)
 
     // Attendance Records
@@ -114,6 +117,14 @@ class ClassroomRepository(private val database: AppDatabase) {
     suspend fun getDisciplineRecordsByStudentOnce(studentId: Long): List<DisciplineRecordEntity> = disciplineDao.getDisciplineRecordsByStudentOnce(studentId)
     suspend fun saveDisciplineRecord(record: DisciplineRecordEntity): Long = disciplineDao.insertDisciplineRecord(record)
     suspend fun deleteDisciplineRecord(record: DisciplineRecordEntity) = disciplineDao.deleteDisciplineRecord(record)
+
+    // Formative Live Class Assessment Records
+    fun getLiveAssessmentsByClassroom(classroomId: Long): Flow<List<LiveAssessmentEntity>> = liveAssessmentDao.getAssessmentsByClassroom(classroomId)
+    suspend fun getLiveAssessmentsByClassroomOnce(classroomId: Long): List<LiveAssessmentEntity> = liveAssessmentDao.getAssessmentsByClassroomOnce(classroomId)
+    fun getLiveAssessmentsByStudent(studentId: Long): Flow<List<LiveAssessmentEntity>> = liveAssessmentDao.getAssessmentsByStudent(studentId)
+    suspend fun saveLiveAssessment(assessment: LiveAssessmentEntity): Long = liveAssessmentDao.insertAssessment(assessment)
+    suspend fun updateLiveAssessment(assessment: LiveAssessmentEntity) = liveAssessmentDao.updateAssessment(assessment)
+    suspend fun deleteLiveAssessment(assessment: LiveAssessmentEntity) = liveAssessmentDao.deleteAssessment(assessment)
 
     // Lesson Plans & Daily Diary
     fun getLessonPlans(classroomId: Long): Flow<List<LessonPlanEntity>> = plannerDao.getLessonPlansForClassroom(classroomId)

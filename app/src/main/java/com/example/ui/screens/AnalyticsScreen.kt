@@ -41,6 +41,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -226,9 +227,10 @@ fun AnalyticsScreen(
 
         // Section Tabs
         item {
-            TabRow(
+            ScrollableTabRow(
                 selectedTabIndex = currentSection,
                 containerColor = MaterialTheme.colorScheme.surface,
+                edgePadding = 8.dp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
                     .testTag("analytics_section_tabs")
@@ -310,7 +312,7 @@ fun AnalyticsScreen(
                                 )
                             }
                         }
-                        items(uiState.students) { student ->
+                        items(uiState.students, key = { it.id }) { student ->
                             val isSelected = student.id == uiState.analyticsSelectedStudentId
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
@@ -462,7 +464,7 @@ fun AnalyticsScreen(
                     }
                 }
             } else {
-                items(analytics.difficultyAreas) { diffArea ->
+                items(analytics.difficultyAreas, key = { it.assignment.id }) { diffArea ->
                     ClassDifficultyAreaCard(
                         area = diffArea,
                         onReviewClick = {
@@ -590,7 +592,7 @@ fun AnalyticsScreen(
                 uiState.analyticsTierFilter == null || traj.tier == uiState.analyticsTierFilter
             }
 
-            items(filteredTrajectories) { trajectory ->
+            items(filteredTrajectories, key = { it.student.id }) { trajectory ->
                 StudentTrajectoryCard(
                     trajectory = trajectory,
                     onStudentClick = {

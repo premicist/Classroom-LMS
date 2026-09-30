@@ -122,7 +122,9 @@ fun ClassroomHeader(
                         Text(
                             text = "${activeClassroom?.subject ?: ""} • ${activeClassroom?.gradeLevel ?: ""}",
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
