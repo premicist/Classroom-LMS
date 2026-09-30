@@ -176,12 +176,10 @@ data class HomeworkCheckDay(
 
 enum class LmsTab(val label: String) {
     DASHBOARD("Overview"),
-    ANALYTICS("Analytics"),
+    ACADEMIC("Academic"),
     STUDENTS("Students"),
-    GRADEBOOK("Gradebook"),
-    ASSIGNMENTS("Assignments"),
-    HOMEWORK("HW Check"),
-    ATTENDANCE("Attendance")
+    ATTENDANCE("Attendance"),
+    ANALYTICS("Analytics")
 }
 
 data class LmsUiState(

@@ -57,6 +57,7 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -147,9 +148,9 @@ fun ClassroomScheduleScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Master Classroom Schedule", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Classroom Schedule", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Text(
-                            text = "Unified Cross-Subject Timetable",
+                            text = "Unified Timetable & Period Management",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -218,21 +219,23 @@ fun ClassroomScheduleScreen(
             ) { mode ->
                 if (mode == ScheduleViewMode.WEEKLY_DAY) {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Week Selector Chips (1 to 5)
-                        Row(
+                        // Week Selector Chips (1 to 5) - Horizontally scrollable and responsive
+                        LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Week:",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            (1..5).forEach { week ->
+                            item {
+                                Text(
+                                    text = "Week:",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            items((1..5).toList(), key = { it }) { week ->
                                 val isSelected = week == selectedWeek
                                 FilterChip(
                                     selected = isSelected,
@@ -243,15 +246,16 @@ fun ClassroomScheduleScreen(
                         }
 
                         // Day Tabs
-                        SecondaryTabRow(
+                        ScrollableTabRow(
                             selectedTabIndex = selectedDayIndex,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            edgePadding = 12.dp
                         ) {
                             dayLabels.forEachIndexed { index, label ->
                                 Tab(
                                     selected = selectedDayIndex == index,
                                     onClick = { selectedDayIndex = index },
-                                    text = { Text(label, fontSize = 12.sp, fontWeight = if (selectedDayIndex == index) FontWeight.Bold else FontWeight.Normal) }
+                                    text = { Text(label, fontSize = 13.sp, fontWeight = if (selectedDayIndex == index) FontWeight.Bold else FontWeight.Normal) }
                                 )
                             }
                         }

@@ -73,6 +73,7 @@ import com.example.data.entity.LiveAssessmentTaskType
 import com.example.data.entity.MasteryLevel
 import com.example.data.entity.StudentEntity
 import com.example.ui.components.StudentAvatar
+import com.example.ui.components.VoiceDictationButton
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusErrorBg
 import com.example.ui.theme.StatusInfo
@@ -423,6 +424,14 @@ fun LiveAssessmentDialog(
                     onValueChange = { remarks = it },
                     label = { Text("Teacher Remarks / Diagnostic Feedback") },
                     placeholder = { Text("e.g. Good grasp of formula, reviewed algebraic sign rule with student.") },
+                    trailingIcon = {
+                        VoiceDictationButton(
+                            onTextSpoken = { spoken ->
+                                remarks = if (remarks.isBlank()) spoken else "$remarks $spoken"
+                            },
+                            prompt = "Speak diagnostic remarks..."
+                        )
+                    },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )

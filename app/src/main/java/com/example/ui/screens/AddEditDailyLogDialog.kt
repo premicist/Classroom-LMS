@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
+import com.example.ui.components.VoiceDictationButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -124,6 +125,14 @@ fun AddEditDailyLogDialog(
                     value = reflectionNotes,
                     onValueChange = { reflectionNotes = it },
                     label = { Text("Reflection & Teaching Notes *") },
+                    trailingIcon = {
+                        VoiceDictationButton(
+                            onTextSpoken = { spoken ->
+                                reflectionNotes = if (reflectionNotes.isBlank()) spoken else "$reflectionNotes $spoken"
+                            },
+                            prompt = "Speak daily reflection..."
+                        )
+                    },
                     minLines = 3,
                     maxLines = 6,
                     modifier = Modifier.fillMaxWidth()

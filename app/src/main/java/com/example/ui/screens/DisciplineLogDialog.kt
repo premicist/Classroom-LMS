@@ -42,6 +42,7 @@ import com.example.data.entity.BehaviorCategory
 import com.example.data.entity.BehaviorSeverity
 import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.StudentEntity
+import com.example.ui.components.VoiceDictationButton
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import java.text.SimpleDateFormat
@@ -215,6 +216,14 @@ fun DisciplineLogDialog(
                     onValueChange = { description = it },
                     label = { Text("Incident Details / Context") },
                     placeholder = { Text("Optional additional notes...") },
+                    trailingIcon = {
+                        VoiceDictationButton(
+                            onTextSpoken = { spoken ->
+                                description = if (description.isBlank()) spoken else "$description $spoken"
+                            },
+                            prompt = "Speak incident details..."
+                        )
+                    },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -225,6 +234,14 @@ fun DisciplineLogDialog(
                     onValueChange = { actionTaken = it },
                     label = { Text("Action Taken / Teacher Response") },
                     placeholder = { Text("e.g. Moved seat, verbal warning, parent phone call") },
+                    trailingIcon = {
+                        VoiceDictationButton(
+                            onTextSpoken = { spoken ->
+                                actionTaken = if (actionTaken.isBlank()) spoken else "$actionTaken $spoken"
+                            },
+                            prompt = "Speak action taken..."
+                        )
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

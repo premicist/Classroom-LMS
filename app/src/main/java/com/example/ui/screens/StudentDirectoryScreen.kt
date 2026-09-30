@@ -20,16 +20,32 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.entity.StudentEntity
 import com.example.ui.components.GradeBadge
 import com.example.ui.components.StudentAvatar
 import com.example.ui.theme.EduPrimary
@@ -61,6 +78,8 @@ fun StudentDirectoryScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") } // All, Needs Support, Enrichment, Low Attendance
+    var studentToDelete by remember { mutableStateOf<StudentEntity?>(null) }
+    var studentToReassign by remember { mutableStateOf<StudentEntity?>(null) }
 
     val filters = listOf("All", "⚠️ Needs Support", "🌟 Enrichment", "Low Attendance (<85%)")
 
@@ -80,21 +99,34 @@ fun StudentDirectoryScreen(
         matchesSearch && matchesFilter
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .padding(top = 16.dp)
-    ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Search by student name or ID...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp)
-        )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.openAddStudent() },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Student")
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .padding(top = 12.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search by student name or ID...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
         
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -156,6 +188,62 @@ fun StudentDirectoryScreen(
                                     }
                                 }
                                 GradeBadge(letterGrade = summary.letterGrade, percentage = summary.percentage)
+
+                                var showActionMenu by remember { mutableStateOf(false) }
+                                Box {
+                                    IconButton(onClick = { showActionMenu = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.MoreVert,
+                                            contentDescription = "Options",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = showActionMenu,
+                                        onDismissRequest = { showActionMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Edit Student") },
+                                            onClick = {
+                                                showActionMenu = false
+                                                viewModel.openEditStudent(s)
+                                            },
+                                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Live Assessment") },
+                                            onClick = {
+                                                showActionMenu = false
+                                                viewModel.openLiveAssessment(s)
+                                            },
+                                            leadingIcon = { Icon(Icons.Default.AddComment, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Log Discipline / Merit") },
+                                            onClick = {
+                                                showActionMenu = false
+                                                viewModel.openAddDiscipline(s)
+                                            },
+                                            leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = StatusWarning) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Move to Another Class") },
+                                            onClick = {
+                                                showActionMenu = false
+                                                studentToReassign = s
+                                            },
+                                            leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Delete Student", color = StatusError) },
+                                            onClick = {
+                                                showActionMenu = false
+                                                studentToDelete = s
+                                            },
+                                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = StatusError) }
+                                        )
+                                    }
+                                }
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
@@ -187,5 +275,62 @@ fun StudentDirectoryScreen(
                 }
             }
         }
+    }
+
+    // Reassign Classroom Dialog
+    if (studentToReassign != null) {
+        val s = studentToReassign!!
+        AlertDialog(
+            onDismissRequest = { studentToReassign = null },
+            title = { Text("Move ${s.name} to Classroom") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Select the destination classroom:", style = MaterialTheme.typography.bodyMedium)
+                    uiState.classrooms.filter { it.id != s.classroomId }.forEach { targetClass ->
+                        Button(
+                            onClick = {
+                                viewModel.reassignStudentClassroom(s, targetClass.id)
+                                studentToReassign = null
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("${targetClass.name} (${targetClass.subject})")
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { studentToReassign = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Delete Student Confirmation Dialog
+    if (studentToDelete != null) {
+        val s = studentToDelete!!
+        AlertDialog(
+            onDismissRequest = { studentToDelete = null },
+            title = { Text("Delete Student") },
+            text = { Text("Are you sure you want to remove '${s.name}'? All grades, attendance, and homework records for this student will be deleted.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteStudent(s.id)
+                        studentToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { studentToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

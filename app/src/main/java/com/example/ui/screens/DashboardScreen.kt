@@ -120,7 +120,7 @@ fun DashboardScreen(
                             icon = Icons.Default.MenuBook,
                             label = "Check Homework",
                             color = EduPrimary,
-                            onClick = { viewModel.selectTab(LmsTab.HOMEWORK) }
+                            onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
                         )
                     }
                     item {
@@ -227,7 +227,7 @@ fun DashboardScreen(
                     title = "${analytics.atRiskStudents.size} Students Require Attention",
                     message = "Low grades, chronic attendance issues, or missing assignments flagged.",
                     actionText = "Review",
-                    onAction = { viewModel.selectTab(LmsTab.GRADEBOOK) }
+                    onAction = { viewModel.selectTab(LmsTab.ACADEMIC) }
                 )
             }
         }
@@ -253,7 +253,7 @@ fun DashboardScreen(
                         icon = Icons.Default.Grade,
                         accentColor = EduPrimary,
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.selectTab(LmsTab.GRADEBOOK) }
+                        onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
                     )
                     QuickStatCard(
                         title = "Attendance Rate",
@@ -277,7 +277,7 @@ fun DashboardScreen(
                         icon = Icons.Default.People,
                         accentColor = Color(0xFF0F766E),
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.openStudentRoster() }
+                        onClick = { viewModel.selectTab(LmsTab.STUDENTS) }
                     )
                     QuickStatCard(
                         title = "Pending Grading",
@@ -286,7 +286,7 @@ fun DashboardScreen(
                         icon = Icons.Default.Assignment,
                         accentColor = if (analytics.pendingGradingCount > 0) StatusWarning else StatusSuccess,
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.selectTab(LmsTab.ASSIGNMENTS) }
+                        onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
                     )
                 }
             }
@@ -354,7 +354,7 @@ fun DashboardScreen(
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .clickable { viewModel.selectTab(LmsTab.ASSIGNMENTS) }
+                                .clickable { viewModel.selectTab(LmsTab.ACADEMIC) }
                                 .padding(4.dp)
                         )
                     }
@@ -377,7 +377,7 @@ fun DashboardScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .clickable { viewModel.selectTab(LmsTab.ASSIGNMENTS) }
+                                    .clickable { viewModel.selectTab(LmsTab.ACADEMIC) }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

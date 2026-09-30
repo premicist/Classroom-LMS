@@ -61,6 +61,7 @@ import com.example.ui.components.ClassroomHeader
 import com.example.ui.dialogs.InterventionDialog
 import com.example.ui.screens.AddEditAssignmentDialog
 import com.example.ui.screens.AddEditClassroomDialog
+import com.example.ui.screens.AcademicWorkScreen
 import com.example.ui.screens.AddEditStudentDialog
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.AssignmentsScreen
@@ -403,11 +404,8 @@ fun LmsMainScreen(
             ) {
                 val tabs = listOf(
                     Triple(LmsTab.DASHBOARD, Icons.Filled.Dashboard to Icons.Outlined.Dashboard, "Overview"),
-                    Triple(LmsTab.ANALYTICS, Icons.Filled.AutoGraph to Icons.Outlined.AutoGraph, "Analytics"),
+                    Triple(LmsTab.ACADEMIC, Icons.AutoMirrored.Filled.Grading to Icons.AutoMirrored.Outlined.Grading, "Academic"),
                     Triple(LmsTab.STUDENTS, Icons.Filled.People to Icons.Outlined.People, "Students"),
-                    Triple(LmsTab.GRADEBOOK, Icons.AutoMirrored.Filled.Grading to Icons.AutoMirrored.Outlined.Grading, "Grades"),
-                    Triple(LmsTab.ASSIGNMENTS, Icons.AutoMirrored.Filled.Assignment to Icons.AutoMirrored.Outlined.Assignment, "Tasks"),
-                    Triple(LmsTab.HOMEWORK, Icons.AutoMirrored.Filled.MenuBook to Icons.AutoMirrored.Outlined.MenuBook, "HW"),
                     Triple(LmsTab.ATTENDANCE, Icons.Filled.EventAvailable to Icons.Outlined.EventAvailable, "Attend")
                 )
 
@@ -459,9 +457,7 @@ fun LmsMainScreen(
                     LmsTab.DASHBOARD -> DashboardScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.ANALYTICS -> AnalyticsScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.STUDENTS -> com.example.ui.screens.StudentDirectoryScreen(uiState = uiState, viewModel = viewModel)
-                    LmsTab.GRADEBOOK -> GradebookScreen(uiState = uiState, viewModel = viewModel)
-                    LmsTab.ASSIGNMENTS -> AssignmentsScreen(uiState = uiState, viewModel = viewModel)
-                    LmsTab.HOMEWORK -> HomeworkCheckScreen(uiState = uiState, viewModel = viewModel)
+                    LmsTab.ACADEMIC -> AcademicWorkScreen(uiState = uiState, viewModel = viewModel)
                     LmsTab.ATTENDANCE -> AttendanceScreen(uiState = uiState, viewModel = viewModel)
                 }
             }
