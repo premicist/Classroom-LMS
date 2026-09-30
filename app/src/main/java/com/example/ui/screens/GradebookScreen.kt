@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.entity.SubmissionStatus
@@ -352,39 +353,50 @@ fun GradebookScreen(
                                     if (assign != null) {
                                         if (isInlineGradeMode) {
                                             var scoreInput by remember(sub.id) { mutableStateOf(sub.score?.toInt()?.toString() ?: "") }
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(assign.title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                                    Text("Max: ${assign.maxPoints.toInt()}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                }
-                                                OutlinedTextField(
-                                                    value = scoreInput,
-                                                    onValueChange = { scoreInput = it },
-                                                    label = { Text("Score") },
-                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                                                    modifier = Modifier.width(80.dp),
-                                                    singleLine = true
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Button(
-                                                    onClick = {
-                                                        val s = scoreInput.toDoubleOrNull()
-                                                        if (s != null) {
-                                                            viewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
-                                                        }
-                                                    },
-                                                    contentPadding = PaddingValues(horizontal = 8.dp),
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    modifier = Modifier.height(36.dp)
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Text("Save")
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(
+                                                            text = assign.title,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                        Text(
+                                                            text = "Max: ${assign.maxPoints.toInt()}",
+                                                            fontSize = 10.sp,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    OutlinedTextField(
+                                                        value = scoreInput,
+                                                        onValueChange = { scoreInput = it },
+                                                        label = { Text("Score", fontSize = 10.sp) },
+                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                                                        modifier = Modifier.width(72.dp),
+                                                        singleLine = true
+                                                    )
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Button(
+                                                        onClick = {
+                                                            val s = scoreInput.toDoubleOrNull()
+                                                            if (s != null) {
+                                                                viewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
+                                                            }
+                                                        },
+                                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        modifier = Modifier.height(36.dp)
+                                                    ) {
+                                                        Text("Save", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                    }
                                                 }
-                                            }
                                         } else {
                                             Row(
                                                 modifier = Modifier

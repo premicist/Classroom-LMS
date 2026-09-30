@@ -29,9 +29,12 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsUiState
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+
 /**
  * Unified Academic Hub containing Grades (Gradebook), Tasks (Assignments), and Homework check.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AcademicWorkScreen(
     uiState: LmsUiState,

@@ -428,7 +428,7 @@ fun HomeworkCheckScreen(
                 )
             }
 
-            items(uiState.homeworkCheckDays.take(5)) { day ->
+            items(uiState.homeworkCheckDays.take(5), key = { "${it.date}_${it.topic}" }) { day ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()

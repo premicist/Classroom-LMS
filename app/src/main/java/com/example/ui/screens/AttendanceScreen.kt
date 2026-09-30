@@ -567,7 +567,7 @@ private fun AutomatedAttendanceReportsView(
             )
         }
 
-        items(report.studentSummaries) { s ->
+        items(report.studentSummaries, key = { it.student.id }) { s ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),

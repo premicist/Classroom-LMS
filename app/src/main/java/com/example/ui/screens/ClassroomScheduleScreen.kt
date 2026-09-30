@@ -331,7 +331,7 @@ fun ClassroomScheduleScreen(
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                items(selectedDaySchedules) { entry ->
+                                items(selectedDaySchedules, key = { it.id }) { entry ->
                                     val subjectColor = classroomColorMap[entry.classroomName.lowercase(Locale.US)] ?: EduPrimary
                                     val isToday = currentDayOfWeek.equals(todayDayOfWeekStr, ignoreCase = true)
                                     val isOngoing = isToday && (nowMinutes >= entry.startMinutes && (entry.endMinutes == 0 || nowMinutes < entry.endMinutes))
@@ -490,7 +490,7 @@ fun ClassroomScheduleScreen(
                                                 )
                                             } else {
                                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                    items(entriesForDay) { cls ->
+                                                    items(entriesForDay, key = { it.id }) { cls ->
                                                         val color = classroomColorMap[cls.classroomName.lowercase(Locale.US)] ?: MaterialTheme.colorScheme.primaryContainer
                                                         Box(
                                                             modifier = Modifier
@@ -626,9 +626,10 @@ fun AddEditScheduleEntryDialog(
             val isPm = clean.contains("PM")
             val isAm = clean.contains("AM")
             val rawTime = clean.replace("AM", "").replace("PM", "").trim()
-            val parts = rawTime.split(":")
-            var hours = parts[0].trim().toInt()
-            val mins = if (parts.size > 1) parts[1].trim().toInt() else 0
+            val separator = if (rawTime.contains(":")) ":" else if (rawTime.contains(".")) "." else " "
+            val parts = rawTime.split(separator).filter { it.isNotBlank() }
+            var hours = parts.getOrNull(0)?.trim()?.toIntOrNull() ?: 9
+            val mins = parts.getOrNull(1)?.trim()?.toIntOrNull() ?: 0
             if (isPm && hours < 12) hours += 12
             if (isAm && hours == 12) hours = 0
             (hours * 60) + mins
