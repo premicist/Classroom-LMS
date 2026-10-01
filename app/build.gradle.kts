@@ -10,6 +10,10 @@ plugins {
 }
 
 android {
+  // namespace must match the Kotlin/Java package root under src/main/java.
+  // applicationId is the Play Store / Firebase identity — do not change without
+  // updating google-services.json and accepting a new-install requirement.
+  // Future work: migrate sources to com.aistudio.classroomlms and align both.
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
@@ -26,10 +30,15 @@ android {
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      val keystoreFile = file(keystorePath)
+      if (keystoreFile.exists()) {
+        storeFile = keystoreFile
+        storePassword = System.getenv("STORE_PASSWORD")
+        keyAlias = "upload"
+        keyPassword = System.getenv("KEY_PASSWORD")
+      } else {
+        initWith(getByName("debug"))
+      }
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -42,12 +51,14 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      // Use default signing config if debug.keystore is missing
+      // Default debug signing; do not force debugConfig when keystore is missing
+      isMinifyEnabled = false
     }
   }
   compileOptions {

@@ -55,6 +55,11 @@ import java.util.Calendar
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 
+/**
+ * ARCHITECTURE FREEZE: Do not add new feature logic here.
+ * Extract to focused ViewModels / UseCases instead.
+ * See ARCHITECTURE_FREEZE.md in the repo root.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClassroomViewModel(application: Application) : AndroidViewModel(application) {
 

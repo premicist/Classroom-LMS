@@ -1,5 +1,57 @@
-# Project exclude paths
-/.gradle/
-/app/build/
-/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/
-/build/
+# --- Gradle / build ---
+.gradle/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# --- Local machine / IDE ---
+local.properties
+.idea/
+*.iml
+.DS_Store
+*.swp
+*~
+.project
+.classpath
+.settings/
+.vscode/
+*.hprof
+
+# --- Secrets & credentials (never commit) ---
+.env
+.env.local
+.env.*.local
+*.jks
+*.keystore
+!debug.keystore
+google-services.json
+
+# --- Signing / CI secrets ---
+keystore.properties
+secrets.properties
+service-account*.json
+
+# --- Kotlin / Compose ---
+.kotlin/
+
+# --- Test / coverage ---
+**/jacoco/
+coverage/
+*.exec
+test-results/
+.roborazzi/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- OS ---
+Thumbs.db
+Desktop.ini

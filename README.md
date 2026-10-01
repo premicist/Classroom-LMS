@@ -1,22 +1,50 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Classroom LMS
 
-# Run and deploy your AI Studio app
+Classroom LMS is an offline-first Android application designed for teachers to manage classroom rosters, attendance, homework, grading, daily logs, lesson plans, and student support.
 
-This contains everything you need to run your app locally.
+View app in AI Studio: [AI Studio App Link](https://ai.studio/apps/b498d84a-3f44-4d5b-8315-c415b245499d)
 
-View your app in AI Studio: https://ai.studio/apps/b498d84a-3f44-4d5b-8315-c415b245499d
+## Local Setup & Run
 
-## Run Locally
+1. **Open in Android Studio**: Open Android Studio and select **Open**, choosing this repository directory.
+2. **Firebase Configuration**: Download your `google-services.json` file from your Firebase console and place it at `app/google-services.json`. *(This file is gitignored — never commit credentials!)*
+3. **Environment Variables**: Create a root `.env` file based on `.env.example` and set `GEMINI_API_KEY` if using Gemini AI features:
+   ```bash
+   cp .env.example .env
+   ```
+4. **Run Debug Build**: Select a physical device or emulator and run the `debug` build configuration from Android Studio or command line:
+   ```bash
+   ./gradlew :app:assembleDebug
+   ```
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+## Release Build & Minification
 
+Release builds have R8 code minification and resource shrinking enabled (`isMinifyEnabled = true`, `isShrinkResources = true`).
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
-7. If you have already published your app in AI Studio, please [request upload key reset](https://support.google.com/googleplay/android-developer/answer/9842756#zippy=%2Crequest-an-upload-key-reset) in Google Play Console.
+To build a release APK:
+```bash
+./gradlew :app:assembleRelease
+```
+
+### Signing Environment Variables
+
+Release signing configuration expects the following environment variables (falls back to local upload key file if unset):
+- `KEYSTORE_PATH`: Path to your upload keystore file (defaults to `${rootDir}/my-upload-key.jks`)
+- `STORE_PASSWORD`: Keystore password
+- `KEY_PASSWORD`: Key password for alias `upload`
+
+Always smoke-test release builds after assembling to verify R8 keep rules for reflection or serialization.
+
+## Security Practices
+
+Never commit the following sensitive or machine-local files to version control:
+- `.env` and `.env.local`
+- `local.properties`
+- `*.jks` / `*.keystore`
+- `app/google-services.json`
+- `keystore.properties` or `secrets.properties`
+
+## Architecture & Maintenance
+
+- **Architecture Freeze**: `ClassroomViewModel.kt` is currently frozen for new feature logic. Refer to [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md) before adding new capabilities.
+- **Cleanup Summary**: For details on package identity and git hygiene, see [CLEANUP_IMMEDIATE.md](CLEANUP_IMMEDIATE.md).
