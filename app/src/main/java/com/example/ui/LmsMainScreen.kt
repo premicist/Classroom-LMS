@@ -102,6 +102,7 @@ import com.example.ui.screens.ClassroomScheduleScreen
 import com.example.ui.screens.DisciplineLogDialog
 import com.example.ui.screens.LinkGoogleSheetDialog
 import com.example.ui.screens.PlannerScreen
+import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.StudentRosterScreen
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -305,9 +306,12 @@ fun LmsMainScreen(
                 )
 
                 NavigationDrawerItem(
-                    label = { Text("Settings (Coming Soon)") },
-                    selected = false,
-                    onClick = { scope.launch { drawerState.close() } },
+                    label = { Text("Settings") },
+                    selected = uiState.isSettingsOpen,
+                    onClick = { 
+                        scope.launch { drawerState.close() }
+                        viewModel.openSettings()
+                    },
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -505,9 +509,11 @@ fun LmsMainScreen(
     // 2. Add / Edit Student Dialog
     if (uiState.isAddEditStudentOpen) {
         val activeClassId = uiState.activeClassroom?.id ?: 1L
+        val isClassroomLinked = !uiState.activeClassroom?.linkedSpreadsheetId.isNullOrBlank()
         AddEditStudentDialog(
             classroomId = activeClassId,
             initialStudent = uiState.editingStudent,
+            isClassroomLinked = isClassroomLinked,
             onDismiss = { viewModel.closeDialogs() },
             onSave = { student ->
                 viewModel.saveStudent(student)
@@ -737,6 +743,14 @@ fun LmsMainScreen(
             classroomId = uiState.activeClassroom!!.id,
             viewModel = viewModel,
             onBack = { viewModel.closePlanner() }
+        )
+    }
+
+    if (uiState.isSettingsOpen) {
+        SettingsScreen(
+            uiState = uiState,
+            viewModel = viewModel,
+            onDismiss = { viewModel.closeSettings() }
         )
     }
 

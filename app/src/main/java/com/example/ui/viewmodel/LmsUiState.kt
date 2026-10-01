@@ -7,6 +7,9 @@ import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamCategory
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
@@ -197,6 +200,8 @@ data class LmsUiState(
     val interventions: List<InterventionEntity> = emptyList(),
     val schedules: List<ClassScheduleEntity> = emptyList(),
     val allSchedules: List<ClassScheduleEntity> = emptyList(),
+    val exams: List<ExamEntity> = emptyList(),
+    val examMarks: List<ExamMarkEntity> = emptyList(),
     
     // Computed analytics
     val studentGradeSummaries: List<StudentGradeSummary> = emptyList(),
@@ -247,6 +252,9 @@ data class LmsUiState(
     val userNotificationMessage: String? = null,
     val isPlannerOpen: Boolean = false,
     val isScheduleScreenOpen: Boolean = false,
+    val isSettingsOpen: Boolean = false,
+    val selectedDifficultyAreaForRemedial: ClassDifficultyArea? = null,
+    val isRemedialPlanDialogOpen: Boolean = false,
 
     // App Update State
     val isCheckingForUpdates: Boolean = false,
@@ -267,5 +275,10 @@ data class LmsUiState(
 
     // Term Weighting Configuration State
     val termWeightConfig: TermWeightConfig = TermWeightConfig(),
-    val isTermWeightingDialogOpen: Boolean = false
+    val isTermWeightingDialogOpen: Boolean = false,
+
+    // Exams
+    val isAddEditExamOpen: Boolean = false,
+    val editingExam: ExamEntity? = null,
+    val selectedExamCategory: ExamCategory = ExamCategory.CLASS_TEST
 )

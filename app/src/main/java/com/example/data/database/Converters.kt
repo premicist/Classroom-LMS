@@ -3,6 +3,7 @@ package com.example.data.database
 import androidx.room.TypeConverter
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceStatus
+import com.example.data.entity.ExamCategory
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionType
 import com.example.data.entity.LiveAssessmentTaskType
@@ -91,6 +92,18 @@ class Converters {
             MasteryLevel.valueOf(it)
         } catch (e: Exception) {
             MasteryLevel.MASTERED
+        }
+    }
+
+    @TypeConverter
+    fun fromExamCategory(value: ExamCategory?): String? = value?.name
+
+    @TypeConverter
+    fun toExamCategory(value: String?): ExamCategory? = value?.let {
+        try {
+            ExamCategory.valueOf(it)
+        } catch (e: Exception) {
+            ExamCategory.CLASS_TEST
         }
     }
 }

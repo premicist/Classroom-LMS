@@ -55,6 +55,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.AiInsightUtils
 import com.example.data.entity.InterventionEntity
 import com.example.ui.components.CategoryMasteryBreakdown
 import com.example.ui.components.ClassDifficultyAreaCard
@@ -468,7 +476,7 @@ fun AnalyticsScreen(
                     ClassDifficultyAreaCard(
                         area = diffArea,
                         onReviewClick = {
-                            // Focus on this assignment in the analytics
+                            viewModel.openRemedialPlanDialog(diffArea)
                         }
                     )
                 }
@@ -477,7 +485,7 @@ fun AnalyticsScreen(
 
         // SECTION 2: STUDENT SUPPORT & ENRICHMENT ROSTER & TEACHER INTERVENTIONS
         if (currentSection == 2) {
-            // Tier Filter Chips
+            // Tier Filter Chips & Header
             item {
                 Column {
                     Row(
@@ -485,12 +493,21 @@ fun AnalyticsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Student Progress & Intervention Records",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Student Support & Interventions",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Filter roster by tier or record teacher notes",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
@@ -498,7 +515,7 @@ fun AnalyticsScreen(
                             color = MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -513,7 +530,7 @@ fun AnalyticsScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -691,5 +708,62 @@ fun AnalyticsScreen(
                 }
             }
         }
+    }
+
+    if (uiState.isRemedialPlanDialogOpen && uiState.selectedDifficultyAreaForRemedial != null) {
+        val area = uiState.selectedDifficultyAreaForRemedial!!
+        val plan = AiInsightUtils.generateRemedialPlanForDifficulty(area.assignment.title)
+        val context = LocalContext.current
+
+        AlertDialog(
+            onDismissRequest = { viewModel.closeRemedialPlanDialog() },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Psychology, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("AI Remedial Lesson Plan", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Target Topic: ${area.assignment.title} (${area.assignment.type.displayName})",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = plan,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("Remedial Plan", plan)
+                        clipboard.setPrimaryClip(clip)
+                        Toast.makeText(context, "Remedial plan copied to clipboard!", Toast.LENGTH_SHORT).show()
+                        viewModel.closeRemedialPlanDialog()
+                    }
+                ) {
+                    Text("Copy Plan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.closeRemedialPlanDialog() }) {
+                    Text("Close")
+                }
+            }
+        )
     }
 }

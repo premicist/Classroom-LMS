@@ -22,6 +22,8 @@ import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.LessonPlanEntity
@@ -42,9 +44,11 @@ import com.example.data.entity.SubmissionEntity
         DailyLogEntity::class,
         ClassScheduleEntity::class,
         DisciplineRecordEntity::class,
-        LiveAssessmentEntity::class
+        LiveAssessmentEntity::class,
+        ExamEntity::class,
+        ExamMarkEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 @TypeConverters(Converters::class, com.example.data.entity.Converters::class)
@@ -60,6 +64,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun classScheduleDao(): ClassScheduleDao
     abstract fun disciplineDao(): DisciplineDao
     abstract fun liveAssessmentDao(): LiveAssessmentDao
+    abstract fun examDao(): com.example.data.dao.ExamDao
 
     companion object {
         @Volatile

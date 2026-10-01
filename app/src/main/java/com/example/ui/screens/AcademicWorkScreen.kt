@@ -46,6 +46,7 @@ fun AcademicWorkScreen(
 
     val subTabs = listOf(
         Triple("Gradebook", Icons.AutoMirrored.Filled.Grading, Icons.AutoMirrored.Outlined.Grading),
+        Triple("Exams", Icons.AutoMirrored.Filled.Assignment, Icons.AutoMirrored.Outlined.Assignment),
         Triple("Assignments", Icons.AutoMirrored.Filled.Assignment, Icons.AutoMirrored.Outlined.Assignment),
         Triple("Homework Check", Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook)
     )
@@ -66,7 +67,7 @@ fun AcademicWorkScreen(
                     text = {
                         Text(
                             text = label,
-                            fontSize = 13.sp,
+                            fontSize = 11.sp, // Reduced font size to fit 4 tabs
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
                     },
@@ -74,7 +75,7 @@ fun AcademicWorkScreen(
                         Icon(
                             imageVector = if (isSelected) filledIcon else outlinedIcon,
                             contentDescription = label,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp) // Slightly smaller icon
                         )
                     }
                 )
@@ -84,8 +85,9 @@ fun AcademicWorkScreen(
         Box(modifier = Modifier.weight(1f)) {
             when (selectedSubTab) {
                 0 -> GradebookScreen(uiState = uiState, viewModel = viewModel)
-                1 -> AssignmentsScreen(uiState = uiState, viewModel = viewModel)
-                2 -> HomeworkCheckScreen(uiState = uiState, viewModel = viewModel)
+                1 -> ExamScreen(uiState = uiState, viewModel = viewModel)
+                2 -> AssignmentsScreen(uiState = uiState, viewModel = viewModel)
+                3 -> HomeworkCheckScreen(uiState = uiState, viewModel = viewModel)
             }
         }
     }

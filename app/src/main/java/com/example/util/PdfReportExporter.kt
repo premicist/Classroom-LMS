@@ -11,6 +11,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.StudentEntity
 import com.example.ui.viewmodel.StudentGradeSummary
 import java.io.File
@@ -34,6 +36,44 @@ object PdfReportExporter {
     private const val HEADING_SIZE = 12f
     private const val BODY_SIZE = 10f
     private const val SMALL_SIZE = 9f
+
+    fun exportExamReport(
+        context: Context,
+        exam: ExamEntity,
+        marks: List<ExamMarkEntity>,
+        students: List<StudentEntity>
+    ) {
+        val title = "Exam Report: ${exam.title} (${exam.category.displayName})"
+        val sb = StringBuilder()
+        sb.appendLine("====================================================")
+        sb.appendLine("                    EXAM REPORT                     ")
+        sb.appendLine("====================================================\n")
+        sb.appendLine("Exam Name: ${exam.title}")
+        sb.appendLine("Category: ${exam.category.displayName}")
+        sb.appendLine("Date: ${exam.date}")
+        if (exam.topicOrChapter.isNotBlank()) sb.appendLine("Topic/Chapter: ${exam.topicOrChapter}")
+        sb.appendLine("Full Marks: ${exam.fullMarks.toInt()} | Pass Marks: ${exam.passMarks.toInt()}\n")
+        
+        sb.appendLine(String.format(Locale.US, "%-25s | %-10s | %-10s", "Student Name", "ID", "Marks"))
+        sb.appendLine("---------------------------------------------------------")
+        
+        students.sortedBy { it.name }.forEach { student ->
+            val markRecord = marks.find { it.studentId == student.id }
+            val marksStr = if (markRecord == null) {
+                "Not Graded"
+            } else if (markRecord.isAbsent) {
+                "ABSENT"
+            } else if (markRecord.marksObtained != null) {
+                markRecord.marksObtained.toString()
+            } else {
+                "Not Graded"
+            }
+            sb.appendLine(String.format(Locale.US, "%-25s | %-10s | %-10s", student.name.take(25), student.studentNumber, marksStr))
+        }
+        
+        sb.appendLine("\n====================================================")
+        exportAndShare(context, title, sb.toString(), "ExamReport_${exam.title.replace(" ", "_")}")
+    }
 
     fun exportStudentPortfolio(
         context: Context,

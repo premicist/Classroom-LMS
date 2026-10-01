@@ -361,10 +361,11 @@ fun DashboardScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "High: ${"%.1f".format(analytics.highestPercentage)}%  •  Low: ${"%.1f".format(analytics.lowestPercentage)}%",
-                            fontSize = 12.sp,
+                            text = "High: ${analytics.highestPercentage.toInt()}% • Low: ${analytics.lowestPercentage.toInt()}%",
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))

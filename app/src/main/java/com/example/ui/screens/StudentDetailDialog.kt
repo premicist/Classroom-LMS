@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +57,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.Psychology
+import com.example.util.AiInsightUtils
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -107,6 +118,7 @@ fun StudentDetailDialog(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val student = summary.student
+    val context = LocalContext.current
 
     val (tierBg, tierText) = when (summary.tier) {
         StudentTier.EXTRA_SUPPORT -> StatusErrorBg to StatusError
@@ -247,6 +259,149 @@ fun StudentDetailDialog(
                         MetricItem("GPA", "${summary.gpa}", MaterialTheme.colorScheme.onSurface)
                         MetricItem("HW Check", "${summary.homeworkCompletionRate.toInt()}%", EduPrimary)
                         MetricItem("Attendance", "${summary.attendanceRate.toInt()}%", StatusSuccess)
+                    }
+                }
+            }
+
+            // AI Student Intelligence & Insights Card
+            item {
+                val aiInsight = remember(summary) { AiInsightUtils.generateAiInsightForStudent(summary) }
+                var isNepaliLanguage by remember { mutableStateOf(false) }
+                val currentMessage = if (isNepaliLanguage) aiInsight.nepaliMessage else aiInsight.englishMessage
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Psychology,
+                                    contentDescription = "AI Insights",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "AI Student Intelligence & Insights",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(aiInsight.riskColor)
+                            ) {
+                                Text(
+                                    text = aiInsight.riskScore,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        // Personalized Recommendations
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "💡 AI Actionable Recommendations",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            aiInsight.recommendations.forEach { rec ->
+                                Text(
+                                    text = "• $rec",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                        // Bilingual Parent Message Generator
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "💬 AI Parent Message Generator",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (!isNepaliLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        modifier = Modifier.clickable { isNepaliLanguage = false }
+                                    ) {
+                                        Text("English", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (!isNepaliLanguage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isNepaliLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        modifier = Modifier.clickable { isNepaliLanguage = true }
+                                    ) {
+                                        Text("नेपाली", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isNepaliLanguage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                    }
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = currentMessage,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(10.dp)
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val clip = ClipData.newPlainText("Parent Message", currentMessage)
+                                        clipboard.setPrimaryClip(clip)
+                                        Toast.makeText(context, "Parent message copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text("Copy Message", fontSize = 11.sp)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        CommunicationUtils.sendWhatsAppMessage(context, student.guardianContact, currentMessage)
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text("Send via WhatsApp", fontSize = 11.sp)
+                                }
+                            }
+                        }
                     }
                 }
             }

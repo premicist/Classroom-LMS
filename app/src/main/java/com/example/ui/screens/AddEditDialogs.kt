@@ -253,6 +253,7 @@ fun AddEditClassroomDialog(
 fun AddEditStudentDialog(
     classroomId: Long,
     initialStudent: StudentEntity?,
+    isClassroomLinked: Boolean = false,
     onDismiss: () -> Unit,
     onSave: (StudentEntity) -> Unit
 ) {
@@ -265,6 +266,11 @@ fun AddEditStudentDialog(
     var notes by remember { mutableStateOf(initialStudent?.notes ?: "") }
     var photoPath by remember { mutableStateOf(initialStudent?.photoPath) }
     var isSavingPhoto by remember { mutableStateOf(false) }
+
+    // Map of custom attributes / Google Sheet synced fields for editing
+    val customAttributesMap = remember {
+        mutableStateOf(initialStudent?.customAttributes?.toMutableMap() ?: mutableMapOf())
+    }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -279,7 +285,6 @@ fun AddEditStudentDialog(
                 val savedPath = StudentPhotoStorage.savePhoto(context, uri)
                 if (savedPath != null) {
                     photoPath = savedPath
-                    // Clean up the old photo file now that it's been replaced.
                     StudentPhotoStorage.deletePhoto(previousPath)
                 }
                 isSavingPhoto = false
@@ -291,7 +296,7 @@ fun AddEditStudentDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (initialStudent == null) "Add Student" else "Edit Student",
+                text = if (initialStudent == null) "Add Student" else "Edit Student Details",
                 fontWeight = FontWeight.Bold
             )
         },
@@ -414,6 +419,48 @@ fun AddEditStudentDialog(
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Google Sheet Synced Fields / Custom Attributes Section (Automatic check if classroom is synced or attributes exist)
+                if (initialStudent != null && (isClassroomLinked || customAttributesMap.value.isNotEmpty())) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (isClassroomLinked) "Synced Google Sheet Details" else "Student Details & Attributes",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = if (isClassroomLinked)
+                            "Automatically detected synced Google Sheet fields (editable across all details):"
+                        else
+                            "Offline student details & attributes:",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    if (customAttributesMap.value.isEmpty()) {
+                        Text(
+                            text = "No additional sheet columns found for this student.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        customAttributesMap.value.forEach { (key, value) ->
+                            var attrVal by remember { mutableStateOf(value) }
+                            OutlinedTextField(
+                                value = attrVal,
+                                onValueChange = { newVal ->
+                                    attrVal = newVal
+                                    customAttributesMap.value[key] = newVal
+                                },
+                                label = { Text(key) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -426,7 +473,8 @@ fun AddEditStudentDialog(
                             email = email.trim(),
                             guardianContact = guardianContact.trim(),
                             notes = notes.trim(),
-                            photoPath = photoPath
+                            photoPath = photoPath,
+                            customAttributes = customAttributesMap.value.toMap()
                         ) ?: StudentEntity(
                             classroomId = classroomId,
                             name = name.trim(),
@@ -441,7 +489,7 @@ fun AddEditStudentDialog(
                 },
                 enabled = name.isNotBlank() && studentNumber.isNotBlank() && !isSavingPhoto
             ) {
-                Text(if (initialStudent == null) "Add" else "Save")
+                Text(if (initialStudent == null) "Add Student" else "Save Changes")
             }
         },
         dismissButton = {

@@ -57,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.entity.AttendanceStatus
@@ -216,33 +217,41 @@ private fun DailyAttendanceCheckInView(
                             )
                         }
 
-                        // Quick date toggles
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        IconButton(
+                            onClick = { showDatePicker = true },
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            DatePill(
-                                label = "Today",
-                                isSelected = selectedDate == todayStr,
-                                onClick = { onDateSelected(todayStr) }
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Pick Date",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
-                            DatePill(
-                                label = "Yesterday",
-                                isSelected = selectedDate == yesterdayStr,
-                                onClick = { onDateSelected(yesterdayStr) }
-                            )
-                            IconButton(
-                                onClick = { showDatePicker = true },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarMonth,
-                                    contentDescription = "Pick Date",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Quick date toggles
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Quick Select:",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        DatePill(
+                            label = "Today",
+                            isSelected = selectedDate == todayStr,
+                            onClick = { onDateSelected(todayStr) }
+                        )
+                        DatePill(
+                            label = "Yesterday",
+                            isSelected = selectedDate == yesterdayStr,
+                            onClick = { onDateSelected(yesterdayStr) }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -412,30 +421,35 @@ private fun AutomatedAttendanceReportsView(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Automated Attendance Report",
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = report.dateRangeText,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
                                 val text = viewModel.generateFormattedAttendanceReportText()
                                 viewModel.openExportReport(text)
                             },
                             shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Export", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Export", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 

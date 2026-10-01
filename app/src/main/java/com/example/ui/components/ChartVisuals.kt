@@ -34,8 +34,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -115,7 +117,7 @@ fun GradeDistributionBarChart(
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
-                            .width(32.dp)
+                            .width(26.dp)
                             .height((88 * animatedHeight).dp)
                             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                             .background(if (count > 0) color else MaterialTheme.colorScheme.surfaceVariant)
@@ -123,9 +125,11 @@ fun GradeDistributionBarChart(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = label.substringBefore(" "),
-                        fontSize = 13.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = color
+                        color = color,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -725,6 +729,22 @@ fun ClassDifficultyAreaCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(
+                    onClick = onReviewClick,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Psychology, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("AI Remedial Plan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

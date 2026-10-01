@@ -8,6 +8,9 @@ import com.example.data.entity.AttendanceStatus
 import com.example.data.entity.BehaviorCategory
 import com.example.data.entity.BehaviorSeverity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamCategory
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
@@ -20,6 +23,7 @@ import com.example.data.network.BatchUpdateSpreadsheetRequest
 import com.example.data.network.GoogleSheetsApi
 import com.example.data.network.Request
 import com.example.data.network.SheetProperties
+import com.example.data.network.Spreadsheet
 import com.example.data.network.ValueRange
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -65,6 +69,9 @@ class SyncRepository(
             Log.e(TAG, "Failed to connect to spreadsheet", e)
             return@withContext "Failed to connect to Google Sheet. Check Sheet ID and permissions."
         }
+
+        // --- NEW: Sync Exam Marks from Multi-Tab Layouts ---
+        syncExamMarks(classroomId, spreadsheet, authHeader)
 
         val rosterSheetTitle = spreadsheet.sheets?.firstOrNull()?.properties?.title ?: "Sheet1"
         val range = "$rosterSheetTitle!A:Z"
@@ -579,6 +586,107 @@ class SyncRepository(
                         resolved = resolvedBool
                     )
                 )
+            }
+        }
+    }
+
+    /**
+     * Pulls Exam Marks from multi-tab sheet layout (`class-test1`, `term-exam1`, etc.)
+     * This pushes missing exams and updates marks.
+     */
+    private suspend fun syncExamMarks(classroomId: Long, spreadsheet: Spreadsheet, authHeader: String) {
+        val students = database.studentDao().getStudentsByClassroomOnce(classroomId)
+        if (students.isEmpty()) return
+
+        // 1. Identify sheets matching exam prefix templates
+        val examCategories = ExamCategory.entries
+        val examSheets = spreadsheet.sheets?.filter { sheet ->
+            val title = sheet.properties.title
+            examCategories.any { cat -> title.startsWith(cat.sheetPrefix, ignoreCase = true) }
+        } ?: return
+
+        for (sheet in examSheets) {
+            val title = sheet.properties.title
+            val category = examCategories.find { title.startsWith(it.sheetPrefix, ignoreCase = true) } ?: continue
+
+            val range = "'$title'!A1:Z1000"
+            val response = try {
+                api.getSheetValues(spreadsheet.spreadsheetId, range, authHeader)
+            } catch (e: Exception) { continue }
+
+            val rows = response.values ?: continue
+            if (rows.size < 2) continue // Need at least header + 1 row
+
+            // First row might contain config: "Date: 2024-10-10", "Full Marks: 100", "Pass: 40"
+            val configRow = rows[0]
+            val headers = if (rows.size > 1) rows[1] else return
+
+            val dateStr = configRow.find { it.toString().startsWith("Date:", ignoreCase = true) }?.toString()?.substringAfter(":")?.trim() ?: "2024-01-01"
+            val fullMarks = configRow.find { it.toString().startsWith("Full Marks:", ignoreCase = true) }?.toString()?.substringAfter(":")?.trim()?.toDoubleOrNull() ?: 100.0
+            val passMarks = configRow.find { it.toString().startsWith("Pass Marks:", ignoreCase = true) }?.toString()?.substringAfter(":")?.trim()?.toDoubleOrNull() ?: 40.0
+            val topic = configRow.find { it.toString().startsWith("Topic:", ignoreCase = true) }?.toString()?.substringAfter(":")?.trim() ?: ""
+
+            // Find or Create ExamEntity
+            val existingExams = database.examDao().getExamsForClassroomOnce(classroomId)
+            var exam = existingExams.find { it.title.equals(title, ignoreCase = true) && it.category == category }
+            
+            if (exam == null) {
+                val newExam = ExamEntity(
+                    classroomId = classroomId,
+                    category = category,
+                    title = title,
+                    topicOrChapter = topic,
+                    fullMarks = fullMarks,
+                    passMarks = passMarks,
+                    date = dateStr
+                )
+                val id = database.examDao().insertExam(newExam)
+                exam = newExam.copy(id = id)
+            } else {
+                // Update config if changed
+                if (exam.fullMarks != fullMarks || exam.passMarks != passMarks || exam.date != dateStr || exam.topicOrChapter != topic) {
+                    exam = exam.copy(fullMarks = fullMarks, passMarks = passMarks, date = dateStr, topicOrChapter = topic)
+                    database.examDao().updateExam(exam)
+                }
+            }
+
+            // Sync Marks
+            val existingMarks = database.examDao().getMarksForExamOnce(exam.id)
+            val studentIdIdx = headers.indexOfFirst { it.toString().equals("Student ID", ignoreCase = true) }
+            val nameIdx = headers.indexOfFirst { it.toString().equals("Name", ignoreCase = true) }
+            val markIdx = headers.indexOfFirst { it.toString().equals("Marks Obtained", ignoreCase = true) }
+            val absentIdx = headers.indexOfFirst { it.toString().equals("Absent", ignoreCase = true) }
+
+            for (i in 2 until rows.size) {
+                val row = rows[i]
+                if (row.isEmpty()) continue
+
+                val studentIdStr = if (studentIdIdx >= 0) row.getOrNull(studentIdIdx)?.toString() ?: "" else ""
+                val nameStr = if (nameIdx >= 0) row.getOrNull(nameIdx)?.toString() ?: "" else ""
+                val student = students.find {
+                    (studentIdStr.isNotBlank() && it.studentNumber == studentIdStr) ||
+                    (nameStr.isNotBlank() && it.name.equals(nameStr, ignoreCase = true))
+                } ?: continue
+
+                val isAbsent = if (absentIdx >= 0) row.getOrNull(absentIdx)?.toString()?.trim()?.equals("yes", ignoreCase = true) == true else false
+                val marksStr = if (markIdx >= 0) row.getOrNull(markIdx)?.toString()?.trim() ?: "" else ""
+                val marksVal = marksStr.toDoubleOrNull()
+
+                val markEntity = existingMarks.find { it.studentId == student.id }
+                if (markEntity != null) {
+                    if (markEntity.marksObtained != marksVal || markEntity.isAbsent != isAbsent) {
+                        database.examDao().updateMark(markEntity.copy(marksObtained = marksVal, isAbsent = isAbsent))
+                    }
+                } else {
+                    database.examDao().insertMark(
+                        ExamMarkEntity(
+                            examId = exam.id,
+                            studentId = student.id,
+                            marksObtained = marksVal,
+                            isAbsent = isAbsent
+                        )
+                    )
+                }
             }
         }
     }
