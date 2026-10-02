@@ -79,7 +79,8 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                     .addMigrations(
                         com.example.data.database.Migrations.MIGRATION_6_7,
-                        com.example.data.database.Migrations.MIGRATION_7_8
+                        Migrations.MIGRATION_7_8,
+                        Migrations.MIGRATION_8_9
                     )
                     .build()
                 INSTANCE = instance

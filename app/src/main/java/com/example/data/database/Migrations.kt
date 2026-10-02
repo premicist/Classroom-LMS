@@ -60,4 +60,44 @@ object Migrations {
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_live_assessments_date` ON `live_assessments` (`date`)")
         }
     }
+
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `exams` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                    `classroomId` INTEGER NOT NULL, 
+                    `category` TEXT NOT NULL, 
+                    `title` TEXT NOT NULL, 
+                    `topicOrChapter` TEXT NOT NULL, 
+                    `fullMarks` REAL NOT NULL, 
+                    `passMarks` REAL NOT NULL, 
+                    `date` TEXT NOT NULL, 
+                    `createdAt` INTEGER NOT NULL, 
+                    FOREIGN KEY(`classroomId`) REFERENCES `classrooms`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_exams_classroomId` ON `exams` (`classroomId`)")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `exam_marks` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                    `examId` INTEGER NOT NULL, 
+                    `studentId` INTEGER NOT NULL, 
+                    `marksObtained` REAL, 
+                    `remarks` TEXT NOT NULL, 
+                    `isAbsent` INTEGER NOT NULL, 
+                    `updatedAt` INTEGER NOT NULL, 
+                    FOREIGN KEY(`examId`) REFERENCES `exams`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, 
+                    FOREIGN KEY(`studentId`) REFERENCES `students`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_exam_marks_examId` ON `exam_marks` (`examId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_exam_marks_studentId` ON `exam_marks` (`studentId`)")
+        }
+    }
 }
