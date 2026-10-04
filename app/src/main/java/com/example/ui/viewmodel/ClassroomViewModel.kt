@@ -1154,6 +1154,20 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // --- EXAMS ---
+    fun saveExam(exam: ExamEntity) {
+        viewModelScope.launch {
+            try {
+                if (exam.id == 0L) {
+                    examDao.insertExam(exam)
+                } else {
+                    examDao.updateExam(exam)
+                }
+            } catch (e: Exception) {
+                showToast("Failed to save exam")
+            }
+        }
+    }
+
     fun saveExamMark(mark: ExamMarkEntity) {
         viewModelScope.launch {
             try {

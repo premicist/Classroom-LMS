@@ -28,18 +28,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -62,6 +67,8 @@ import coil.compose.AsyncImage
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.ClassroomEntity
+import com.example.data.entity.ExamCategory
+import com.example.data.entity.ExamEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -77,8 +84,10 @@ import com.example.util.StudentPhotoStorage
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun AddEditClassroomDialog(
@@ -752,6 +761,162 @@ fun GradeSubmissionDialog(
                 }
             ) {
                 Text("Save Grade")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddEditExamDialog(
+    category: ExamCategory,
+    initialExam: ExamEntity?,
+    classroomId: Long,
+    onDismiss: () -> Unit,
+    onSave: (ExamEntity) -> Unit
+) {
+    val defaultDate = remember {
+        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    }
+
+    var title by remember { mutableStateOf(initialExam?.title ?: "") }
+    var topicOrChapter by remember { mutableStateOf(initialExam?.topicOrChapter ?: "") }
+    var fullMarksStr by remember { mutableStateOf(initialExam?.fullMarks?.toInt()?.toString() ?: "100") }
+    var passMarksStr by remember { mutableStateOf(initialExam?.passMarks?.toInt()?.toString() ?: "40") }
+    var date by remember { mutableStateOf(initialExam?.date ?: defaultDate) }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                        cal.timeInMillis = millis
+                        date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(cal.time)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Select")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = if (initialExam == null) "New ${category.displayName}" else "Edit ${category.displayName}",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Exam Name *") },
+                    placeholder = { Text("e.g. Midterm, Unit Test 1") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = topicOrChapter,
+                    onValueChange = { topicOrChapter = it },
+                    label = { Text("Topic / Chapter (Optional)") },
+                    placeholder = { Text("e.g. Chapter 4: Microeconomics") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { },
+                    readOnly = true,
+                    label = { Text("Date *") },
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Pick Date")
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = fullMarksStr,
+                        onValueChange = { fullMarksStr = it },
+                        label = { Text("Full Marks *") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = passMarksStr,
+                        onValueChange = { passMarksStr = it },
+                        label = { Text("Pass Marks *") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val fullMarks = fullMarksStr.toDoubleOrNull()
+                    val passMarks = passMarksStr.toDoubleOrNull()
+
+                    if (title.isNotBlank() && fullMarks != null && passMarks != null && date.isNotBlank()) {
+                        val exam = initialExam?.copy(
+                            title = title.trim(),
+                            topicOrChapter = topicOrChapter.trim(),
+                            fullMarks = fullMarks,
+                            passMarks = passMarks,
+                            date = date.trim()
+                        ) ?: ExamEntity(
+                            classroomId = classroomId,
+                            category = category,
+                            title = title.trim(),
+                            topicOrChapter = topicOrChapter.trim(),
+                            fullMarks = fullMarks,
+                            passMarks = passMarks,
+                            date = date.trim()
+                        )
+                        onSave(exam)
+                    }
+                },
+                enabled = title.isNotBlank() && date.isNotBlank() && fullMarksStr.isNotBlank() && passMarksStr.isNotBlank()
+            ) {
+                Text(if (initialExam == null) "Create" else "Save")
             }
         },
         dismissButton = {

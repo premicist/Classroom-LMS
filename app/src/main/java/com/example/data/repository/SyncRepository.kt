@@ -866,6 +866,45 @@ class SyncRepository(
                 body = ValueRange("Discipline_Log!A1", "ROWS", disciplineRows)
             )
 
+            // 6. Export Exams & Marks
+            val exams = database.examDao().getExamsForClassroomOnce(classroomId)
+            for (exam in exams) {
+                val sheetTitle = exam.title.ifBlank { "${exam.category.sheetPrefix}-${exam.id}" }
+                val examMarks = database.examDao().getMarksForExamOnce(exam.id)
+                val examRows = mutableListOf<List<String>>()
+
+                // Config Header Row
+                val configRow = listOf(
+                    "Date: ${exam.date}",
+                    "Full Marks: ${exam.fullMarks.toInt()}",
+                    "Pass Marks: ${exam.passMarks.toInt()}",
+                    "Topic: ${exam.topicOrChapter}"
+                )
+                examRows.add(configRow)
+
+                // Table Header Row
+                val tableHeaderRow = listOf("Student Name", "Student ID", "Marks Obtained", "Absent")
+                examRows.add(tableHeaderRow)
+
+                for (student in students) {
+                    val markEntry = examMarks.find { it.studentId == student.id }
+                    val marksStr = markEntry?.marksObtained?.toString() ?: ""
+                    val absentStr = if (markEntry?.isAbsent == true) "YES" else "NO"
+                    examRows.add(listOf(student.name, student.studentNumber, marksStr, absentStr))
+                }
+
+                try {
+                    api.updateSheetValues(
+                        spreadsheetId = spreadsheetId,
+                        range = "'$sheetTitle'!A1",
+                        authHeader = authHeader,
+                        body = ValueRange("'$sheetTitle'!A1", "ROWS", examRows)
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to push exam '$sheetTitle'", e)
+                }
+            }
+
             return@withContext "Sync & Export successful."
         } catch (e: Exception) {
             Log.e(TAG, "Export error", e)

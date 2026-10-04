@@ -98,6 +98,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.BuildConfig
+import com.example.ui.screens.AddEditExamDialog
 import com.example.ui.screens.ClassroomScheduleScreen
 import com.example.ui.screens.DisciplineLogDialog
 import com.example.ui.screens.LinkGoogleSheetDialog
@@ -530,6 +531,21 @@ fun LmsMainScreen(
             onDismiss = { viewModel.closeDialogs() },
             onSave = { assignment ->
                 viewModel.saveAssignment(assignment)
+            }
+        )
+    }
+
+    // 3b. Add / Edit Exam Dialog
+    if (uiState.isAddEditExamOpen) {
+        val activeClassId = uiState.activeClassroom?.id ?: 1L
+        AddEditExamDialog(
+            category = uiState.selectedExamCategory,
+            initialExam = uiState.editingExam,
+            classroomId = activeClassId,
+            onDismiss = { viewModel.closeAddEditExamDialog() },
+            onSave = { exam ->
+                viewModel.saveExam(exam)
+                viewModel.closeAddEditExamDialog()
             }
         )
     }
