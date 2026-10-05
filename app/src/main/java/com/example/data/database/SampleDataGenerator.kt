@@ -4,11 +4,23 @@ import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.AttendanceStatus
+import com.example.data.entity.BehaviorCategory
+import com.example.data.entity.BehaviorSeverity
+import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
+import com.example.data.entity.DailyLogEntity
+import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamCategory
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.HomeworkStatus
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.InterventionType
+import com.example.data.entity.LessonPlanEntity
+import com.example.data.entity.LiveAssessmentEntity
+import com.example.data.entity.LiveAssessmentTaskType
+import com.example.data.entity.MasteryLevel
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
@@ -41,6 +53,11 @@ object SampleDataGenerator {
         val homeworkDao = database.homeworkRecordDao()
         val attendanceDao = database.attendanceDao()
         val interventionDao = database.interventionDao()
+        val plannerDao = database.plannerDao()
+        val scheduleDao = database.classScheduleDao()
+        val disciplineDao = database.disciplineDao()
+        val liveAssessmentDao = database.liveAssessmentDao()
+        val examDao = database.examDao()
 
         // 1. Classrooms
         val mathClass = ClassroomEntity(
@@ -329,5 +346,198 @@ object SampleDataGenerator {
             )
         )
         interventionDao.insertInterventions(interventions)
+
+        // 8. Master Timetable / Schedules
+        val sampleSchedules = listOf(
+            ClassScheduleEntity(
+                classroomId = mathId,
+                weekNumber = 1,
+                dayOfWeek = "MONDAY",
+                classroomName = "Algebra II - Honors",
+                startTime = "08:30 AM",
+                endTime = "09:45 AM",
+                startMinutes = 510,
+                endMinutes = 585
+            ),
+            ClassScheduleEntity(
+                classroomId = mathId,
+                weekNumber = 1,
+                dayOfWeek = "WEDNESDAY",
+                classroomName = "Algebra II - Honors",
+                startTime = "08:30 AM",
+                endTime = "09:45 AM",
+                startMinutes = 510,
+                endMinutes = 585
+            ),
+            ClassScheduleEntity(
+                classroomId = mathId,
+                weekNumber = 1,
+                dayOfWeek = "FRIDAY",
+                classroomName = "Algebra II - Honors",
+                startTime = "08:30 AM",
+                endTime = "09:45 AM",
+                startMinutes = 510,
+                endMinutes = 585
+            ),
+            ClassScheduleEntity(
+                classroomId = bioId,
+                weekNumber = 1,
+                dayOfWeek = "TUESDAY",
+                classroomName = "AP Biology",
+                startTime = "10:00 AM",
+                endTime = "11:30 AM",
+                startMinutes = 600,
+                endMinutes = 690
+            ),
+            ClassScheduleEntity(
+                classroomId = bioId,
+                weekNumber = 1,
+                dayOfWeek = "THURSDAY",
+                classroomName = "AP Biology",
+                startTime = "10:00 AM",
+                endTime = "11:30 AM",
+                startMinutes = 600,
+                endMinutes = 690
+            ),
+            ClassScheduleEntity(
+                classroomId = histId,
+                weekNumber = 1,
+                dayOfWeek = "MONDAY",
+                classroomName = "World History",
+                startTime = "01:15 PM",
+                endTime = "02:30 PM",
+                startMinutes = 795,
+                endMinutes = 870
+            )
+        )
+        scheduleDao.insertScheduleEntriesSync(sampleSchedules)
+
+        // 9. Discipline & Merit Logs
+        val sampleDiscipline = listOf(
+            DisciplineRecordEntity(
+                studentId = mathStudentIds[0],
+                classroomId = mathId,
+                date = getPastDate(2),
+                timestamp = System.currentTimeMillis() - 2 * 86400000L,
+                category = BehaviorCategory.PRAISE_MERIT,
+                severity = BehaviorSeverity.LOW_WARNING,
+                title = "Exceptional Peer Mentorship",
+                description = "Volunteered during office hours to tutor peers struggling with factoring quadratics.",
+                actionTaken = "Commendation Certificate Issued",
+                parentNotified = true,
+                resolved = true
+            ),
+            DisciplineRecordEntity(
+                studentId = mathStudentIds[4],
+                classroomId = mathId,
+                date = getPastDate(4),
+                timestamp = System.currentTimeMillis() - 4 * 86400000L,
+                category = BehaviorCategory.UNPREPARED,
+                severity = BehaviorSeverity.LOW_WARNING,
+                title = "Repeated Incomplete Homework",
+                description = "Missing practice set 2 days consecutively.",
+                actionTaken = "Verbal Counseling & Study Plan",
+                parentNotified = true,
+                resolved = false
+            )
+        )
+        disciplineDao.insertDisciplineRecordsSync(sampleDiscipline)
+
+        // 10. Live Assessment & Observations
+        val sampleLiveAssessments = listOf(
+            LiveAssessmentEntity(
+                studentId = mathStudentIds[0],
+                classroomId = mathId,
+                date = getPastDate(1),
+                timestamp = System.currentTimeMillis() - 86400000L,
+                taskType = LiveAssessmentTaskType.CONCEPT_EXPLANATION,
+                topic = "Quadratic Discriminant Analysis",
+                masteryLevel = MasteryLevel.MASTERED,
+                diagnosticTags = "Strong Intuition, Clear Explanation",
+                remarks = "Demonstrated deep conceptual mastery of complex vs real roots.",
+                includeInCasGrade = true
+            ),
+            LiveAssessmentEntity(
+                studentId = mathStudentIds[3],
+                classroomId = mathId,
+                date = getPastDate(3),
+                timestamp = System.currentTimeMillis() - 3 * 86400000L,
+                taskType = LiveAssessmentTaskType.PEER_PROBLEM_SOLVING,
+                topic = "Factoring Trinomials",
+                masteryLevel = MasteryLevel.DEVELOPING,
+                diagnosticTags = "Sign Error Tendency",
+                remarks = "Understands grouping method but needs practice tracking negative signs.",
+                includeInCasGrade = true
+            )
+        )
+        liveAssessmentDao.insertAssessmentsSync(sampleLiveAssessments)
+
+        // 11. Exams & Student Marks
+        val classTestExam = ExamEntity(
+            classroomId = mathId,
+            category = ExamCategory.CLASS_TEST,
+            title = "Unit 1 Class Test: Quadratic Equations",
+            topicOrChapter = "Chapters 1 & 2",
+            fullMarks = 50.0,
+            passMarks = 20.0,
+            date = getPastDate(15)
+        )
+        val termExam = ExamEntity(
+            classroomId = mathId,
+            category = ExamCategory.TERMINAL,
+            title = "First Terminal Examination",
+            topicOrChapter = "Units 1 to 4 Comprehensive",
+            fullMarks = 100.0,
+            passMarks = 40.0,
+            date = getPastDate(5)
+        )
+
+        val testExamId = examDao.insertExam(classTestExam)
+        val termExamId = examDao.insertExam(termExam)
+
+        val sampleMarks = listOf(
+            // Class Test Marks
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[0], marksObtained = 48.0, remarks = "Outstanding"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[1], marksObtained = 44.5, remarks = "Very Good"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[2], marksObtained = 49.0, remarks = "Excellent"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[3], marksObtained = 28.0, remarks = "Passed, needs review"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[4], marksObtained = 32.0, remarks = "Steady improvement"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[5], marksObtained = 41.0, remarks = "Good work"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[6], marksObtained = 46.0, remarks = "Strong analytical skills"),
+            ExamMarkEntity(examId = testExamId, studentId = mathStudentIds[7], marksObtained = 47.5, remarks = "Consistent top tier"),
+
+            // Terminal Exam Marks
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[0], marksObtained = 94.0, remarks = "Grade A+"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[1], marksObtained = 88.0, remarks = "Grade A"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[2], marksObtained = 96.5, remarks = "Grade A+ (Class Rank 1)"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[3], marksObtained = 58.0, remarks = "Grade C+ (Follow up on Unit 2)"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[4], marksObtained = 64.0, remarks = "Grade B"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[5], marksObtained = 82.0, remarks = "Grade A"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[6], marksObtained = 91.0, remarks = "Grade A+"),
+            ExamMarkEntity(examId = termExamId, studentId = mathStudentIds[7], marksObtained = 92.5, remarks = "Grade A+")
+        )
+        examDao.insertExamMarksSync(sampleMarks)
+
+        // 12. Lesson Plans & Daily Logs
+        val sampleLessonPlans = listOf(
+            LessonPlanEntity(
+                classroomId = mathId,
+                unitTitle = "Unit 3: Polynomial & Rational Functions",
+                description = "Students will graph polynomial functions using end behavior, zeros, and multiplicities. Includes interactive Desmos exploration and exit ticket.",
+                targetDate = System.currentTimeMillis() + 86400000L,
+                status = "PLANNED"
+            )
+        )
+        plannerDao.insertLessonPlansSync(sampleLessonPlans)
+
+        val sampleDailyLogs = listOf(
+            DailyLogEntity(
+                classroomId = mathId,
+                date = System.currentTimeMillis() - 86400000L,
+                reflectionNotes = "Synthetic Division and Remainder Theorem covered. Class showed high engagement during whiteboard practice.",
+                wasProxyClass = false
+            )
+        )
+        plannerDao.insertDailyLogsSync(sampleDailyLogs)
     }
 }

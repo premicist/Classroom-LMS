@@ -35,6 +35,9 @@ interface LiveAssessmentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAssessments(assessments: List<LiveAssessmentEntity>): List<Long>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAssessmentsSync(assessments: List<LiveAssessmentEntity>)
+
     @Update
     suspend fun updateAssessment(assessment: LiveAssessmentEntity)
 

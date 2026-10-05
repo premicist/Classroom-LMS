@@ -9,9 +9,12 @@ import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DailyLogEntity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.HomeworkRecordEntity
 import com.example.data.entity.InterventionEntity
 import com.example.data.entity.LessonPlanEntity
+import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.squareup.moshi.JsonClass
@@ -24,17 +27,20 @@ import java.io.OutputStream
 
 @JsonClass(generateAdapter = true)
 data class DatabaseBackupData(
-    val classrooms: List<ClassroomEntity>,
-    val students: List<StudentEntity>,
-    val assignments: List<AssignmentEntity>,
-    val submissions: List<SubmissionEntity>,
-    val homeworkRecords: List<HomeworkRecordEntity>,
-    val attendanceRecords: List<AttendanceRecordEntity>,
-    val interventions: List<InterventionEntity>,
-    val lessonPlans: List<LessonPlanEntity>,
-    val dailyLogs: List<DailyLogEntity>,
-    val classSchedules: List<ClassScheduleEntity>,
-    val disciplineRecords: List<DisciplineRecordEntity>
+    val classrooms: List<ClassroomEntity> = emptyList(),
+    val students: List<StudentEntity> = emptyList(),
+    val assignments: List<AssignmentEntity> = emptyList(),
+    val submissions: List<SubmissionEntity> = emptyList(),
+    val homeworkRecords: List<HomeworkRecordEntity> = emptyList(),
+    val attendanceRecords: List<AttendanceRecordEntity> = emptyList(),
+    val interventions: List<InterventionEntity> = emptyList(),
+    val lessonPlans: List<LessonPlanEntity> = emptyList(),
+    val dailyLogs: List<DailyLogEntity> = emptyList(),
+    val classSchedules: List<ClassScheduleEntity> = emptyList(),
+    val disciplineRecords: List<DisciplineRecordEntity> = emptyList(),
+    val liveAssessments: List<LiveAssessmentEntity> = emptyList(),
+    val exams: List<ExamEntity> = emptyList(),
+    val examMarks: List<ExamMarkEntity> = emptyList()
 )
 
 class DatabaseBackupManager(private val context: Context, private val db: AppDatabase) {
@@ -55,7 +61,10 @@ class DatabaseBackupManager(private val context: Context, private val db: AppDat
                 lessonPlans = db.plannerDao().getAllLessonPlansOnce(),
                 dailyLogs = db.plannerDao().getAllDailyLogsOnce(),
                 classSchedules = db.classScheduleDao().getAllSchedulesOnce(),
-                disciplineRecords = db.disciplineDao().getAllDisciplineRecordsOnce()
+                disciplineRecords = db.disciplineDao().getAllDisciplineRecordsOnce(),
+                liveAssessments = db.liveAssessmentDao().getAllAssessmentsOnce(),
+                exams = db.examDao().getAllExamsOnce(),
+                examMarks = db.examDao().getAllExamMarksOnce()
             )
 
             val json = adapter.toJson(backupData)
@@ -92,6 +101,9 @@ class DatabaseBackupManager(private val context: Context, private val db: AppDat
                 db.plannerDao().insertDailyLogsSync(backupData.dailyLogs)
                 db.classScheduleDao().insertScheduleEntriesSync(backupData.classSchedules)
                 db.disciplineDao().insertDisciplineRecordsSync(backupData.disciplineRecords)
+                db.liveAssessmentDao().insertAssessmentsSync(backupData.liveAssessments)
+                db.examDao().insertExamsSync(backupData.exams)
+                db.examDao().insertExamMarksSync(backupData.examMarks)
             }
 
             Result.success(Unit)

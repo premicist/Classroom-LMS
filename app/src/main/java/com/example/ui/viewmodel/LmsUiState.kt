@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import com.example.data.database.LmsSettings
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceRecordEntity
@@ -280,5 +281,8 @@ data class LmsUiState(
     // Exams
     val isAddEditExamOpen: Boolean = false,
     val editingExam: ExamEntity? = null,
-    val selectedExamCategory: ExamCategory = ExamCategory.CLASS_TEST
+    val selectedExamCategory: ExamCategory = ExamCategory.CLASS_TEST,
+
+    // Persisted App Settings
+    val settings: LmsSettings = LmsSettings()
 )

@@ -6,6 +6,12 @@ import com.example.data.entity.BehaviorCategory
 import com.example.data.entity.BehaviorSeverity
 import com.example.data.entity.ClassroomEntity
 import com.example.data.entity.DisciplineRecordEntity
+import com.example.data.entity.ExamCategory
+import com.example.data.entity.ExamEntity
+import com.example.data.entity.ExamMarkEntity
+import com.example.data.entity.LiveAssessmentEntity
+import com.example.data.entity.LiveAssessmentTaskType
+import com.example.data.entity.MasteryLevel
 import com.example.data.entity.StudentEntity
 import com.example.data.repository.DatabaseBackupData
 import com.squareup.moshi.Moshi
@@ -61,6 +67,38 @@ class DatabaseBackupJsonTest {
             resolved = true
         )
 
+        val liveAssessment = LiveAssessmentEntity(
+            id = 401L,
+            studentId = 101L,
+            classroomId = 1L,
+            date = "2025-05-12",
+            timestamp = System.currentTimeMillis(),
+            taskType = LiveAssessmentTaskType.QUICK_QUIZ_QA,
+            topic = "Limits & Continuity",
+            masteryLevel = MasteryLevel.MASTERED,
+            diagnosticTags = "Strong intuition",
+            remarks = "Answered all concept checks accurately"
+        )
+
+        val exam = ExamEntity(
+            id = 501L,
+            classroomId = 1L,
+            category = ExamCategory.TERMINAL,
+            title = "Term 1 Final Exam",
+            topicOrChapter = "Units 1-5",
+            fullMarks = 100.0,
+            passMarks = 40.0,
+            date = "2025-05-20"
+        )
+
+        val examMark = ExamMarkEntity(
+            id = 601L,
+            examId = 501L,
+            studentId = 101L,
+            marksObtained = 88.5,
+            remarks = "Strong performance"
+        )
+
         val originalData = DatabaseBackupData(
             classrooms = listOf(classroom),
             students = listOf(student),
@@ -72,7 +110,10 @@ class DatabaseBackupJsonTest {
             lessonPlans = emptyList(),
             dailyLogs = emptyList(),
             classSchedules = emptyList(),
-            disciplineRecords = listOf(discipline)
+            disciplineRecords = listOf(discipline),
+            liveAssessments = listOf(liveAssessment),
+            exams = listOf(exam),
+            examMarks = listOf(examMark)
         )
 
         // 1. Serialize to JSON
@@ -98,5 +139,16 @@ class DatabaseBackupJsonTest {
         assertEquals(BehaviorCategory.PRAISE_MERIT, deserialized.disciplineRecords[0].category)
         assertEquals("Outstanding Peer Mentoring", deserialized.disciplineRecords[0].title)
         assertEquals(true, deserialized.disciplineRecords[0].parentNotified)
+
+        assertEquals(1, deserialized.liveAssessments.size)
+        assertEquals(LiveAssessmentTaskType.QUICK_QUIZ_QA, deserialized.liveAssessments[0].taskType)
+        assertEquals(MasteryLevel.MASTERED, deserialized.liveAssessments[0].masteryLevel)
+
+        assertEquals(1, deserialized.exams.size)
+        assertEquals("Term 1 Final Exam", deserialized.exams[0].title)
+        assertEquals(100.0, deserialized.exams[0].fullMarks, 0.001)
+
+        assertEquals(1, deserialized.examMarks.size)
+        assertEquals(88.5, deserialized.examMarks[0].marksObtained ?: 0.0, 0.001)
     }
 }
