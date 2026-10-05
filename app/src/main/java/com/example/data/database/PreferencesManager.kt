@@ -19,6 +19,7 @@ data class LmsSettings(
     val signaturePlaceholder: String = "Class Teacher / Principal Signature",
     val backgroundTemplatePath: String? = null,
     val isLandscapeA4: Boolean = false,
+    val isBiometricLockEnabled: Boolean = false,
     val hwWeight: Double = 20.0,
     val quizWeight: Double = 30.0,
     val projectWeight: Double = 20.0,
@@ -34,6 +35,7 @@ class PreferencesManager(private val context: Context) {
         val SIGNATURE_PLACEHOLDER = stringPreferencesKey("signature_placeholder")
         val BG_TEMPLATE_PATH = stringPreferencesKey("background_template_path")
         val IS_LANDSCAPE_A4 = booleanPreferencesKey("is_landscape_a4")
+        val IS_BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("is_biometric_lock_enabled")
         val WEIGHT_HW = doublePreferencesKey("weight_homework")
         val WEIGHT_QUIZ = doublePreferencesKey("weight_quiz")
         val WEIGHT_PROJECT = doublePreferencesKey("weight_project")
@@ -55,6 +57,7 @@ class PreferencesManager(private val context: Context) {
                 signaturePlaceholder = preferences[SIGNATURE_PLACEHOLDER] ?: "Class Teacher / Principal Signature",
                 backgroundTemplatePath = preferences[BG_TEMPLATE_PATH],
                 isLandscapeA4 = preferences[IS_LANDSCAPE_A4] ?: false,
+                isBiometricLockEnabled = preferences[IS_BIOMETRIC_LOCK_ENABLED] ?: false,
                 hwWeight = preferences[WEIGHT_HW] ?: 20.0,
                 quizWeight = preferences[WEIGHT_QUIZ] ?: 30.0,
                 projectWeight = preferences[WEIGHT_PROJECT] ?: 20.0,
@@ -84,6 +87,7 @@ class PreferencesManager(private val context: Context) {
                 preferences.remove(BG_TEMPLATE_PATH)
             }
             preferences[IS_LANDSCAPE_A4] = settings.isLandscapeA4
+            preferences[IS_BIOMETRIC_LOCK_ENABLED] = settings.isBiometricLockEnabled
             preferences[WEIGHT_HW] = settings.hwWeight
             preferences[WEIGHT_QUIZ] = settings.quizWeight
             preferences[WEIGHT_PROJECT] = settings.projectWeight

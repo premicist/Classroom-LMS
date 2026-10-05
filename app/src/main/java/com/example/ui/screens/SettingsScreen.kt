@@ -45,6 +45,7 @@ fun SettingsScreen(
     var signaturePlaceholder by remember(uiState.settings) { mutableStateOf(uiState.settings.signaturePlaceholder) }
     var backgroundTemplatePath by remember(uiState.settings) { mutableStateOf(uiState.settings.backgroundTemplatePath) }
     var isLandscapeA4 by remember(uiState.settings) { mutableStateOf(uiState.settings.isLandscapeA4) }
+    var isBiometricLockEnabled by remember(uiState.settings) { mutableStateOf(uiState.settings.isBiometricLockEnabled) }
 
     // Grading Rules & Weightage
     var hwWeight by remember(uiState.settings) { mutableStateOf(uiState.settings.hwWeight.toInt().toString()) }
@@ -60,6 +61,7 @@ fun SettingsScreen(
             signaturePlaceholder = signaturePlaceholder,
             backgroundTemplatePath = backgroundTemplatePath,
             isLandscapeA4 = isLandscapeA4,
+            isBiometricLockEnabled = isBiometricLockEnabled,
             hwWeight = hwWeight.toDoubleOrNull() ?: 20.0,
             quizWeight = quizWeight.toDoubleOrNull() ?: 30.0,
             projectWeight = projectWeight.toDoubleOrNull() ?: 20.0,
@@ -281,6 +283,45 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Bold,
                         color = if (totalWeight == 100) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     )
+                }
+            }
+
+            // SECTION 3: SECURITY & STUDENT DATA PRIVACY
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Security & Student Data Privacy",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Require device biometric authentication (Fingerprint / Face ID / Screen PIN) when opening Classroom LMS to safeguard student grades, disciplinary records, and guardian contact details.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Biometric / Screen PIN Lock", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = if (isBiometricLockEnabled) "Enabled — Authenticate on app launch" else "Disabled — Instant access without lock",
+                                fontSize = 12.sp,
+                                color = if (isBiometricLockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = isBiometricLockEnabled,
+                            onCheckedChange = { isBiometricLockEnabled = it }
+                        )
+                    }
                 }
             }
 

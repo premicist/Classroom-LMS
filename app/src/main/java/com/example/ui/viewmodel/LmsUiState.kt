@@ -283,6 +283,7 @@ data class LmsUiState(
     val editingExam: ExamEntity? = null,
     val selectedExamCategory: ExamCategory = ExamCategory.CLASS_TEST,
 
-    // Persisted App Settings
-    val settings: LmsSettings = LmsSettings()
+    // Persisted App Settings & Security
+    val settings: LmsSettings = LmsSettings(),
+    val isAppLocked: Boolean = false
 )

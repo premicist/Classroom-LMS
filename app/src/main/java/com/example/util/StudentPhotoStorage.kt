@@ -17,6 +17,7 @@ import java.util.UUID
 object StudentPhotoStorage {
 
     private const val FOLDER_NAME = "student_photos"
+    private const val MAX_PHOTO_BYTES = 10 * 1024 * 1024L // 10MB limit
 
     /**
      * Copies the image at [sourceUri] into internal storage and returns the
@@ -30,11 +31,21 @@ object StudentPhotoStorage {
 
                 context.contentResolver.openInputStream(sourceUri)?.use { input ->
                     destFile.outputStream().use { output ->
-                        input.copyTo(output)
+                        val buffer = ByteArray(8192)
+                        var totalBytes = 0L
+                        var bytesRead: Int
+                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                            totalBytes += bytesRead
+                            if (totalBytes > MAX_PHOTO_BYTES) {
+                                destFile.delete()
+                                return@withContext null
+                            }
+                            output.write(buffer, 0, bytesRead)
+                        }
                     }
                 } ?: return@withContext null
 
-                destFile.absolutePath
+                destFile.canonicalPath
             } catch (e: Exception) {
                 null
             }
@@ -48,7 +59,10 @@ object StudentPhotoStorage {
         if (path.isNullOrBlank()) return
         withContext(Dispatchers.IO) {
             try {
-                File(path).let { if (it.exists()) it.delete() }
+                val file = File(path)
+                if (file.name.endsWith(".jpg") && file.exists()) {
+                    file.delete()
+                }
             } catch (e: Exception) {
                 // Best-effort cleanup; ignore failures.
             }

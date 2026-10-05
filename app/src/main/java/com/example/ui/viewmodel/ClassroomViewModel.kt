@@ -88,6 +88,8 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _selectedClassroomId = MutableStateFlow<Long?>(null)
 
+    private var isFirstSettingsLoad = true
+
     init {
         repository = ClassroomRepository(db)
         scheduleRepository = ScheduleRepository(db.classScheduleDao())
@@ -134,7 +136,11 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         // Settings from DataStore
         viewModelScope.launch {
             preferencesManager.settingsFlow.collect { settings ->
-                _uiState.update { it.copy(settings = settings) }
+                _uiState.update { state ->
+                    val shouldLock = if (isFirstSettingsLoad && settings.isBiometricLockEnabled) true else state.isAppLocked
+                    state.copy(settings = settings, isAppLocked = shouldLock)
+                }
+                isFirstSettingsLoad = false
             }
         }
 
@@ -1227,6 +1233,10 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 showToast("Failed to save settings")
             }
         }
+    }
+
+    fun setAppLocked(locked: Boolean) {
+        _uiState.update { it.copy(isAppLocked = locked) }
     }
 
     fun showToast(message: String) {

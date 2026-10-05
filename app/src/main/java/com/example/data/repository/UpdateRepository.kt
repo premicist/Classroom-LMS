@@ -10,6 +10,9 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.io.File
+import java.io.FileInputStream
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 data class AppUpdateInfo(
@@ -19,13 +22,14 @@ data class AppUpdateInfo(
     val releaseTitle: String,
     val releaseNotes: String,
     val downloadUrl: String,
-    val publishedAt: String = ""
+    val publishedAt: String = "",
+    val sha256: String? = null
 )
 
 class UpdateRepository {
     private val gitHubService: GitHubReleaseService by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
         }
 
         val okHttpClient = OkHttpClient.Builder()
@@ -65,7 +69,8 @@ class UpdateRepository {
                 latestVersionName = latestVersionTag,
                 releaseTitle = "Classroom LMS v$latestVersionTag",
                 releaseNotes = versionInfo.releaseNotes.ifBlank { "New features and enhancements available." },
-                downloadUrl = versionInfo.downloadUrl
+                downloadUrl = versionInfo.downloadUrl,
+                sha256 = versionInfo.sha256
             )
 
             Result.success(updateInfo)
@@ -87,6 +92,24 @@ class UpdateRepository {
                 if (latestNum < currentNum) return false
             }
             return false
+        }
+
+        fun verifyFileSha256(file: File, expectedSha256: String): Boolean {
+            if (!file.exists() || !file.isFile || expectedSha256.isBlank()) return false
+            return try {
+                val digest = MessageDigest.getInstance("SHA-256")
+                FileInputStream(file).use { fis ->
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    while (fis.read(buffer).also { bytesRead = it } != -1) {
+                        digest.update(buffer, 0, bytesRead)
+                    }
+                }
+                val calculated = digest.digest().joinToString("") { "%02x".format(it) }
+                calculated.equals(expectedSha256.trim(), ignoreCase = true)
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 }
