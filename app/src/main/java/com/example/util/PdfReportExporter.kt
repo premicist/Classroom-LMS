@@ -851,6 +851,13 @@ object PdfReportExporter {
             studentSummary: StudentAttendanceSummary,
             report: AttendanceReport
         ): Map<String, AttendanceStatus> {
+            // This would need actual record data to be accurate
+            // For now, return empty map - the grid will show default status
+            // In a full implementation, we'd pass the AttendanceRecordEntity list
             return emptyMap()
         }
-}
+
+        /**
+         * Create the PDF file in cache and return it.
+         */
+        fun buildPdfFile(

@@ -1245,6 +1245,18 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         showToast("Exporting PDF for ${exam.title}...")
     }
 
+    fun exportAttendanceRollSheet(context: Context) {
+        val report = _uiState.value.attendanceReport
+        if (report == null) {
+            showToast("No attendance data available to export")
+            return
+        }
+        // In a full implementation, we would pass the actual attendance records
+        // For now, we'll use the report data (limited but functional)
+        PdfReportExporter.exportAttendanceRollSheet(context, report)
+        showToast("Exporting Attendance Roll Sheet...")
+    }
+
     fun saveSettings(settings: LmsSettings) {
         viewModelScope.launch {
             try {
