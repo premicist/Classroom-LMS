@@ -1260,6 +1260,43 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(isAppLocked = locked) }
     }
 
+    fun importStudentsFromCsv(classroomId: Long, uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val csvContent = getApplication<Application>().contentResolver.openInputStream(uri)?.use { inputStream ->
+                    inputStream.bufferedReader().use { it.readText() }
+                } ?: throw IllegalStateException("Could not read file from selected URI")
+
+                val parsed = SpreadsheetUtils.parseCsvRosterText(csvContent)
+                if (parsed.isEmpty()) {
+                    showToast("No valid student rows found in file")
+                    return@launch
+                }
+
+                val avatarColors = listOf(
+                    0xFF6750A4, 0xFF00639B, 0xFF825500, 0xFF059669, 0xFF2563EB, 0xFF7D5260, 0xFFD97706, 0xFF0284C7
+                )
+
+                val entities = parsed.mapIndexed { idx, p ->
+                    StudentEntity(
+                        classroomId = classroomId,
+                        name = p.name,
+                        studentNumber = p.studentNumber,
+                        email = p.email,
+                        guardianContact = p.guardianContact,
+                        notes = p.notes,
+                        avatarColorHex = avatarColors[idx % avatarColors.size]
+                    )
+                }
+
+                repository.insertStudents(entities)
+                showToast("Successfully imported ${entities.size} students!")
+            } catch (e: Exception) {
+                showToast("CSV Import failed: ${e.localizedMessage ?: "Unknown error"}")
+            }
+        }
+    }
+
     fun showToast(message: String) {
         _uiState.update { it.copy(userNotificationMessage = message) }
     }
