@@ -1256,6 +1256,10 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun setAppLocked(locked: Boolean) {
+        _uiState.update { it.copy(isAppLocked = locked) }
+    }
+
     fun showToast(message: String) {
         _uiState.update { it.copy(userNotificationMessage = message) }
     }
