@@ -451,6 +451,18 @@ private fun AutomatedAttendanceReportsView(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Export", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                viewModel.exportAttendanceRollSheet(context)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Print Roll", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
