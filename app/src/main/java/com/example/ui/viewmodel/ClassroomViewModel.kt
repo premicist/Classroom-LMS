@@ -1227,6 +1227,35 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun deleteExam(exam: ExamEntity) {
+        viewModelScope.launch {
+            try {
+                examDao.deleteExam(exam)
+                showToast("Exam deleted")
+            } catch (e: Exception) {
+                showToast("Failed to delete exam")
+            }
+        }
+    }
+
+    fun exportExamReport(context: Context, exam: ExamEntity) {
+        val marks = _uiState.value.examMarks.filter { it.examId == exam.id }
+        val students = _uiState.value.students
+        PdfReportExporter.exportExamReport(context, exam, marks, students)
+        showToast("Exporting PDF for ${exam.title}...")
+    }
+
+    fun saveSettings(settings: LmsSettings) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveSettings(settings)
+                showToast("Settings & Templates Saved Successfully!")
+            } catch (e: Exception) {
+                showToast("Failed to save settings")
+            }
+        }
+    }
+
     fun showToast(message: String) {
         _uiState.update { it.copy(userNotificationMessage = message) }
     }
