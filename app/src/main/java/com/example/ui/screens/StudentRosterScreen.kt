@@ -1,6 +1,9 @@
 package com.example.ui.screens
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -83,9 +87,16 @@ fun StudentRosterScreen(
     onDeleteStudent: (StudentEntity) -> Unit,
     onReassignClassroom: (StudentEntity, Long) -> Unit,
     onLogDiscipline: (StudentEntity) -> Unit = {},
+    onImportCsv: ((Uri) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     BackHandler { onBack() }
+
+    val csvPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let { onImportCsv?.invoke(it) }
+    }
 
     var searchQuery by remember { mutableStateOf("") }
     var filterClassroomId by remember { mutableStateOf<Long?>(activeClassroomId) }
@@ -129,13 +140,27 @@ fun StudentRosterScreen(
                 },
                 actions = {
                     if (!isClassroomLinked) {
-                        FilledTonalButton(
-                            onClick = onAddStudent,
-                            modifier = Modifier.padding(end = 8.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Add")
+                            if (onImportCsv != null) {
+                                IconButton(onClick = {
+                                    csvPickerLauncher.launch(
+                                        arrayOf("text/csv", "text/comma-separated-values", "text/tab-separated-values", "text/plain", "*/*")
+                                    )
+                                }) {
+                                    Icon(Icons.Default.FileUpload, contentDescription = "Import CSV Roster")
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = onAddStudent,
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Add")
+                            }
                         }
                     }
                 },

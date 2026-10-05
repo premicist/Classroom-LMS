@@ -698,6 +698,10 @@ fun LmsMainScreen(
             },
             onLogDiscipline = { student ->
                 viewModel.openAddDiscipline(student)
+            },
+            onImportCsv = { uri ->
+                val classroomId = uiState.activeClassroom?.id ?: return@StudentRosterScreen
+                viewModel.importStudentsFromCsv(classroomId, uri)
             }
         )
     }
