@@ -20,8 +20,14 @@ interface ExamDao {
     @Query("SELECT * FROM exams WHERE classroomId = :classroomId ORDER BY date DESC, createdAt DESC")
     fun getExamsForClassroomOnce(classroomId: Long): List<ExamEntity>
 
+    @Query("SELECT * FROM exams ORDER BY date DESC, createdAt DESC")
+    fun getAllExamsOnce(): List<ExamEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExam(exam: ExamEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertExamsSync(exams: List<ExamEntity>)
 
     @Update
     suspend fun updateExam(exam: ExamEntity)
@@ -30,11 +36,17 @@ interface ExamDao {
     suspend fun deleteExam(exam: ExamEntity)
 
     // Marks
+    @Query("SELECT exam_marks.* FROM exam_marks INNER JOIN exams ON exam_marks.examId = exams.id WHERE exams.classroomId = :classroomId")
+    fun getMarksForClassroom(classroomId: Long): Flow<List<ExamMarkEntity>>
+
     @Query("SELECT * FROM exam_marks WHERE examId = :examId")
     fun getMarksForExam(examId: Long): Flow<List<ExamMarkEntity>>
 
     @Query("SELECT * FROM exam_marks WHERE examId = :examId")
     fun getMarksForExamOnce(examId: Long): List<ExamMarkEntity>
+
+    @Query("SELECT * FROM exam_marks")
+    fun getAllExamMarksOnce(): List<ExamMarkEntity>
 
     @Query("SELECT * FROM exam_marks WHERE studentId = :studentId")
     fun getMarksForStudentOnce(studentId: Long): List<ExamMarkEntity>
@@ -44,6 +56,9 @@ interface ExamDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMarks(marks: List<ExamMarkEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertExamMarksSync(marks: List<ExamMarkEntity>)
 
     @Update
     suspend fun updateMark(mark: ExamMarkEntity)

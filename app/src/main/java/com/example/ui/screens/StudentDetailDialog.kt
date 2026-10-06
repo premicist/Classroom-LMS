@@ -29,6 +29,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -36,13 +39,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingFlat
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -447,9 +445,9 @@ fun StudentDetailDialog(
             if (trajectory != null) {
                 item {
                     val (trendColor, trendIcon) = when (trajectory.trend) {
-                        TrajectoryTrend.IMPROVING -> StatusSuccess to Icons.Default.TrendingUp
-                        TrajectoryTrend.STEADY -> Color(0xFF0284C7) to Icons.Default.TrendingFlat
-                        TrajectoryTrend.DECLINING -> StatusError to Icons.Default.TrendingDown
+                        TrajectoryTrend.IMPROVING -> StatusSuccess to Icons.AutoMirrored.Filled.TrendingUp
+                        TrajectoryTrend.STEADY -> Color(0xFF0284C7) to Icons.AutoMirrored.Filled.TrendingFlat
+                        TrajectoryTrend.DECLINING -> StatusError to Icons.AutoMirrored.Filled.TrendingDown
                     }
 
                     Card(

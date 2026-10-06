@@ -20,15 +20,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BeachAccess
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Grade
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
@@ -94,7 +94,7 @@ fun DashboardScreen(
         ),
         ServicePortalTile(
             title = "Homework",
-            icon = Icons.Default.MenuBook,
+            icon = Icons.AutoMirrored.Filled.MenuBook,
             color = EduPrimary,
             onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
         ),
@@ -118,7 +118,7 @@ fun DashboardScreen(
         ),
         ServicePortalTile(
             title = "Planner",
-            icon = Icons.Default.EventNote,
+            icon = Icons.AutoMirrored.Filled.EventNote,
             color = Color(0xFFD97706),
             onClick = { viewModel.openPlanner() }
         ),
@@ -331,7 +331,7 @@ fun DashboardScreen(
                         title = "Pending Grading",
                         value = "${analytics.pendingGradingCount}",
                         subtitle = "${analytics.totalAssignments} total tasks",
-                        icon = Icons.Default.Assignment,
+                        icon = Icons.AutoMirrored.Filled.Assignment,
                         accentColor = if (analytics.pendingGradingCount > 0) StatusWarning else StatusSuccess,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }

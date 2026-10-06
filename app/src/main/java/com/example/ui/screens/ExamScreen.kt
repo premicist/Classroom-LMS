@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
@@ -173,7 +174,32 @@ fun ExamRecordCard(
     viewModel: ClassroomViewModel
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
     val marks = uiState.examMarks.filter { it.examId == exam.id }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Delete Exam", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete '${exam.title}' and all associated student marks?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        viewModel.deleteExam(exam)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
     
     val totalStudents = uiState.students.size.coerceAtLeast(1)
     val gradedCount = marks.count { it.marksObtained != null }
@@ -219,8 +245,13 @@ fun ExamRecordCard(
                         }
                     }
                 }
-                IconButton(onClick = { viewModel.openAddEditExamDialog(exam.category, exam) }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit Exam", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row {
+                    IconButton(onClick = { viewModel.openAddEditExamDialog(exam.category, exam) }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Exam", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    IconButton(onClick = { showDeleteConfirmation = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Exam", tint = StatusError)
+                    }
                 }
             }
 
@@ -286,7 +317,7 @@ fun ExamRecordCard(
             // Expanded Marks Grid
             if (expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 uiState.students.forEach { student ->

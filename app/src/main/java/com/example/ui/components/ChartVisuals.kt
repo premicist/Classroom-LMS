@@ -21,14 +21,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingFlat
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -764,9 +764,9 @@ fun StudentTrajectoryCard(
     val trend = trajectory.trend
 
     val (trendColor, trendIcon) = when (trend) {
-        TrajectoryTrend.IMPROVING -> StatusSuccess to Icons.Default.TrendingUp
-        TrajectoryTrend.STEADY -> Color(0xFF0284C7) to Icons.Default.TrendingFlat
-        TrajectoryTrend.DECLINING -> StatusError to Icons.Default.TrendingDown
+        TrajectoryTrend.IMPROVING -> StatusSuccess to Icons.AutoMirrored.Filled.TrendingUp
+        TrajectoryTrend.STEADY -> Color(0xFF0284C7) to Icons.AutoMirrored.Filled.TrendingFlat
+        TrajectoryTrend.DECLINING -> StatusError to Icons.AutoMirrored.Filled.TrendingDown
     }
 
     val (tierBg, tierText) = when (trajectory.tier) {
