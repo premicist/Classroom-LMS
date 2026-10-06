@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.BuildConfig
 import com.example.data.dao.AssignmentDao
 import com.example.data.dao.AttendanceDao
 import com.example.data.dao.ClassScheduleDao
