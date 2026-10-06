@@ -121,7 +121,10 @@ import com.example.ui.screens.StudentRosterScreen
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.CompositionLocalProvider
 import com.example.ui.theme.StatusError
+import com.example.ui.util.LocalWindowSizeCategory
+import com.example.ui.util.rememberWindowSizeCategory
 import com.example.ui.viewmodel.AnalyticsViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsTab
@@ -241,9 +244,12 @@ fun LmsMainScreen(
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
+    val windowSizeCategory = rememberWindowSizeCategory()
+
+    CompositionLocalProvider(LocalWindowSizeCategory provides windowSizeCategory) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
             ModalDrawerSheet {
                 Spacer(Modifier.height(24.dp))
                 // Profile Section
@@ -898,6 +904,7 @@ fun LmsMainScreen(
                 }
             }
         )
+    }
     }
 }
 }

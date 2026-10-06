@@ -69,6 +69,8 @@ import com.example.ui.theme.EduPrimary
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
+import com.example.ui.util.LocalWindowSizeCategory
+import com.example.ui.util.adaptiveHorizontalPadding
 import com.example.ui.viewmodel.AttendanceUiState
 import com.example.ui.viewmodel.AttendanceViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
@@ -183,9 +185,16 @@ private fun DailyAttendanceCheckInView(
         }
     }
 
+<<<<<<< HEAD
     val allStudents = if (attendanceUiState.students.isNotEmpty()) attendanceUiState.students else uiState.students
     val allAttendance = if (attendanceUiState.attendanceRecords.isNotEmpty()) attendanceUiState.attendanceRecords else uiState.attendanceRecords
     val dateRecords = allAttendance.filter { it.date == selectedDate }
+=======
+    val isCompact = LocalWindowSizeCategory.current.isCompact
+    val horizontalPadding = LocalWindowSizeCategory.current.adaptiveHorizontalPadding()
+
+    val dateRecords = uiState.attendanceRecords.filter { it.date == selectedDate }
+>>>>>>> 8d9b7a0 (feat: Add adaptive window utilities and smartphone responsive UI fixes)
     val recordMap = dateRecords.associateBy { it.studentId }
 
     val presCount = dateRecords.count { it.status == AttendanceStatus.PRESENT }
@@ -198,9 +207,9 @@ private fun DailyAttendanceCheckInView(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = horizontalPadding),
         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
     ) {
         // Date & Summary Card
         item {
@@ -210,7 +219,7 @@ private fun DailyAttendanceCheckInView(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(if (isCompact) 12.dp else 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -226,7 +235,7 @@ private fun DailyAttendanceCheckInView(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Session Date: $selectedDate",
-                                fontSize = 14.sp,
+                                fontSize = if (isCompact) 13.sp else 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -245,15 +254,15 @@ private fun DailyAttendanceCheckInView(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Quick date toggles
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Quick Select:",
+                            text = if (isCompact) "Quick:" else "Quick Select:",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -269,7 +278,7 @@ private fun DailyAttendanceCheckInView(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     // Metrics row
                     Row(
@@ -277,24 +286,24 @@ private fun DailyAttendanceCheckInView(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                            .padding(12.dp),
+                            .padding(if (isCompact) 8.dp else 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = "Attendance Rate", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$attendanceRate%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (attendanceRate >= 85) StatusSuccess else StatusError)
+                            Text(text = if (isCompact) "Rate" else "Attendance Rate", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "$attendanceRate%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = if (attendanceRate >= 85) StatusSuccess else StatusError)
                         }
                         Column {
-                            Text(text = "Present", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$presCount", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
+                            Text(text = "Present", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "$presCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
                         }
                         Column {
-                            Text(text = "Absent", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$absCount", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
+                            Text(text = "Absent", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "$absCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
                         }
                         Column {
-                            Text(text = "Late", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$lateCount", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusWarning)
+                            Text(text = "Late", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "$lateCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusWarning)
                         }
                     }
 
@@ -418,12 +427,16 @@ private fun AutomatedAttendanceReportsView(
         return
     }
 
+    val windowSize = LocalWindowSizeCategory.current
+    val isCompact = windowSize.isCompact
+    val horizontalPadding = windowSize.adaptiveHorizontalPadding()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = horizontalPadding),
         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
     ) {
         // Executive Attendance Analytics Card
         item {
@@ -433,7 +446,7 @@ private fun AutomatedAttendanceReportsView(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(if (isCompact) 12.dp else 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -442,7 +455,7 @@ private fun AutomatedAttendanceReportsView(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Automated Attendance Report",
-                                fontSize = 15.sp,
+                                fontSize = if (isCompact) 14.sp else 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
@@ -450,12 +463,13 @@ private fun AutomatedAttendanceReportsView(
                             )
                             Text(
                                 text = report.dateRangeText,
-                                fontSize = 11.sp,
+                                fontSize = if (isCompact) 10.sp else 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
+<<<<<<< HEAD
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
@@ -480,10 +494,37 @@ private fun AutomatedAttendanceReportsView(
                             Icon(imageVector = Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Print Roll", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+=======
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Button(
+                                onClick = {
+                                    val text = viewModel.generateFormattedAttendanceReportText()
+                                    viewModel.openExportReport(text)
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = if (isCompact) 6.dp else 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Export", fontSize = if (isCompact) 10.sp else 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Button(
+                                onClick = {
+                                    viewModel.exportAttendanceRollSheet(context)
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = if (isCompact) 6.dp else 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Print Roll", fontSize = if (isCompact) 10.sp else 11.sp, fontWeight = FontWeight.Bold)
+                            }
+>>>>>>> 8d9b7a0 (feat: Add adaptive window utilities and smartphone responsive UI fixes)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -493,8 +534,8 @@ private fun AutomatedAttendanceReportsView(
                         CircularProgressGauge(
                             percentage = report.overallAttendanceRate,
                             title = "Overall Rate",
-                            sizeDp = 90,
-                            strokeWidthDp = 9,
+                            sizeDp = if (isCompact) 78 else 90,
+                            strokeWidthDp = if (isCompact) 7 else 9,
                             accentColor = if (report.overallAttendanceRate >= 85) StatusSuccess else StatusError
                         )
 

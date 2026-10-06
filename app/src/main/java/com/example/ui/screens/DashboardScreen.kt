@@ -65,6 +65,9 @@ import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusInfo
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
+import com.example.ui.util.LocalWindowSizeCategory
+import com.example.ui.util.adaptiveGridColumns
+import com.example.ui.util.adaptiveHorizontalPadding
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsTab
 import com.example.ui.viewmodel.LmsUiState
@@ -170,12 +173,17 @@ fun DashboardScreen(
         )
     )
 
+    val windowSize = LocalWindowSizeCategory.current
+    val isCompact = windowSize.isCompact
+    val portalColumns = windowSize.adaptiveGridColumns(compact = 2, medium = 3, expanded = 4)
+    val horizontalPadding = windowSize.adaptiveHorizontalPadding()
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = horizontalPadding),
         contentPadding = PaddingValues(top = 12.dp, bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp)
     ) {
         // Today's Routine Hero Banner
         item {
@@ -193,12 +201,12 @@ fun DashboardScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(if (isCompact) 12.dp else 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(if (isCompact) 38.dp else 44.dp)
                             .clip(CircleShape)
                             .background(
                                 if (isHoliday) MaterialTheme.colorScheme.primary
@@ -210,31 +218,36 @@ fun DashboardScreen(
                             imageVector = if (isHoliday) Icons.Default.BeachAccess else Icons.Default.Schedule,
                             contentDescription = null,
                             tint = if (isHoliday) Color.White else MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(if (isCompact) 20.dp else 22.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(if (isCompact) 10.dp else 14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Today's Schedule Routine",
-                            fontSize = 14.sp,
+                            fontSize = if (isCompact) 13.sp else 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = summaryMessage,
-                            fontSize = 13.sp,
+                            fontSize = if (isCompact) 12.sp else 13.sp,
                             fontWeight = if (isHoliday) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isHoliday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isHoliday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+                    Spacer(modifier = Modifier.width(6.dp))
                     OutlinedButton(
                         onClick = { viewModel.openScheduleScreen() },
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp)
                     ) {
-                        Text("Routine", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("Routine", fontSize = if (isCompact) 10.sp else 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -254,9 +267,9 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("portal_service_grid"),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    maxItemsInEachRow = 3
+                    horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 10.dp),
+                    maxItemsInEachRow = portalColumns
                 ) {
                     portalTiles.forEach { tile ->
                         PortalTileCard(
@@ -530,6 +543,8 @@ private fun PortalTileCard(
     tile: ServicePortalTile,
     modifier: Modifier = Modifier
 ) {
+    val isCompact = LocalWindowSizeCategory.current.isCompact
+
     Surface(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -541,13 +556,16 @@ private fun PortalTileCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
+                .padding(
+                    vertical = if (isCompact) 10.dp else 12.dp,
+                    horizontal = if (isCompact) 6.dp else 8.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(if (isCompact) 38.dp else 42.dp)
                     .clip(CircleShape)
                     .background(tile.color.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
@@ -556,13 +574,13 @@ private fun PortalTileCard(
                     imageVector = tile.icon,
                     contentDescription = tile.title,
                     tint = tile.color,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(if (isCompact) 20.dp else 22.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(if (isCompact) 6.dp else 8.dp))
             Text(
                 text = tile.title,
-                fontSize = 12.sp,
+                fontSize = if (isCompact) 11.sp else 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,

@@ -35,11 +35,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
+import com.example.ui.util.LocalWindowSizeCategory
 
 @Composable
 fun QuickStatCard(
@@ -51,6 +53,9 @@ fun QuickStatCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val windowSize = LocalWindowSizeCategory.current
+    val isCompact = windowSize.isCompact
+
     val cardModifier = if (onClick != null) {
         modifier
             .fillMaxWidth()
@@ -71,13 +76,13 @@ fun QuickStatCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(if (isCompact) 10.dp else 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(if (isCompact) 36.dp else 44.dp)
+                    .clip(RoundedCornerShape(if (isCompact) 10.dp else 12.dp))
                     .background(accentColor.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -85,10 +90,10 @@ fun QuickStatCard(
                     imageVector = icon,
                     contentDescription = title,
                     tint = accentColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(if (isCompact) 20.dp else 24.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 // minLines/maxLines pin this to exactly 2 lines regardless of
                 // whether the text actually wraps, so "value" below always
@@ -97,25 +102,28 @@ fun QuickStatCard(
                 // ("Pending Grading") pushes the number to different heights.
                 Text(
                     text = title,
-                    fontSize = 12.sp,
+                    fontSize = if (isCompact) 11.sp else 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium,
                     minLines = 2,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = value,
-                    fontSize = 18.sp,
+                    fontSize = if (isCompact) 16.sp else 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = subtitle,
-                    fontSize = 11.sp,
+                    fontSize = if (isCompact) 10.sp else 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     minLines = 2,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

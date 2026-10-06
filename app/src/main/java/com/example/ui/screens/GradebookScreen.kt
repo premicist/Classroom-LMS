@@ -63,6 +63,8 @@ import com.example.ui.theme.EduPrimary
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
+import com.example.ui.util.LocalWindowSizeCategory
+import com.example.ui.util.adaptiveHorizontalPadding
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsUiState
 import com.example.ui.viewmodel.StudentGradeSummary
@@ -86,6 +88,9 @@ fun GradebookScreen(
     gradingViewModel: GradingViewModel = hiltViewModel()
 ) {
     val gradingUiState by gradingViewModel.uiState.collectAsStateWithLifecycle()
+    val windowSize = LocalWindowSizeCategory.current
+    val isCompact = windowSize.isCompact
+    val horizontalPadding = windowSize.adaptiveHorizontalPadding()
     var searchQuery by remember { mutableStateOf("") }
     var expandedStudentId by remember { mutableStateOf<Long?>(null) }
     var isInlineGradeMode by remember { mutableStateOf(false) }
@@ -108,9 +113,9 @@ fun GradebookScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = horizontalPadding),
         contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
     ) {
         // Gradebook Analytics Header Card
         item {
@@ -120,37 +125,42 @@ fun GradebookScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(if (isCompact) 12.dp else 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Real-Time Gradebook",
-                                fontSize = 16.sp,
+                                fontSize = if (isCompact) 15.sp else 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = "Weighted score & letter grade calculation",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = "Weighted score & letter grade",
+                                fontSize = if (isCompact) 11.sp else 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             OutlinedButton(
                                 onClick = {
                                     gradingViewModel.openTermWeightingDialog()
                                     viewModel.openTermWeightingDialog()
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                contentPadding = PaddingValues(horizontal = if (isCompact) 6.dp else 8.dp, vertical = 4.dp)
                             ) {
-                                Icon(imageVector = Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Weights", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Icon(imageVector = Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Weights", fontSize = if (isCompact) 10.sp else 11.sp, fontWeight = FontWeight.Bold)
                             }
 
                             Button(
@@ -163,16 +173,16 @@ fun GradebookScreen(
                                     viewModel.openExportReport(text)
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp)
                             ) {
-                                Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Export", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Export", fontSize = if (isCompact) 11.sp else 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Class Summary Row
                     Row(
@@ -180,24 +190,24 @@ fun GradebookScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                            .padding(12.dp),
+                            .padding(if (isCompact) 8.dp else 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = "Class Average", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${analytics.averagePercentage}%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = EduPrimary)
+                            Text(text = "Class Avg", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "${analytics.averagePercentage}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = EduPrimary)
                         }
                         Column {
-                            Text(text = "Average GPA", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${"%.2f".format(analytics.averageGpa)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(text = "Avg GPA", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "${"%.2f".format(analytics.averageGpa)}", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Column {
-                            Text(text = "Highest", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${analytics.highestPercentage.toInt()}%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
+                            Text(text = "Highest", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "${analytics.highestPercentage.toInt()}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
                         }
                         Column {
-                            Text(text = "Lowest", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${analytics.lowestPercentage.toInt()}%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
+                            Text(text = "Lowest", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "${analytics.lowestPercentage.toInt()}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
                         }
                     }
 
@@ -371,6 +381,57 @@ fun GradebookScreen(
                                     if (assign != null) {
                                         if (isInlineGradeMode) {
                                             var scoreInput by remember(sub.id) { mutableStateOf(sub.score?.toInt()?.toString() ?: "") }
+                                            if (isCompact) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = assign.title,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.SpaceBetween
+                                                    ) {
+                                                        Text(
+                                                            text = "Max: ${assign.maxPoints.toInt()} pts",
+                                                            fontSize = 10.sp,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            OutlinedTextField(
+                                                                value = scoreInput,
+                                                                onValueChange = { scoreInput = it },
+                                                                label = { Text("Score", fontSize = 10.sp) },
+                                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                                                                modifier = Modifier.width(76.dp),
+                                                                singleLine = true
+                                                            )
+                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                            Button(
+                                                                onClick = {
+                                                                    val s = scoreInput.toDoubleOrNull()
+                                                                    if (s != null) {
+                                                                        viewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
+                                                                    }
+                                                                },
+                                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                                                shape = RoundedCornerShape(8.dp),
+                                                                modifier = Modifier.height(36.dp)
+                                                            ) {
+                                                                Text("Save", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            } else {
                                                 Row(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
@@ -415,6 +476,7 @@ fun GradebookScreen(
                                                         Text("Save", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
+                                            }
                                         } else {
                                             Row(
                                                 modifier = Modifier
