@@ -1,3 +1,66 @@
 <resources>
     <string name="app_name">Classroom LMS</string>
+    
+    <!-- Attendance Screen Strings -->
+    <string name="session_date">Session Date:</string>
+    <string name="quick_select">Quick Select:</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="attendance_rate">Attendance Rate</string>
+    <string name="present">Present</string>
+    <string name="absent">Absent</string>
+    <string name="late">Late</string>
+    <string name="mark_all_students_present">Mark All Students Present</string>
+    <string name="class_roster">Class Roster</string>
+    <string name="tap_badge_to_change">Tap badge to change</string>
+    <string name="note_prefix">Note:</string>
+    <string name="student">Student</string>
+    <string name="id">ID</string>
+    <string name="attendance_status_present">P</string>
+    <string name="attendance_status_absent">A</string>
+    <string name="attendance_status_late">L</string>
+    <string name="attendance_status_excused">E</string>
+    <string name="attendance_legend_present">P = Present (Green)</string>
+    <string name="attendance_legend_absent">A = Absent (Red)</string>
+    <string name="attendance_legend_late">L = Late (Amber)</string>
+    <string name="attendance_legend_excused">E = Excused (Blue)</string>
+    <string name="attendance_summary_overall_rate">Summary: Overall Rate:</string>
+    <string name="attendance_summary_total_records">Total Records:</string>
+    <string name="export">Export</string>
+    <string name="print_roll">Print Roll</string>
+    <string name="automated_attendance_report">Automated Attendance Report</string>
+    <string name="chronic_absenteeism_alerts">Chronic Absenteeism Alerts (<xliff:g id="percentage">85</xliff:g>%)</string>
+    <string name="total_sessions">Total Sessions</string>
+    <string name="present_logged">Present Logged</string>
+    <string name="absent_logged">Absent Logged</string>
+    <string name="late_logged">Late Logged</string>
+    <string name="no_attendance_data">No attendance data logged yet.</string>
+    
+    <!-- Settings Screen Strings -->
+    <string name="settings_hub_templates">Settings Hub & Templates</string>
+    <string name="exam_report_portfolio_templates">Exam, Report & Portfolio Templates</string>
+    <string name="create_exam_marks_templates">Create Exam Marks Templates, customize headers, footers, and upload background A4 images for official PDF exports.</string>
+    <string name="institution_school_name">Institution / School Name</string>
+    <string name="default_report_header_title">Default Report Header Title</string>
+    <string name="default_report_footer_text">Default Report Footer Text</string>
+    <string name="signature_line_placeholder">Signature Line Placeholder</string>
+    <string name="create_exam_marks_template_pdf_background_overlay">Create Exam Marks Template (PDF Background Overlay)</string>
+    <string name="upload_designed_a4_school_letterhead">Upload a designed A4 school letterhead or marksheet layout. Exam results will be overlaid onto this image.</string>
+    <string name="upload_background">Upload Background</string>
+    <string name="background_selected">Background Selected</string>
+    <string name="no_background_image">No background image</string>
+    <string name="a4_orientation">A4 Orientation</string>
+    <string name="grading_rules_category_weightage">Grading Rules & Category Weightage</string>
+    <string name="set_category_weight_percentages">Set category weight percentages for final grade and GPA calculations (must sum to 100%):</string>
+    <string name="homework_percent">Homework %</string>
+    <string name="quizzes_percent">Quizzes %</string>
+    <string name="projects_percent">Projects %</string>
+    <string name="exams_percent">Exams %</string>
+    <string name="total_weight">Total Weight: %1$s%2$s</string>
+    <string name="security_student_data_privacy">Security & Student Data Privacy</string>
+    <string name="require_device_biometric_authentication">Require device biometric authentication (Fingerprint / Face ID / Screen PIN) when opening Classroom LMS to safeguard student grades, disciplinary records, and guardian contact details.</string>
+    <string name="biometric_screen_pin_lock">Biometric / Screen PIN Lock</string>
+    <string name="biometric_enabled_authenticate_on_app_launch">Enabled — Authenticate on app launch</string>
+    <string name="biometric_disabled_instant_access_without_lock">Disabled — Instant access without lock</string>
+    <string name="save_all_settings_rules">Save All Settings & Rules</string>
 </resources>
