@@ -74,8 +74,7 @@ class SpreadsheetUtilsTest {
 
     @Test
     fun testParseCsvRosterTextTabSeparated() {
-        val csvContent = """John Doe\t1001\tjohn@example.com\t555-1234\tGood student
-        Jane Smith\t1002\tjane@example.com\t555-5678\tNeeds improvement"""
+        val csvContent = "John Doe\t1001\tjohn@example.com\t555-1234\tGood student\nJane Smith\t1002\tjane@example.com\t555-5678\tNeeds improvement"
         val result = SpreadsheetUtils.parseCsvRosterText(csvContent)
         assertEquals(2, result.size)
         assertEquals("John Doe", result[0].name)

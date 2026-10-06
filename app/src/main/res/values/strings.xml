@@ -29,7 +29,7 @@
     <string name="export">Export</string>
     <string name="print_roll">Print Roll</string>
     <string name="automated_attendance_report">Automated Attendance Report</string>
-    <string name="chronic_absenteeism_alerts">Chronic Absenteeism Alerts (<xliff:g id="percentage">85</xliff:g>%)</string>
+    <string name="chronic_absenteeism_alerts">Chronic Absenteeism Alerts (&lt; 85%)</string>
     <string name="total_sessions">Total Sessions</string>
     <string name="present_logged">Present Logged</string>
     <string name="absent_logged">Absent Logged</string>
@@ -37,8 +37,8 @@
     <string name="no_attendance_data">No attendance data logged yet.</string>
     
     <!-- Settings Screen Strings -->
-    <string name="settings_hub_templates">Settings Hub & Templates</string>
-    <string name="exam_report_portfolio_templates">Exam, Report & Portfolio Templates</string>
+    <string name="settings_hub_templates">Settings Hub &amp; Templates</string>
+    <string name="exam_report_portfolio_templates">Exam, Report &amp; Portfolio Templates</string>
     <string name="create_exam_marks_templates">Create Exam Marks Templates, customize headers, footers, and upload background A4 images for official PDF exports.</string>
     <string name="institution_school_name">Institution / School Name</string>
     <string name="default_report_header_title">Default Report Header Title</string>
@@ -50,17 +50,17 @@
     <string name="background_selected">Background Selected</string>
     <string name="no_background_image">No background image</string>
     <string name="a4_orientation">A4 Orientation</string>
-    <string name="grading_rules_category_weightage">Grading Rules & Category Weightage</string>
+    <string name="grading_rules_category_weightage">Grading Rules &amp; Category Weightage</string>
     <string name="set_category_weight_percentages">Set category weight percentages for final grade and GPA calculations (must sum to 100%):</string>
     <string name="homework_percent">Homework %</string>
     <string name="quizzes_percent">Quizzes %</string>
     <string name="projects_percent">Projects %</string>
     <string name="exams_percent">Exams %</string>
     <string name="total_weight">Total Weight: %1$s%2$s</string>
-    <string name="security_student_data_privacy">Security & Student Data Privacy</string>
+    <string name="security_student_data_privacy">Security &amp; Student Data Privacy</string>
     <string name="require_device_biometric_authentication">Require device biometric authentication (Fingerprint / Face ID / Screen PIN) when opening Classroom LMS to safeguard student grades, disciplinary records, and guardian contact details.</string>
     <string name="biometric_screen_pin_lock">Biometric / Screen PIN Lock</string>
     <string name="biometric_enabled_authenticate_on_app_launch">Enabled — Authenticate on app launch</string>
     <string name="biometric_disabled_instant_access_without_lock">Disabled — Instant access without lock</string>
-    <string name="save_all_settings_rules">Save All Settings & Rules</string>
+    <string name="save_all_settings_rules">Save All Settings &amp; Rules</string>
 </resources>
