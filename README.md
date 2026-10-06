@@ -2,7 +2,6 @@
 
 Classroom LMS is an offline-first Android application designed for teachers to manage classroom rosters, attendance, homework, grading, daily logs, lesson plans, and student support.
 
-View app in AI Studio: [AI Studio App Link](https://ai.studio/apps/b498d84a-3f44-4d5b-8315-c415b245499d)
 
 ## Local Setup & Run
 
