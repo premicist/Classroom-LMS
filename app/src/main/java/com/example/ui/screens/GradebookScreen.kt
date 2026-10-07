@@ -153,7 +153,6 @@ fun GradebookScreen(
                             OutlinedButton(
                                 onClick = {
                                     gradingViewModel.openTermWeightingDialog()
-                                    viewModel.openTermWeightingDialog()
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = if (isCompact) 6.dp else 8.dp, vertical = 4.dp)
@@ -165,11 +164,7 @@ fun GradebookScreen(
 
                             Button(
                                 onClick = {
-                                    val text = if (gradingUiState.assignments.isNotEmpty()) {
-                                        gradingViewModel.generateFormattedGradebookReportText()
-                                    } else {
-                                        viewModel.generateFormattedGradebookReportText()
-                                    }
+                                    val text = gradingViewModel.generateFormattedGradebookReportText()
                                     viewModel.openExportReport(text)
                                 },
                                 shape = RoundedCornerShape(8.dp),
@@ -466,7 +461,7 @@ fun GradebookScreen(
                                                         onClick = {
                                                             val s = scoreInput.toDoubleOrNull()
                                                             if (s != null) {
-                                                                viewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
+                                                                gradingViewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
                                                             }
                                                         },
                                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
@@ -529,18 +524,16 @@ fun GradebookScreen(
         }
     }
 
-    val showTermWeightDialog = gradingUiState.isTermWeightingDialogOpen || uiState.isTermWeightingDialogOpen
+    val showTermWeightDialog = gradingUiState.isTermWeightingDialogOpen
     if (showTermWeightDialog) {
-        val initialConfig = if (gradingUiState.isTermWeightingDialogOpen) gradingUiState.termWeightConfig else uiState.termWeightConfig
+        val initialConfig = gradingUiState.termWeightConfig
         TermWeightingDialog(
             initialConfig = initialConfig,
             onDismiss = {
                 gradingViewModel.closeTermWeightingDialog()
-                viewModel.closeTermWeightingDialog()
             },
             onSave = { config ->
                 gradingViewModel.saveTermWeightConfig(config)
-                viewModel.saveTermWeightConfig(config)
             }
         )
     }

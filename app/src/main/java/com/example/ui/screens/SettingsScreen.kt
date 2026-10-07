@@ -28,30 +28,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.data.database.LmsSettings
-import com.example.ui.viewmodel.ClassroomViewModel
-import com.example.ui.viewmodel.LmsUiState
+import com.example.ui.viewmodel.SettingsUiState
+import com.example.ui.viewmodel.SettingsViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    uiState: LmsUiState,
-    viewModel: ClassroomViewModel,
+    uiState: SettingsUiState,
+    viewModel: SettingsViewModel,
     onDismiss: () -> Unit
 ) {
-    var schoolName by remember(uiState.settings) { mutableStateOf(uiState.settings.schoolName) }
-    var reportHeader by remember(uiState.settings) { mutableStateOf(uiState.settings.reportHeader) }
-    var reportFooter by remember(uiState.settings) { mutableStateOf(uiState.settings.reportFooter) }
-    var signaturePlaceholder by remember(uiState.settings) { mutableStateOf(uiState.settings.signaturePlaceholder) }
-    var backgroundTemplatePath by remember(uiState.settings) { mutableStateOf(uiState.settings.backgroundTemplatePath) }
-    var isLandscapeA4 by remember(uiState.settings) { mutableStateOf(uiState.settings.isLandscapeA4) }
-    var isBiometricLockEnabled by remember(uiState.settings) { mutableStateOf(uiState.settings.isBiometricLockEnabled) }
+    var schoolName by remember { mutableStateOf(uiState.settings.schoolName) }
+    var reportHeader by remember { mutableStateOf(uiState.settings.reportHeader) }
+    var reportFooter by remember { mutableStateOf(uiState.settings.reportFooter) }
+    var signaturePlaceholder by remember { mutableStateOf(uiState.settings.signaturePlaceholder) }
+    var backgroundTemplatePath by remember { mutableStateOf(uiState.settings.backgroundTemplatePath) }
+    var isLandscapeA4 by remember { mutableStateOf(uiState.settings.isLandscapeA4) }
+    var isBiometricLockEnabled by remember { mutableStateOf(uiState.settings.isBiometricLockEnabled) }
 
     // Grading Rules & Weightage
-    var hwWeight by remember(uiState.settings) { mutableStateOf(uiState.settings.hwWeight.toInt().toString()) }
-    var quizWeight by remember(uiState.settings) { mutableStateOf(uiState.settings.quizWeight.toInt().toString()) }
-    var projectWeight by remember(uiState.settings) { mutableStateOf(uiState.settings.projectWeight.toInt().toString()) }
-    var examWeight by remember(uiState.settings) { mutableStateOf(uiState.settings.examWeight.toInt().toString()) }
+    var hwWeight by remember { mutableStateOf(uiState.settings.hwWeight.toInt().toString()) }
+    var quizWeight by remember { mutableStateOf(uiState.settings.quizWeight.toInt().toString()) }
+    var projectWeight by remember { mutableStateOf(uiState.settings.projectWeight.toInt().toString()) }
+    var examWeight by remember { mutableStateOf(uiState.settings.examWeight.toInt().toString()) }
 
     fun performSave() {
         val updatedSettings = LmsSettings(

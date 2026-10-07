@@ -1,9 +1,10 @@
-package com.example.data.repository
+﻿package com.example.data.repository
 
 import com.example.BuildConfig
 import com.example.data.network.GitHubReleaseService
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -14,8 +15,9 @@ import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-data class AppUpdateInfo(
+data class UpdateInfo(
     val isUpdateAvailable: Boolean,
     val currentVersionName: String,
     val latestVersionName: String,
@@ -26,7 +28,9 @@ data class AppUpdateInfo(
     val sha256: String? = null
 )
 
-class UpdateRepository {
+@Singleton
+class UpdateRepository @Inject constructor() {
+
     private val gitHubService: GitHubReleaseService by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
@@ -53,7 +57,7 @@ class UpdateRepository {
     suspend fun checkLatestRelease(
         currentVersion: String = BuildConfig.VERSION_NAME,
         currentVersionCode: Int = BuildConfig.VERSION_CODE
-    ): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
+    ): Result<UpdateInfo> = withContext(Dispatchers.IO) {
         try {
             val versionInfo = gitHubService.getVersionInfo()
             val latestVersionTag = versionInfo.latestVersionName.trim()
@@ -63,7 +67,7 @@ class UpdateRepository {
             val hasNewerCode = versionInfo.latestVersionCode > currentVersionCode
             val hasNewerVersion = hasNewerCode || isVersionHigher(cleanLatestVersion, cleanCurrentVersion)
 
-            val updateInfo = AppUpdateInfo(
+            val updateInfo = UpdateInfo(
                 isUpdateAvailable = hasNewerVersion,
                 currentVersionName = currentVersion,
                 latestVersionName = latestVersionTag,

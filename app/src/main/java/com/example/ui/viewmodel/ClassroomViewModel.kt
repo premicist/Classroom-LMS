@@ -77,6 +77,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private val updateRepository = UpdateRepository()
     private val preferencesManager = PreferencesManager(application)
     private val backupManager = DatabaseBackupManager(application, db)
+    private val syncViewModel: SyncViewModel? = null // Placeholder for delegation
 
     private val _uiState = MutableStateFlow(
         LmsUiState(
@@ -258,65 +259,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     // UI Events & State Mutators
     // ==========================================
 
-    fun syncGoogleSheet(classroomId: Long) {
-        val classroom = uiState.value.activeClassroom ?: return
-        if (classroom.linkedSpreadsheetId.isNullOrBlank()) {
-            _uiState.update { it.copy(userNotificationMessage = "No Google Sheet linked to this classroom") }
-            return
-        }
-
-        val cleanSpreadsheetId = SpreadsheetUtils.extractSpreadsheetId(classroom.linkedSpreadsheetId)
-
-        viewModelScope.launch {
-            try {
-                if (!authManager.isUserSignedIn()) {
-                    _uiState.update { it.copy(userNotificationMessage = "Please sign in with Google first (open navigation menu).") }
-                    return@launch
-                }
-
-                val token = authManager.getAccessToken()
-                if (token == null) {
-                    _uiState.update { it.copy(userNotificationMessage = "Failed to get Google Token. Please sign out and sign in again to grant Sheets permission.") }
-                    return@launch
-                }
-                
-                _uiState.update { it.copy(userNotificationMessage = "Syncing roster with Google Sheets...") }
-                
-                val syncRepo = SyncRepository(db, token)
-                // 1. Pull Students (Roster)
-                val pullResult = syncRepo.syncClassroomRoster(classroomId, cleanSpreadsheetId)
-                
-                // Trigger a refresh of the UI state to ensure the new students show up immediately
-                _selectedClassroomId.value = null
-                _selectedClassroomId.value = classroomId
-                
-                _uiState.update { it.copy(userNotificationMessage = "Pushing attendance, homework & grades to Google Sheets...") }
-                
-                // 2. Push Grades, Attendance, and Homework
-                val pushResult = syncRepo.exportToSheets(classroomId, cleanSpreadsheetId)
-                
-                _uiState.update { it.copy(userNotificationMessage = "Sync Complete: $pullResult | $pushResult") }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(userNotificationMessage = "Sync failed: ${e.message}") }
-            }
-        }
-    }
-
-    fun linkSpreadsheet(classroomId: Long, spreadsheetId: String) {
-        viewModelScope.launch {
-            val classroom = db.classroomDao().getClassroomByIdOnce(classroomId) ?: return@launch
-            val cleanId = SpreadsheetUtils.extractSpreadsheetId(spreadsheetId).ifBlank { null }
-            val updated = classroom.copy(linkedSpreadsheetId = cleanId)
-            repository.updateClassroom(updated)
-            if (cleanId != null) {
-                syncGoogleSheet(classroomId)
-            } else {
-                _uiState.update { it.copy(userNotificationMessage = "Unlinked Google Sheet from classroom") }
-            }
-        }
-    }
-
-    fun getAuthManager() = authManager
 
     fun selectTab(tab: LmsTab) {
         _uiState.update { it.copy(selectedTab = tab) }

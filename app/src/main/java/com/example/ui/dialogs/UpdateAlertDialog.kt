@@ -25,11 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.data.repository.AppUpdateInfo
+import com.example.data.repository.UpdateInfo
 
 @Composable
 fun UpdateAlertDialog(
-    updateInfo: AppUpdateInfo,
+    updateInfo: UpdateInfo,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current

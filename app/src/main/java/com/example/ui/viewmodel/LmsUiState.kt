@@ -21,7 +21,7 @@ import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
 import com.example.data.entity.TermWeightConfig
-import com.example.data.repository.AppUpdateInfo
+import com.example.data.repository.UpdateInfo
 
 enum class TrajectoryTrend(val label: String) {
     IMPROVING("Improving Trajectory"),
@@ -259,7 +259,7 @@ data class LmsUiState(
 
     // App Update State
     val isCheckingForUpdates: Boolean = false,
-    val updateInfo: AppUpdateInfo? = null,
+    val updateInfo: UpdateInfo? = null,
     val isUpdateDialogOpen: Boolean = false,
 
     // Lesson Planner & Daily Diary State

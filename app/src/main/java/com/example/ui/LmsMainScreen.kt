@@ -126,8 +126,11 @@ import com.example.ui.theme.StatusError
 import com.example.ui.util.LocalWindowSizeCategory
 import com.example.ui.util.rememberWindowSizeCategory
 import com.example.ui.viewmodel.AnalyticsViewModel
+import com.example.ui.viewmodel.GradingViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsTab
+import com.example.ui.viewmodel.RosterViewModel
+import com.example.ui.viewmodel.SettingsViewModel
 import com.example.ui.viewmodel.StudentSupportViewModel
 import com.example.ui.viewmodel.SyncViewModel
 import com.example.util.PdfReportExporter
@@ -140,7 +143,10 @@ fun LmsMainScreen(
     onAuthenticate: (() -> Unit)? = null,
     studentSupportViewModel: StudentSupportViewModel = hiltViewModel(),
     syncViewModel: SyncViewModel = hiltViewModel(),
-    analyticsViewModel: AnalyticsViewModel = hiltViewModel()
+    analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    rosterViewModel: RosterViewModel = hiltViewModel(),
+    gradingViewModel: GradingViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -178,7 +184,7 @@ fun LmsMainScreen(
     val exportBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
-        uri?.let { viewModel.exportBackup(it) }
+        uri?.let { settingsViewModel.exportBackup(it) }
     }
 
     var showRestoreWarningDialog by remember { mutableStateOf(false) }
@@ -195,7 +201,7 @@ fun LmsMainScreen(
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val authManager = viewModel.getAuthManager()
+    val authManager = syncViewModel.authManager
 
     // Handle system back gesture / button on all overlays
     BackHandler(enabled = drawerState.isOpen) {
@@ -295,7 +301,7 @@ fun LmsMainScreen(
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
-                        viewModel.openAddClassroom() 
+                        rosterViewModel.openAddClassroom() 
                     },
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -306,7 +312,7 @@ fun LmsMainScreen(
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
-                        viewModel.openStudentRoster()
+                        rosterViewModel.openStudentRoster()
                     },
                     icon = { Icon(Icons.Default.People, contentDescription = "Student Roster") },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -386,7 +392,7 @@ fun LmsMainScreen(
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
-                        viewModel.checkForUpdates(isManual = true)
+                        settingsViewModel.checkForUpdates(isManual = true)
                     },
                     icon = { Icon(Icons.Default.SystemUpdate, contentDescription = "Check for Updates") },
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -428,7 +434,7 @@ fun LmsMainScreen(
                 classrooms = uiState.classrooms,
                 onSelectClassroom = { viewModel.selectClassroom(it.id) },
                 onMenuClick = { scope.launch { drawerState.open() } },
-                onManageClassrooms = { viewModel.openClassroomManagement() },
+                onManageClassrooms = { rosterViewModel.openClassroomManagement() },
                 onSyncClick = {
                     val classroom = uiState.activeClassroom
                     if (classroom != null) {
@@ -436,7 +442,6 @@ fun LmsMainScreen(
                             showLinkSheetDialog = true
                         } else {
                             syncViewModel.syncGoogleSheet(classroom.id)
-                            viewModel.syncGoogleSheet(classroom.id)
                         }
                     }
                 }
@@ -528,12 +533,10 @@ fun LmsMainScreen(
             onLinkAndSync = { spreadsheetId ->
                 showLinkSheetDialog = false
                 syncViewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
-                viewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
             },
             onUnlink = {
                 showLinkSheetDialog = false
                 syncViewModel.linkSpreadsheet(currentClassroom.id, "")
-                viewModel.linkSpreadsheet(currentClassroom.id, "")
             }
         )
     }
@@ -542,9 +545,9 @@ fun LmsMainScreen(
     if (uiState.isAddEditClassroomOpen) {
         AddEditClassroomDialog(
             initialClassroom = uiState.editingClassroom,
-            onDismiss = { viewModel.closeDialogs() },
+            onDismiss = { rosterViewModel.closeDialogs() },
             onSave = { classroom ->
-                viewModel.saveClassroom(classroom)
+                rosterViewModel.saveClassroom(classroom)
             }
         )
     }
@@ -557,36 +560,37 @@ fun LmsMainScreen(
             classroomId = activeClassId,
             initialStudent = uiState.editingStudent,
             isClassroomLinked = isClassroomLinked,
-            onDismiss = { viewModel.closeDialogs() },
+            onDismiss = { rosterViewModel.closeDialogs() },
             onSave = { student ->
-                viewModel.saveStudent(student)
+                rosterViewModel.saveStudent(student)
             }
         )
     }
 
     // 3. Add / Edit Assignment Dialog
-    if (uiState.isAddEditAssignmentOpen) {
+    val gradingUiState by gradingViewModel.uiState.collectAsState()
+    if (gradingUiState.isAddEditAssignmentOpen) {
         val activeClassId = uiState.activeClassroom?.id ?: 1L
         AddEditAssignmentDialog(
             classroomId = activeClassId,
-            initialAssignment = uiState.editingAssignment,
-            onDismiss = { viewModel.closeDialogs() },
+            initialAssignment = gradingUiState.editingAssignment,
+            onDismiss = { gradingViewModel.closeAddEditAssignment() },
             onSave = { assignment ->
-                viewModel.saveAssignment(assignment)
+                gradingViewModel.saveAssignment(assignment)
             }
         )
     }
 
 
     // 4. Grading Dialog
-    if (uiState.isGradingSubmissionOpen && uiState.gradingSubmission != null && uiState.gradingAssignment != null && uiState.gradingStudent != null) {
+    if (gradingUiState.isGradingSubmissionOpen && gradingUiState.gradingSubmission != null && gradingUiState.gradingAssignment != null && gradingUiState.gradingStudent != null) {
         GradeSubmissionDialog(
-            submission = uiState.gradingSubmission!!,
-            assignment = uiState.gradingAssignment!!,
-            student = uiState.gradingStudent!!,
-            onDismiss = { viewModel.closeDialogs() },
+            submission = gradingUiState.gradingSubmission!!,
+            assignment = gradingUiState.gradingAssignment!!,
+            student = gradingUiState.gradingStudent!!,
+            onDismiss = { gradingViewModel.closeGradingDialog() },
             onSave = { updatedSub ->
-                viewModel.saveSubmission(updatedSub)
+                gradingViewModel.saveSubmission(updatedSub)
             }
         )
     }
@@ -610,7 +614,7 @@ fun LmsMainScreen(
             onDismiss = { viewModel.closeStudentProfile() },
             onEditStudent = {
                 viewModel.closeStudentProfile()
-                viewModel.openEditStudent(student)
+                rosterViewModel.openEditStudent(student)
             },
             onDeleteStudent = {
                 studentToDelete = student
@@ -644,15 +648,12 @@ fun LmsMainScreen(
             students = uiState.students,
             onDismiss = {
                 studentSupportViewModel.closeInterventionDialog()
-                viewModel.closeDialogs()
             },
             onSave = { studentId, type, title, notes, date, resolved ->
                 studentSupportViewModel.saveIntervention(studentId, type, title, notes, date, resolved)
-                viewModel.saveIntervention(studentId, type, title, notes, date, resolved)
             },
             onDelete = { id ->
                 studentSupportViewModel.deleteIntervention(id)
-                viewModel.deleteIntervention(id)
             }
         )
     }
@@ -665,17 +666,17 @@ fun LmsMainScreen(
             onSelectClassroom = { viewModel.selectClassroom(it.id) },
             onAddClassroom = {
                 viewModel.closeDialogs()
-                viewModel.openAddClassroom()
+                rosterViewModel.openAddClassroom()
             },
             onEditClassroom = { cls ->
                 viewModel.closeDialogs()
-                viewModel.openEditClassroom(cls)
+                rosterViewModel.openEditClassroom(cls)
             },
             onDeleteClassroom = { cls ->
                 classroomToDelete = cls
                 viewModel.closeDialogs()
             },
-            onOpenStudentRoster = { viewModel.openStudentRoster() },
+            onOpenStudentRoster = { rosterViewModel.openStudentRoster() },
             onResetSampleData = { viewModel.resetSampleData() },
             onDismiss = { viewModel.closeDialogs() }
         )
@@ -688,7 +689,6 @@ fun LmsMainScreen(
             reportTitle = uiState.exportReportTitle,
             onDismiss = {
                 analyticsViewModel.closeExportReport()
-                viewModel.closeExportReport()
             }
         )
     }
@@ -702,18 +702,17 @@ fun LmsMainScreen(
             activeClassroomId = uiState.activeClassroom?.id,
             onBack = { viewModel.closeStudentRoster() },
             onAddStudent = { viewModel.openAddStudent() },
-            onEditStudent = { viewModel.openEditStudent(it) },
-            onDeleteStudent = { viewModel.deleteStudent(it.id) },
+            onEditStudent = { rosterViewModel.openEditStudent(it) },
+            onDeleteStudent = { rosterViewModel.deleteStudent(it.id) },
             onReassignClassroom = { student, newId ->
                 viewModel.reassignStudentClassroom(student, newId)
             },
             onLogDiscipline = { student ->
                 studentSupportViewModel.openAddDiscipline(student)
-                viewModel.openAddDiscipline(student)
             },
             onImportCsv = { uri ->
                 val classroomId = uiState.activeClassroom?.id ?: return@StudentRosterScreen
-                viewModel.importStudentsFromCsv(classroomId, uri)
+                rosterViewModel.importStudentsFromCsv(classroomId, uri)
             }
         )
     }
@@ -728,15 +727,12 @@ fun LmsMainScreen(
             classroomId = activeClassId,
             onDismiss = {
                 studentSupportViewModel.closeDisciplineDialog()
-                viewModel.closeDisciplineDialog()
             },
             onSave = { record ->
                 studentSupportViewModel.saveDisciplineRecord(record)
-                viewModel.saveDisciplineRecord(record)
             },
             onDelete = { record ->
                 studentSupportViewModel.deleteDisciplineRecord(record)
-                viewModel.deleteDisciplineRecord(record)
             }
         )
     }
@@ -751,15 +747,12 @@ fun LmsMainScreen(
             classroomId = activeClassId,
             onDismiss = {
                 studentSupportViewModel.closeLiveAssessmentDialog()
-                viewModel.closeLiveAssessmentDialog()
             },
             onSave = { assessment ->
                 studentSupportViewModel.saveLiveAssessment(assessment)
-                viewModel.saveLiveAssessment(assessment)
             },
             onDelete = { assessment ->
                 studentSupportViewModel.deleteLiveAssessment(assessment)
-                viewModel.deleteLiveAssessment(assessment)
             }
         )
     }
@@ -773,7 +766,7 @@ fun LmsMainScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        studentToDelete?.let { viewModel.deleteStudent(it.id) }
+                        studentToDelete?.let { rosterViewModel.deleteStudent(it.id) }
                         studentToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)
@@ -798,7 +791,7 @@ fun LmsMainScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        classroomToDelete?.let { viewModel.deleteClassroom(it.id) }
+                        classroomToDelete?.let { rosterViewModel.deleteClassroom(it.id) }
                         classroomToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)
@@ -824,9 +817,9 @@ fun LmsMainScreen(
 
     if (uiState.isSettingsOpen) {
         SettingsScreen(
-            uiState = uiState,
-            viewModel = viewModel,
-            onDismiss = { viewModel.closeSettings() }
+            uiState = settingsViewModel.uiState.collectAsState().value,
+            viewModel = settingsViewModel,
+            onDismiss = { settingsViewModel.setAppLocked(false); viewModel.closeSettings() }
         )
     }
 
@@ -834,7 +827,7 @@ fun LmsMainScreen(
     if (uiState.isUpdateDialogOpen && uiState.updateInfo != null) {
         UpdateAlertDialog(
             updateInfo = uiState.updateInfo!!,
-            onDismiss = { viewModel.closeUpdateDialog() }
+            onDismiss = { settingsViewModel.closeUpdateDialog() }
         )
     }
 
@@ -888,7 +881,7 @@ fun LmsMainScreen(
                         showRestoreWarningDialog = false
                         pendingRestoreUri = null
                         scope.launch { drawerState.close() }
-                        uriToRestore?.let { viewModel.restoreBackup(it) }
+                        uriToRestore?.let { settingsViewModel.restoreBackup(it) }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)
                 ) {

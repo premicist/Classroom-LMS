@@ -68,7 +68,11 @@ import com.example.ui.theme.StatusWarning
 import com.example.ui.util.LocalWindowSizeCategory
 import com.example.ui.util.adaptiveGridColumns
 import com.example.ui.util.adaptiveHorizontalPadding
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
+import com.example.ui.viewmodel.GradingViewModel
+import com.example.ui.viewmodel.RosterViewModel
+import com.example.ui.viewmodel.SyncViewModel
 import com.example.ui.viewmodel.LmsTab
 import com.example.ui.viewmodel.LmsUiState
 
@@ -84,7 +88,10 @@ data class ServicePortalTile(
 fun DashboardScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    syncViewModel: SyncViewModel = hiltViewModel(),
+    gradingViewModel: GradingViewModel = hiltViewModel(),
+    rosterViewModel: RosterViewModel = hiltViewModel()
 ) {
     val analytics = uiState.analytics
 
@@ -105,13 +112,13 @@ fun DashboardScreen(
             title = "New Task",
             icon = Icons.Default.Add,
             color = Color(0xFF7C3AED),
-            onClick = { viewModel.openAddAssignment() }
+            onClick = { gradingViewModel.openAddAssignment() }
         ),
         ServicePortalTile(
             title = "Roster",
             icon = Icons.Default.People,
             color = Color(0xFF0F766E),
-            onClick = { viewModel.openStudentRoster() }
+            onClick = { rosterViewModel.openStudentRoster() }
         ),
         ServicePortalTile(
             title = "Timetable",
@@ -146,7 +153,7 @@ fun DashboardScreen(
             icon = Icons.Default.CloudSync,
             color = Color(0xFF0284C7),
             onClick = {
-                uiState.activeClassroom?.id?.let { viewModel.syncGoogleSheet(it) }
+                uiState.activeClassroom?.id?.let { syncViewModel.syncGoogleSheet(it) }
                     ?: viewModel.showToast("No active classroom")
             }
         ),
@@ -338,7 +345,7 @@ fun DashboardScreen(
                         icon = Icons.Default.People,
                         accentColor = Color(0xFF0F766E),
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.openStudentRoster() }
+                        onClick = { rosterViewModel.openStudentRoster() }
                     )
                     QuickStatCard(
                         title = "Pending Grading",

@@ -41,6 +41,7 @@ import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.ExamUiState
 import com.example.ui.viewmodel.ExamViewModel
 import com.example.ui.viewmodel.LmsUiState
+import com.example.ui.viewmodel.SyncViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -50,7 +51,8 @@ fun ExamScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    examViewModel: ExamViewModel = hiltViewModel()
+    examViewModel: ExamViewModel = hiltViewModel(),
+    syncViewModel: SyncViewModel = hiltViewModel()
 ) {
     val examUiState by examViewModel.uiState.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf(ExamCategory.CLASS_TEST) }
@@ -160,7 +162,7 @@ fun ExamScreen(
                             if (!uiState.activeClassroom?.linkedSpreadsheetId.isNullOrBlank()) {
                                 Button(
                                     onClick = { 
-                                        uiState.activeClassroom?.id?.let { id -> viewModel.syncGoogleSheet(id) } 
+                                        uiState.activeClassroom?.id?.let { id -> syncViewModel.syncGoogleSheet(id) } 
                                     },
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp),

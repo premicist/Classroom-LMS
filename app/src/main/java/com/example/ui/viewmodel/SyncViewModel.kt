@@ -33,7 +33,7 @@ data class SyncUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SyncViewModel @Inject constructor(
-    private val authManager: AuthManager,
+    val authManager: AuthManager,
     private val classroomDao: ClassroomDao,
     private val preferencesManager: PreferencesManager,
     private val database: AppDatabase
