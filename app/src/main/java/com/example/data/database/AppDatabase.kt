@@ -31,7 +31,6 @@ import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
-import com.example.BuildConfig
 
 @Database(
     entities = [

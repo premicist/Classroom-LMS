@@ -185,16 +185,11 @@ private fun DailyAttendanceCheckInView(
         }
     }
 
-<<<<<<< HEAD
     val allStudents = if (attendanceUiState.students.isNotEmpty()) attendanceUiState.students else uiState.students
     val allAttendance = if (attendanceUiState.attendanceRecords.isNotEmpty()) attendanceUiState.attendanceRecords else uiState.attendanceRecords
     val dateRecords = allAttendance.filter { it.date == selectedDate }
-=======
     val isCompact = LocalWindowSizeCategory.current.isCompact
     val horizontalPadding = LocalWindowSizeCategory.current.adaptiveHorizontalPadding()
-
-    val dateRecords = uiState.attendanceRecords.filter { it.date == selectedDate }
->>>>>>> 8d9b7a0 (feat: Add adaptive window utilities and smartphone responsive UI fixes)
     val recordMap = dateRecords.associateBy { it.studentId }
 
     val presCount = dateRecords.count { it.status == AttendanceStatus.PRESENT }
@@ -469,32 +464,6 @@ private fun AutomatedAttendanceReportsView(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-<<<<<<< HEAD
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                val text = attendanceViewModel.generateFormattedAttendanceReportText()
-                                viewModel.openExportReport(text)
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Export", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                attendanceViewModel.exportAttendanceRollSheet(context)
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Print Roll", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-=======
                         Spacer(modifier = Modifier.width(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Button(
@@ -520,7 +489,6 @@ private fun AutomatedAttendanceReportsView(
                                 Spacer(modifier = Modifier.width(3.dp))
                                 Text("Print Roll", fontSize = if (isCompact) 10.sp else 11.sp, fontWeight = FontWeight.Bold)
                             }
->>>>>>> 8d9b7a0 (feat: Add adaptive window utilities and smartphone responsive UI fixes)
                         }
                     }
 
