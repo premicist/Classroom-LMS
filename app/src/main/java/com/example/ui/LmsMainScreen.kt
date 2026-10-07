@@ -122,15 +122,22 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.launch
 import com.example.ui.theme.StatusError
+import com.example.ui.viewmodel.AnalyticsViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsTab
+import com.example.ui.viewmodel.StudentSupportViewModel
+import com.example.ui.viewmodel.SyncViewModel
 import com.example.util.PdfReportExporter
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun LmsMainScreen(
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    onAuthenticate: (() -> Unit)? = null
+    onAuthenticate: (() -> Unit)? = null,
+    studentSupportViewModel: StudentSupportViewModel = hiltViewModel(),
+    syncViewModel: SyncViewModel = hiltViewModel(),
+    analyticsViewModel: AnalyticsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -422,6 +429,7 @@ fun LmsMainScreen(
                         if (classroom.linkedSpreadsheetId.isNullOrBlank()) {
                             showLinkSheetDialog = true
                         } else {
+                            syncViewModel.syncGoogleSheet(classroom.id)
                             viewModel.syncGoogleSheet(classroom.id)
                         }
                     }
@@ -513,10 +521,12 @@ fun LmsMainScreen(
             onDismiss = { showLinkSheetDialog = false },
             onLinkAndSync = { spreadsheetId ->
                 showLinkSheetDialog = false
+                syncViewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
                 viewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
             },
             onUnlink = {
                 showLinkSheetDialog = false
+                syncViewModel.linkSpreadsheet(currentClassroom.id, "")
                 viewModel.linkSpreadsheet(currentClassroom.id, "")
             }
         )
@@ -561,20 +571,6 @@ fun LmsMainScreen(
         )
     }
 
-    // 3b. Add / Edit Exam Dialog
-    if (uiState.isAddEditExamOpen) {
-        val activeClassId = uiState.activeClassroom?.id ?: 1L
-        AddEditExamDialog(
-            category = uiState.selectedExamCategory,
-            initialExam = uiState.editingExam,
-            classroomId = activeClassId,
-            onDismiss = { viewModel.closeAddEditExamDialog() },
-            onSave = { exam ->
-                viewModel.saveExam(exam)
-                viewModel.closeAddEditExamDialog()
-            }
-        )
-    }
 
     // 4. Grading Dialog
     if (uiState.isGradingSubmissionOpen && uiState.gradingSubmission != null && uiState.gradingAssignment != null && uiState.gradingStudent != null) {
@@ -624,6 +620,7 @@ fun LmsMainScreen(
                 viewModel.openLiveAssessment(student)
             },
             onExportDisciplineIncidentSlip = { record ->
+                studentSupportViewModel.exportDisciplineIncidentSlip(context, student, record)
                 PdfReportExporter.exportDisciplineIncidentSlip(context, student, record, uiState.activeClassroom?.name ?: "Classroom")
             },
             onExportReport = {
@@ -639,11 +636,16 @@ fun LmsMainScreen(
             intervention = uiState.editingIntervention,
             initialStudent = uiState.interventionStudent,
             students = uiState.students,
-            onDismiss = { viewModel.closeDialogs() },
+            onDismiss = {
+                studentSupportViewModel.closeInterventionDialog()
+                viewModel.closeDialogs()
+            },
             onSave = { studentId, type, title, notes, date, resolved ->
+                studentSupportViewModel.saveIntervention(studentId, type, title, notes, date, resolved)
                 viewModel.saveIntervention(studentId, type, title, notes, date, resolved)
             },
             onDelete = { id ->
+                studentSupportViewModel.deleteIntervention(id)
                 viewModel.deleteIntervention(id)
             }
         )
@@ -678,7 +680,10 @@ fun LmsMainScreen(
         ReportExportDialog(
             reportText = uiState.exportReportContent,
             reportTitle = uiState.exportReportTitle,
-            onDismiss = { viewModel.closeExportReport() }
+            onDismiss = {
+                analyticsViewModel.closeExportReport()
+                viewModel.closeExportReport()
+            }
         )
     }
 
@@ -697,6 +702,7 @@ fun LmsMainScreen(
                 viewModel.reassignStudentClassroom(student, newId)
             },
             onLogDiscipline = { student ->
+                studentSupportViewModel.openAddDiscipline(student)
                 viewModel.openAddDiscipline(student)
             },
             onImportCsv = { uri ->
@@ -714,9 +720,18 @@ fun LmsMainScreen(
             student = student,
             initialRecord = uiState.editingDisciplineRecord,
             classroomId = activeClassId,
-            onDismiss = { viewModel.closeDisciplineDialog() },
-            onSave = { record -> viewModel.saveDisciplineRecord(record) },
-            onDelete = { record -> viewModel.deleteDisciplineRecord(record) }
+            onDismiss = {
+                studentSupportViewModel.closeDisciplineDialog()
+                viewModel.closeDisciplineDialog()
+            },
+            onSave = { record ->
+                studentSupportViewModel.saveDisciplineRecord(record)
+                viewModel.saveDisciplineRecord(record)
+            },
+            onDelete = { record ->
+                studentSupportViewModel.deleteDisciplineRecord(record)
+                viewModel.deleteDisciplineRecord(record)
+            }
         )
     }
 
@@ -728,9 +743,18 @@ fun LmsMainScreen(
             students = uiState.students,
             initialAssessment = uiState.editingLiveAssessment,
             classroomId = activeClassId,
-            onDismiss = { viewModel.closeLiveAssessmentDialog() },
-            onSave = { assessment -> viewModel.saveLiveAssessment(assessment) },
-            onDelete = { assessment -> viewModel.deleteLiveAssessment(assessment) }
+            onDismiss = {
+                studentSupportViewModel.closeLiveAssessmentDialog()
+                viewModel.closeLiveAssessmentDialog()
+            },
+            onSave = { assessment ->
+                studentSupportViewModel.saveLiveAssessment(assessment)
+                viewModel.saveLiveAssessment(assessment)
+            },
+            onDelete = { assessment ->
+                studentSupportViewModel.deleteLiveAssessment(assessment)
+                viewModel.deleteLiveAssessment(assessment)
+            }
         )
     }
 

@@ -73,20 +73,55 @@ import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.ui.viewmodel.ClassroomViewModel
+import com.example.ui.viewmodel.GradingViewModel
 import com.example.ui.viewmodel.LmsUiState
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun AssignmentsScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    gradingViewModel: GradingViewModel = hiltViewModel()
 ) {
+    val gradingUiState by gradingViewModel.uiState.collectAsStateWithLifecycle()
     var selectedSubTab by remember { mutableIntStateOf(0) } // 0 = Assignments, 1 = Submissions Checklist Matrix
     var selectedAssignmentForMatrix by remember { mutableStateOf<AssignmentEntity?>(null) }
     var assignmentToDelete by remember { mutableStateOf<AssignmentEntity?>(null) }
 
+    val allAssignments = if (gradingUiState.assignments.isNotEmpty()) gradingUiState.assignments else uiState.assignments
+    val allStudents = if (gradingUiState.students.isNotEmpty()) gradingUiState.students else uiState.students
+    val allSubmissions = if (gradingUiState.submissions.isNotEmpty()) gradingUiState.submissions else uiState.submissions
+
     // Synchronize default selected assignment for matrix
-    val currentMatrixAssignment = selectedAssignmentForMatrix ?: uiState.assignments.firstOrNull()
+    val currentMatrixAssignment = selectedAssignmentForMatrix ?: allAssignments.firstOrNull()
+
+    // Add / Edit Assignment Dialog
+    if (gradingUiState.isAddEditAssignmentOpen) {
+        val activeClassId = gradingUiState.activeClassroomId ?: uiState.activeClassroom?.id ?: 1L
+        AddEditAssignmentDialog(
+            initialAssignment = gradingUiState.editingAssignment,
+            classroomId = activeClassId,
+            onDismiss = { gradingViewModel.closeAddEditAssignment() },
+            onSave = { assignment ->
+                gradingViewModel.saveAssignment(assignment)
+            }
+        )
+    }
+
+    // Grading Dialog
+    if (gradingUiState.isGradingSubmissionOpen && gradingUiState.gradingSubmission != null && gradingUiState.gradingAssignment != null && gradingUiState.gradingStudent != null) {
+        GradeSubmissionDialog(
+            submission = gradingUiState.gradingSubmission!!,
+            assignment = gradingUiState.gradingAssignment!!,
+            student = gradingUiState.gradingStudent!!,
+            onDismiss = { gradingViewModel.closeGradingDialog() },
+            onSave = { sub ->
+                gradingViewModel.saveSubmission(sub)
+            }
+        )
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -99,7 +134,7 @@ fun AssignmentsScreen(
                 Tab(
                     selected = selectedSubTab == 0,
                     onClick = { selectedSubTab = 0 },
-                    text = { Text("Assignments (${uiState.assignments.size})", fontWeight = FontWeight.Bold) }
+                    text = { Text("Assignments (${allAssignments.size})", fontWeight = FontWeight.Bold) }
                 )
                 Tab(
                     selected = selectedSubTab == 1,
@@ -111,12 +146,12 @@ fun AssignmentsScreen(
             if (selectedSubTab == 0) {
                 // --- TAB 0: ASSIGNMENTS LIST ---
                 AssignmentsListView(
-                    assignments = uiState.assignments,
-                    students = uiState.students,
-                    submissions = uiState.submissions,
-                    filterType = uiState.assignmentFilterType,
-                    onFilterChange = { viewModel.setAssignmentFilter(it, uiState.assignmentFilterStatus) },
-                    onEdit = { viewModel.openEditAssignment(it) },
+                    assignments = allAssignments,
+                    students = allStudents,
+                    submissions = allSubmissions,
+                    filterType = gradingUiState.assignmentFilterType ?: uiState.assignmentFilterType,
+                    onFilterChange = { gradingViewModel.setAssignmentFilter(it, gradingUiState.assignmentFilterStatus ?: uiState.assignmentFilterStatus) },
+                    onEdit = { gradingViewModel.openEditAssignment(it) },
                     onDelete = { assignmentToDelete = it },
                     onViewChecklist = { assignment ->
                         selectedAssignmentForMatrix = assignment
@@ -126,19 +161,19 @@ fun AssignmentsScreen(
             } else {
                 // --- TAB 1: SUBMISSION CHECKLIST MATRIX ---
                 SubmissionsChecklistMatrixView(
-                    assignments = uiState.assignments,
-                    students = uiState.students,
-                    submissions = uiState.submissions,
+                    assignments = allAssignments,
+                    students = allStudents,
+                    submissions = allSubmissions,
                     selectedAssignment = currentMatrixAssignment,
                     onSelectAssignment = { selectedAssignmentForMatrix = it },
                     onGradeSubmission = { sub, assign, student ->
-                        viewModel.openGradingDialog(sub, assign, student)
+                        gradingViewModel.openGradingDialog(sub, assign, student)
                     },
                     onToggleCheck = { sub ->
-                        viewModel.toggleSubmissionCheck(sub)
+                        gradingViewModel.toggleSubmissionCheck(sub)
                     },
                     onMarkAll = { assignId, status ->
-                        viewModel.quickMarkAllSubmissionsForAssignment(assignId, status)
+                        gradingViewModel.quickMarkAllSubmissionsForAssignment(assignId, status)
                     }
                 )
             }
@@ -146,7 +181,7 @@ fun AssignmentsScreen(
 
         // Floating Action Button to Add New Assignment
         FloatingActionButton(
-            onClick = { viewModel.openAddAssignment() },
+            onClick = { gradingViewModel.openAddAssignment() },
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = Color.White,
             modifier = Modifier
@@ -167,7 +202,7 @@ fun AssignmentsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        assignmentToDelete?.let { viewModel.deleteAssignment(it.id) }
+                        assignmentToDelete?.let { gradingViewModel.deleteAssignment(it.id) }
                         assignmentToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)

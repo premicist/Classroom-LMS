@@ -69,8 +69,12 @@ import com.example.ui.theme.EduPrimary
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
+import com.example.ui.viewmodel.AttendanceUiState
+import com.example.ui.viewmodel.AttendanceViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsUiState
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -80,8 +84,10 @@ import java.util.Locale
 fun AttendanceScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    attendanceViewModel: AttendanceViewModel = hiltViewModel()
 ) {
+    val attendanceUiState by attendanceViewModel.uiState.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Daily Check-in, 1 = Automated Reports
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US) }
     val todayStr = remember { dateFormat.format(Date()) }
@@ -117,6 +123,8 @@ fun AttendanceScreen(
             DailyAttendanceCheckInView(
                 uiState = uiState,
                 viewModel = viewModel,
+                attendanceViewModel = attendanceViewModel,
+                attendanceUiState = attendanceUiState,
                 selectedDate = selectedDate,
                 todayStr = todayStr,
                 yesterdayStr = yesterdayStr,
@@ -126,7 +134,9 @@ fun AttendanceScreen(
             // --- AUTOMATED ATTENDANCE REPORTS VIEW ---
             AutomatedAttendanceReportsView(
                 uiState = uiState,
-                viewModel = viewModel
+                viewModel = viewModel,
+                attendanceViewModel = attendanceViewModel,
+                attendanceUiState = attendanceUiState
             )
         }
     }
@@ -137,6 +147,8 @@ fun AttendanceScreen(
 private fun DailyAttendanceCheckInView(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
+    attendanceViewModel: AttendanceViewModel,
+    attendanceUiState: AttendanceUiState,
     selectedDate: String,
     todayStr: String,
     yesterdayStr: String,
@@ -171,14 +183,16 @@ private fun DailyAttendanceCheckInView(
         }
     }
 
-    val dateRecords = uiState.attendanceRecords.filter { it.date == selectedDate }
+    val allStudents = if (attendanceUiState.students.isNotEmpty()) attendanceUiState.students else uiState.students
+    val allAttendance = if (attendanceUiState.attendanceRecords.isNotEmpty()) attendanceUiState.attendanceRecords else uiState.attendanceRecords
+    val dateRecords = allAttendance.filter { it.date == selectedDate }
     val recordMap = dateRecords.associateBy { it.studentId }
 
     val presCount = dateRecords.count { it.status == AttendanceStatus.PRESENT }
     val absCount = dateRecords.count { it.status == AttendanceStatus.ABSENT }
     val lateCount = dateRecords.count { it.status == AttendanceStatus.LATE }
     val excusCount = dateRecords.count { it.status == AttendanceStatus.EXCUSED }
-    val totalStudents = uiState.students.size.coerceAtLeast(1)
+    val totalStudents = allStudents.size.coerceAtLeast(1)
     val attendanceRate = (((presCount + excusCount).toDouble() / totalStudents) * 100.0).toInt()
 
     LazyColumn(
@@ -288,7 +302,7 @@ private fun DailyAttendanceCheckInView(
 
                     // Mark All Present Action
                     Button(
-                        onClick = { viewModel.markAllPresent(selectedDate) },
+                        onClick = { attendanceViewModel.markAllPresent(selectedDate) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -312,7 +326,7 @@ private fun DailyAttendanceCheckInView(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Class Roster (${uiState.students.size})",
+                    text = "Class Roster (${allStudents.size})",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -325,7 +339,7 @@ private fun DailyAttendanceCheckInView(
             }
         }
 
-        items(uiState.students, key = { it.id }) { student ->
+        items(allStudents, key = { it.id }) { student ->
             val record = recordMap[student.id]
             val currentStatus = record?.status ?: AttendanceStatus.PRESENT
 
@@ -373,7 +387,7 @@ private fun DailyAttendanceCheckInView(
                     AttendanceBadge(
                         status = currentStatus,
                         onClick = {
-                            viewModel.cycleAttendanceStatus(student.id, selectedDate)
+                            attendanceViewModel.cycleAttendanceStatus(student.id, selectedDate)
                         }
                     )
                 }
@@ -385,10 +399,12 @@ private fun DailyAttendanceCheckInView(
 @Composable
 private fun AutomatedAttendanceReportsView(
     uiState: LmsUiState,
-    viewModel: ClassroomViewModel
+    viewModel: ClassroomViewModel,
+    attendanceViewModel: AttendanceViewModel,
+    attendanceUiState: AttendanceUiState
 ) {
     val context = LocalContext.current
-    val report = uiState.attendanceReport
+    val report = attendanceUiState.attendanceReport ?: uiState.attendanceReport
 
     if (report == null) {
         Box(
@@ -443,7 +459,7 @@ private fun AutomatedAttendanceReportsView(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-                                val text = viewModel.generateFormattedAttendanceReportText()
+                                val text = attendanceViewModel.generateFormattedAttendanceReportText()
                                 viewModel.openExportReport(text)
                             },
                             shape = RoundedCornerShape(8.dp),
@@ -456,7 +472,7 @@ private fun AutomatedAttendanceReportsView(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-                                viewModel.exportAttendanceRollSheet(context)
+                                attendanceViewModel.exportAttendanceRollSheet(context)
                             },
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)

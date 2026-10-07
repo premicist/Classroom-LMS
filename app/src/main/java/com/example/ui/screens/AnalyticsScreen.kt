@@ -61,6 +61,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import com.example.util.AiInsightUtils
 import com.example.data.entity.InterventionEntity
@@ -82,17 +83,24 @@ import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsUiState
 import com.example.ui.viewmodel.StudentTier
 
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.viewmodel.AnalyticsViewModel
+
 @Composable
 fun AnalyticsScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    analyticsViewModel: AnalyticsViewModel = hiltViewModel()
 ) {
-    val analytics = uiState.analytics
-    val activeClassroom = uiState.activeClassroom
+    val analyticsUiState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
+    val analytics = if (analyticsUiState.analytics.totalStudents > 0) analyticsUiState.analytics else uiState.analytics
+    val activeClassroom = analyticsUiState.activeClassroom ?: uiState.activeClassroom
     val currentSection = uiState.analyticsViewSection
+    val currentStudents = if (analyticsUiState.students.isNotEmpty()) analyticsUiState.students else uiState.students
 
-    val selectedStudent = uiState.students.find { it.id == uiState.analyticsSelectedStudentId }
+    val selectedStudent = currentStudents.find { it.id == uiState.analyticsSelectedStudentId }
 
     LazyColumn(
         modifier = modifier

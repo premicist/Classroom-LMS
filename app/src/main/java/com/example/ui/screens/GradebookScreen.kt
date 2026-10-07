@@ -74,25 +74,36 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.TextButton
 import com.example.data.entity.TermWeightConfig
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.viewmodel.GradingViewModel
 
 @Composable
 fun GradebookScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    gradingViewModel: GradingViewModel = hiltViewModel()
 ) {
+    val gradingUiState by gradingViewModel.uiState.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
     var expandedStudentId by remember { mutableStateOf<Long?>(null) }
     var isInlineGradeMode by remember { mutableStateOf(false) }
 
+    val rawSummaries = if (gradingUiState.studentGradeSummaries.isNotEmpty()) {
+        gradingUiState.studentGradeSummaries
+    } else {
+        uiState.studentGradeSummaries
+    }
+
     val filteredSummaries = if (searchQuery.isNotEmpty()) {
-        uiState.studentGradeSummaries.filter {
+        rawSummaries.filter {
             it.student.name.contains(searchQuery, ignoreCase = true) ||
             it.student.studentNumber.contains(searchQuery, ignoreCase = true)
         }
-    } else uiState.studentGradeSummaries
+    } else rawSummaries
 
-    val analytics = uiState.analytics
+    val analytics = if (gradingUiState.studentGradeSummaries.isNotEmpty()) gradingUiState.analytics else uiState.analytics
 
     LazyColumn(
         modifier = modifier
@@ -130,7 +141,10 @@ fun GradebookScreen(
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             OutlinedButton(
-                                onClick = { viewModel.openTermWeightingDialog() },
+                                onClick = {
+                                    gradingViewModel.openTermWeightingDialog()
+                                    viewModel.openTermWeightingDialog()
+                                },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                             ) {
@@ -141,7 +155,11 @@ fun GradebookScreen(
 
                             Button(
                                 onClick = {
-                                    val text = viewModel.generateFormattedGradebookReportText()
+                                    val text = if (gradingUiState.assignments.isNotEmpty()) {
+                                        gradingViewModel.generateFormattedGradebookReportText()
+                                    } else {
+                                        viewModel.generateFormattedGradebookReportText()
+                                    }
                                     viewModel.openExportReport(text)
                                 },
                                 shape = RoundedCornerShape(8.dp),
@@ -449,11 +467,19 @@ fun GradebookScreen(
         }
     }
 
-    if (uiState.isTermWeightingDialogOpen) {
+    val showTermWeightDialog = gradingUiState.isTermWeightingDialogOpen || uiState.isTermWeightingDialogOpen
+    if (showTermWeightDialog) {
+        val initialConfig = if (gradingUiState.isTermWeightingDialogOpen) gradingUiState.termWeightConfig else uiState.termWeightConfig
         TermWeightingDialog(
-            initialConfig = uiState.termWeightConfig,
-            onDismiss = { viewModel.closeTermWeightingDialog() },
-            onSave = { config -> viewModel.saveTermWeightConfig(config) }
+            initialConfig = initialConfig,
+            onDismiss = {
+                gradingViewModel.closeTermWeightingDialog()
+                viewModel.closeTermWeightingDialog()
+            },
+            onSave = { config ->
+                gradingViewModel.saveTermWeightConfig(config)
+                viewModel.saveTermWeightConfig(config)
+            }
         )
     }
 }

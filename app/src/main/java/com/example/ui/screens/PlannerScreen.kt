@@ -64,6 +64,9 @@ import com.example.ui.theme.StatusInfo
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.ui.viewmodel.ClassroomViewModel
+import com.example.ui.viewmodel.PlannerViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,22 +76,29 @@ import java.util.Locale
 fun PlannerScreen(
     classroomId: Long,
     viewModel: ClassroomViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    plannerViewModel: PlannerViewModel = hiltViewModel()
 ) {
     BackHandler { onBack() }
 
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val plannerUiState by plannerViewModel.uiState.collectAsStateWithLifecycle()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-    val filteredPlans = remember(uiState.lessonPlans, uiState.plannerClassroomFilterId) {
-        if (uiState.plannerClassroomFilterId == null) uiState.lessonPlans
-        else uiState.lessonPlans.filter { it.classroomId == uiState.plannerClassroomFilterId }
+    val currentPlans = if (plannerUiState.lessonPlans.isNotEmpty()) plannerUiState.lessonPlans else uiState.lessonPlans
+    val currentLogs = if (plannerUiState.dailyLogs.isNotEmpty()) plannerUiState.dailyLogs else uiState.dailyLogs
+    val currentFilterId = plannerUiState.plannerClassroomFilterId ?: uiState.plannerClassroomFilterId
+    val currentClassrooms = if (plannerUiState.classrooms.isNotEmpty()) plannerUiState.classrooms else uiState.classrooms
+
+    val filteredPlans = remember(currentPlans, currentFilterId) {
+        if (currentFilterId == null) currentPlans
+        else currentPlans.filter { it.classroomId == currentFilterId }
     }
 
-    val filteredLogs = remember(uiState.dailyLogs, uiState.plannerClassroomFilterId) {
-        if (uiState.plannerClassroomFilterId == null) uiState.dailyLogs
-        else uiState.dailyLogs.filter { it.classroomId == uiState.plannerClassroomFilterId }
+    val filteredLogs = remember(currentLogs, currentFilterId) {
+        if (currentFilterId == null) currentLogs
+        else currentLogs.filter { it.classroomId == currentFilterId }
     }
 
     val tabs = listOf(
@@ -130,9 +140,17 @@ fun PlannerScreen(
                         IconButton(
                             onClick = {
                                 if (selectedTabIndex == 0) {
-                                    viewModel.exportLessonPlansPdf(context)
+                                    if (plannerUiState.lessonPlans.isNotEmpty()) {
+                                        plannerViewModel.exportLessonPlansPdf(context)
+                                    } else {
+                                        viewModel.exportLessonPlansPdf(context)
+                                    }
                                 } else {
-                                    viewModel.exportDailyDiaryPdf(context)
+                                    if (plannerUiState.dailyLogs.isNotEmpty()) {
+                                        plannerViewModel.exportDailyDiaryPdf(context)
+                                    } else {
+                                        viewModel.exportDailyDiaryPdf(context)
+                                    }
                                 }
                             }
                         ) {
@@ -169,14 +187,20 @@ fun PlannerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilterChip(
-                        selected = uiState.plannerClassroomFilterId == null,
-                        onClick = { viewModel.setPlannerClassroomFilter(null) },
+                        selected = currentFilterId == null,
+                        onClick = {
+                            plannerViewModel.setPlannerClassroomFilter(null)
+                            viewModel.setPlannerClassroomFilter(null)
+                        },
                         label = { Text("All Classrooms", style = MaterialTheme.typography.labelSmall) }
                     )
-                    uiState.classrooms.forEach { cls ->
+                    currentClassrooms.forEach { cls ->
                         FilterChip(
-                            selected = uiState.plannerClassroomFilterId == cls.id,
-                            onClick = { viewModel.setPlannerClassroomFilter(cls.id) },
+                            selected = currentFilterId == cls.id,
+                            onClick = {
+                                plannerViewModel.setPlannerClassroomFilter(cls.id)
+                                viewModel.setPlannerClassroomFilter(cls.id)
+                            },
                             label = { Text(cls.name, style = MaterialTheme.typography.labelSmall) }
                         )
                     }
@@ -187,8 +211,10 @@ fun PlannerScreen(
             FloatingActionButton(
                 onClick = {
                     if (selectedTabIndex == 0) {
+                        plannerViewModel.openAddLessonPlan()
                         viewModel.openAddLessonPlan()
                     } else {
+                        plannerViewModel.openAddDailyLog()
                         viewModel.openAddDailyLog()
                     }
                 },
@@ -207,8 +233,11 @@ fun PlannerScreen(
             when (selectedTabIndex) {
                 0 -> LessonPlansTab(
                     plans = filteredPlans,
-                    classrooms = uiState.classrooms,
-                    onEdit = { viewModel.openEditLessonPlan(it) },
+                    classrooms = currentClassrooms,
+                    onEdit = {
+                        plannerViewModel.openEditLessonPlan(it)
+                        viewModel.openEditLessonPlan(it)
+                    },
                     onDelete = { planToDelete = it },
                     onCycleStatus = { plan ->
                         val nextStatus = when (plan.status) {
@@ -216,13 +245,17 @@ fun PlannerScreen(
                             "IN_PROGRESS" -> "COMPLETED"
                             else -> "PLANNED"
                         }
+                        plannerViewModel.updateLessonPlanStatus(plan, nextStatus)
                         viewModel.updateLessonPlanStatus(plan, nextStatus)
                     }
                 )
                 1 -> DailyDiaryTab(
                     logs = filteredLogs,
-                    classrooms = uiState.classrooms,
-                    onEdit = { viewModel.openEditDailyLog(it) },
+                    classrooms = currentClassrooms,
+                    onEdit = {
+                        plannerViewModel.openEditDailyLog(it)
+                        viewModel.openEditDailyLog(it)
+                    },
                     onDelete = { logToDelete = it }
                 )
             }
@@ -230,25 +263,37 @@ fun PlannerScreen(
     }
 
     // Modal Dialogs
-    if (uiState.isAddEditLessonPlanOpen) {
+    val showPlanDialog = plannerUiState.isAddEditLessonPlanOpen || uiState.isAddEditLessonPlanOpen
+    if (showPlanDialog) {
+        val plan = if (plannerUiState.isAddEditLessonPlanOpen) plannerUiState.editingLessonPlan else uiState.editingLessonPlan
         AddEditLessonPlanDialog(
-            initialPlan = uiState.editingLessonPlan,
-            classrooms = uiState.classrooms,
-            activeClassroomId = uiState.activeClassroom?.id,
-            onDismiss = { viewModel.closeLessonPlanDialog() },
+            initialPlan = plan,
+            classrooms = currentClassrooms,
+            activeClassroomId = plannerUiState.activeClassroomId ?: uiState.activeClassroom?.id,
+            onDismiss = {
+                plannerViewModel.closeLessonPlanDialog()
+                viewModel.closeLessonPlanDialog()
+            },
             onSave = { unitTitle, description, targetDate, status, targetClassroomId ->
+                plannerViewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId)
                 viewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId)
             }
         )
     }
 
-    if (uiState.isAddEditDailyLogOpen) {
+    val showLogDialog = plannerUiState.isAddEditDailyLogOpen || uiState.isAddEditDailyLogOpen
+    if (showLogDialog) {
+        val log = if (plannerUiState.isAddEditDailyLogOpen) plannerUiState.editingDailyLog else uiState.editingDailyLog
         AddEditDailyLogDialog(
-            initialLog = uiState.editingDailyLog,
-            classrooms = uiState.classrooms,
-            activeClassroomId = uiState.activeClassroom?.id,
-            onDismiss = { viewModel.closeDailyLogDialog() },
+            initialLog = log,
+            classrooms = currentClassrooms,
+            activeClassroomId = plannerUiState.activeClassroomId ?: uiState.activeClassroom?.id,
+            onDismiss = {
+                plannerViewModel.closeDailyLogDialog()
+                viewModel.closeDailyLogDialog()
+            },
             onSave = { date, reflectionNotes, wasProxyClass, targetClassroomId ->
+                plannerViewModel.saveDailyLog(date, reflectionNotes, wasProxyClass, targetClassroomId)
                 viewModel.saveDailyLog(date, reflectionNotes, wasProxyClass, targetClassroomId)
             }
         )
@@ -263,6 +308,7 @@ fun PlannerScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        plannerViewModel.deleteLessonPlan(plan)
                         viewModel.deleteLessonPlan(plan)
                         planToDelete = null
                     },
@@ -287,6 +333,7 @@ fun PlannerScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        plannerViewModel.deleteDailyLog(log)
                         viewModel.deleteDailyLog(log)
                         logToDelete = null
                     },

@@ -26,6 +26,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.entity.ExamCategory
 import com.example.data.entity.ExamEntity
 import com.example.data.entity.ExamMarkEntity
@@ -34,6 +36,8 @@ import com.example.ui.theme.EduPrimary
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.viewmodel.ClassroomViewModel
+import com.example.ui.viewmodel.ExamUiState
+import com.example.ui.viewmodel.ExamViewModel
 import com.example.ui.viewmodel.LmsUiState
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -43,15 +47,32 @@ import java.util.Locale
 fun ExamScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    examViewModel: ExamViewModel = hiltViewModel()
 ) {
+    val examUiState by examViewModel.uiState.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf(ExamCategory.CLASS_TEST) }
-    
+
     val categoryTabs = listOf(
         ExamCategory.CLASS_TEST to "Class Test",
         ExamCategory.TERMINAL to "Terminal Exam",
         ExamCategory.PRE_BOARD to "Pre-Board"
     )
+
+    // Add / Edit Exam Dialog wired to ExamViewModel
+    if (examUiState.isAddEditExamOpen) {
+        val activeClassId = examUiState.activeClassroomId ?: uiState.activeClassroom?.id ?: 1L
+        AddEditExamDialog(
+            category = examUiState.selectedExamCategory,
+            initialExam = examUiState.editingExam,
+            classroomId = activeClassId,
+            onDismiss = { examViewModel.closeAddEditExamDialog() },
+            onSave = { exam ->
+                examViewModel.saveExam(exam)
+                examViewModel.closeAddEditExamDialog()
+            }
+        )
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         // Sub-Category Tabs
@@ -76,7 +97,7 @@ fun ExamScreen(
         }
 
         // Exam List for selected category
-        val examsForCategory = uiState.exams.filter { it.category == selectedCategory }
+        val examsForCategory = examUiState.exams.filter { it.category == selectedCategory }
 
         if (examsForCategory.isEmpty()) {
             Box(
@@ -98,7 +119,7 @@ fun ExamScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = { viewModel.openAddEditExamDialog(selectedCategory) },
+                        onClick = { examViewModel.openAddEditExamDialog(selectedCategory) },
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -141,7 +162,7 @@ fun ExamScreen(
                                 }
                             }
                             Button(
-                                onClick = { viewModel.openAddEditExamDialog(selectedCategory) },
+                                onClick = { examViewModel.openAddEditExamDialog(selectedCategory) },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                             ) {
@@ -157,7 +178,9 @@ fun ExamScreen(
                     ExamRecordCard(
                         exam = exam,
                         uiState = uiState,
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        examViewModel = examViewModel,
+                        examUiState = examUiState
                     )
                 }
                 
@@ -171,11 +194,14 @@ fun ExamScreen(
 fun ExamRecordCard(
     exam: ExamEntity,
     uiState: LmsUiState,
-    viewModel: ClassroomViewModel
+    viewModel: ClassroomViewModel,
+    examViewModel: ExamViewModel,
+    examUiState: ExamUiState
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
-    val marks = uiState.examMarks.filter { it.examId == exam.id }
+    val marks = examUiState.examMarks.filter { it.examId == exam.id }
+    val students = if (examUiState.students.isNotEmpty()) examUiState.students else uiState.students
 
     if (showDeleteConfirmation) {
         AlertDialog(
@@ -186,7 +212,7 @@ fun ExamRecordCard(
                 Button(
                     onClick = {
                         showDeleteConfirmation = false
-                        viewModel.deleteExam(exam)
+                        examViewModel.deleteExam(exam)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)
                 ) {
@@ -201,7 +227,7 @@ fun ExamRecordCard(
         )
     }
     
-    val totalStudents = uiState.students.size.coerceAtLeast(1)
+    val totalStudents = students.size.coerceAtLeast(1)
     val gradedCount = marks.count { it.marksObtained != null }
     val passedCount = marks.count { it.marksObtained != null && it.marksObtained >= exam.passMarks }
     
@@ -246,7 +272,7 @@ fun ExamRecordCard(
                     }
                 }
                 Row {
-                    IconButton(onClick = { viewModel.openAddEditExamDialog(exam.category, exam) }) {
+                    IconButton(onClick = { examViewModel.openAddEditExamDialog(exam.category, exam) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit Exam", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = { showDeleteConfirmation = true }) {
@@ -304,7 +330,7 @@ fun ExamRecordCard(
                 
                 val context = LocalContext.current
                 Button(
-                    onClick = { viewModel.exportExamReport(context, exam) },
+                    onClick = { examViewModel.exportExamReport(context, exam) },
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -320,14 +346,14 @@ fun ExamRecordCard(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                uiState.students.forEach { student ->
+                students.forEach { student ->
                     val markEntry = marks.find { it.studentId == student.id }
                     ExamStudentMarkRow(
                         student = student,
                         exam = exam,
                         initialMark = markEntry,
                         onSaveMark = { updatedMark ->
-                            viewModel.saveExamMark(updatedMark)
+                            examViewModel.saveExamMark(updatedMark)
                         }
                     )
                 }

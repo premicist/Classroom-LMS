@@ -83,14 +83,19 @@ import com.example.ui.theme.StatusInfoBg
 import com.example.ui.theme.StatusSuccessBg
 import com.example.ui.theme.StatusWarningBg
 import java.util.TimeZone
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.viewmodel.AttendanceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeworkCheckScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    attendanceViewModel: AttendanceViewModel = hiltViewModel()
 ) {
+    val attendanceUiState by attendanceViewModel.uiState.collectAsStateWithLifecycle()
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US) }
     val todayStr = remember { dateFormat.format(Date()) }
     val yesterdayStr = remember {
@@ -100,7 +105,7 @@ fun HomeworkCheckScreen(
     }
 
     var selectedDate by remember { mutableStateOf(todayStr) }
-    var topicText by remember { mutableStateOf(uiState.activeHomeworkTopic.ifEmpty { "Daily Homework Check" }) }
+    var topicText by remember { mutableStateOf(attendanceUiState.activeHomeworkTopic.ifEmpty { "Daily Homework Check" }) }
     var isEditingTopic by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedStudentForStatus by remember { mutableStateOf<StudentEntity?>(null) }
@@ -131,7 +136,9 @@ fun HomeworkCheckScreen(
         }
     }
 
-    val recordsForDate = uiState.homeworkRecords.filter { it.date == selectedDate && it.topic == topicText }
+    val allStudents = if (attendanceUiState.students.isNotEmpty()) attendanceUiState.students else uiState.students
+    val allHomework = if (attendanceUiState.homeworkRecords.isNotEmpty()) attendanceUiState.homeworkRecords else uiState.homeworkRecords
+    val recordsForDate = allHomework.filter { it.date == selectedDate && it.topic == topicText }
     val recordMap = recordsForDate.associateBy { it.studentId }
 
     // Completion Counts
@@ -227,7 +234,7 @@ fun HomeworkCheckScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(onClick = {
                                 isEditingTopic = false
-                                viewModel.setActiveHomeworkTopic(topicText)
+                                attendanceViewModel.setActiveHomeworkTopic(topicText)
                             }) {
                                 Text("Set")
                             }
@@ -300,7 +307,7 @@ fun HomeworkCheckScreen(
 
                     // Batch Action Button
                     Button(
-                        onClick = { viewModel.markAllHomeworkDone(selectedDate, topicText) },
+                        onClick = { attendanceViewModel.markAllHomeworkDone(selectedDate, topicText) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -324,7 +331,7 @@ fun HomeworkCheckScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Student Checklist (${uiState.students.size})",
+                    text = "Student Checklist (${allStudents.size})",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -337,7 +344,7 @@ fun HomeworkCheckScreen(
             }
         }
 
-        items(uiState.students, key = { it.id }) { student ->
+        items(allStudents, key = { it.id }) { student ->
             val record = recordMap[student.id]
 
             Card(
@@ -502,7 +509,7 @@ fun HomeworkCheckScreen(
                         color = StatusSuccess,
                         isSelected = currentRec?.status == HomeworkStatus.DONE
                     ) {
-                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.DONE)
+                        attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.DONE)
                         selectedStudentForStatus = null
                     }
 
@@ -512,7 +519,7 @@ fun HomeworkCheckScreen(
                         color = StatusWarning,
                         isSelected = currentRec?.status == HomeworkStatus.PARTIAL
                     ) {
-                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.PARTIAL)
+                        attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.PARTIAL)
                         selectedStudentForStatus = null
                     }
 
@@ -522,7 +529,7 @@ fun HomeworkCheckScreen(
                         color = StatusError,
                         isSelected = currentRec?.status == HomeworkStatus.MISSING
                     ) {
-                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.MISSING)
+                        attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.MISSING)
                         selectedStudentForStatus = null
                     }
 
@@ -532,7 +539,7 @@ fun HomeworkCheckScreen(
                         color = StatusInfo,
                         isSelected = currentRec?.status == HomeworkStatus.EXCUSED
                     ) {
-                        viewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.EXCUSED)
+                        attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.EXCUSED)
                         selectedStudentForStatus = null
                     }
 
@@ -544,7 +551,7 @@ fun HomeworkCheckScreen(
                             color = MaterialTheme.colorScheme.outline,
                             isSelected = false
                         ) {
-                            viewModel.deleteHomeworkRecord(student.id, selectedDate, topicText)
+                            attendanceViewModel.deleteHomeworkRecord(student.id, selectedDate, topicText)
                             selectedStudentForStatus = null
                         }
                     }

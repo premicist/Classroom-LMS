@@ -19,7 +19,9 @@ import com.example.data.network.LmsFirebaseMessagingService
 import com.example.ui.LmsMainScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.ClassroomViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
     private val viewModel: ClassroomViewModel by viewModels()

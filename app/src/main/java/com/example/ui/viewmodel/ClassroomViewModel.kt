@@ -590,24 +590,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(isAddEditAssignmentOpen = false, editingAssignment = null) }
     }
 
-    fun openAddEditExamDialog(category: ExamCategory, exam: ExamEntity? = null) {
-        _uiState.update {
-            it.copy(
-                isAddEditExamOpen = true,
-                selectedExamCategory = category,
-                editingExam = exam
-            )
-        }
-    }
-
-    fun closeAddEditExamDialog() {
-        _uiState.update {
-            it.copy(
-                isAddEditExamOpen = false,
-                editingExam = null
-            )
-        }
-    }
+    // Exam dialog lifecycle moved to ExamViewModel. See com.example.ui.viewmodel.ExamViewModel
 
     fun openGradingDialog(submission: SubmissionEntity, assignment: AssignmentEntity, student: StudentEntity) {
         _uiState.update {
@@ -1178,51 +1161,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // --- EXAMS ---
-    fun saveExam(exam: ExamEntity) {
-        viewModelScope.launch {
-            try {
-                if (exam.id == 0L) {
-                    examDao.insertExam(exam)
-                } else {
-                    examDao.updateExam(exam)
-                }
-            } catch (e: Exception) {
-                showToast("Failed to save exam")
-            }
-        }
-    }
-
-    fun saveExamMark(mark: ExamMarkEntity) {
-        viewModelScope.launch {
-            try {
-                if (mark.id == 0L) {
-                    examDao.insertMark(mark)
-                } else {
-                    examDao.updateMark(mark)
-                }
-            } catch (e: Exception) {
-                showToast("Failed to save mark")
-            }
-        }
-    }
-
-    fun deleteExam(exam: ExamEntity) {
-        viewModelScope.launch {
-            try {
-                examDao.deleteExam(exam)
-                showToast("Exam deleted")
-            } catch (e: Exception) {
-                showToast("Failed to delete exam")
-            }
-        }
-    }
-
-    fun exportExamReport(context: Context, exam: ExamEntity) {
-        val marks = _uiState.value.examMarks.filter { it.examId == exam.id }
-        val students = _uiState.value.students
-        PdfReportExporter.exportExamReport(context, exam, marks, students)
-        showToast("Exporting PDF for ${exam.title}...")
-    }
+    // Exam CRUD, marks, and PDF report export moved to ExamViewModel. See com.example.ui.viewmodel.ExamViewModel
 
     fun exportAttendanceRollSheet(context: Context) {
         val report = _uiState.value.attendanceReport

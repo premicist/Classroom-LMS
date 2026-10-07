@@ -64,3 +64,7 @@
 -keepclassmembers class * implements android.os.Parcelable {
     public static final ** CREATOR;
 }
+
+# Hilt
+-dontwarn dagger.hilt.**
+

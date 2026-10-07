@@ -30,6 +30,7 @@ import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
+import com.example.BuildConfig
 
 @Database(
     entities = [
@@ -72,18 +73,24 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "classroom_lms_db"
-                )
-                    .addMigrations(
+                val instance = INSTANCE ?: run {
+                    val builder = Room.databaseBuilder(
+                        context.applicationContext,
+                        AppDatabase::class.java,
+                        "classroom_lms_db"
+                    ).addMigrations(
                         com.example.data.database.Migrations.MIGRATION_6_7,
                         Migrations.MIGRATION_7_8,
                         Migrations.MIGRATION_8_9
                     )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
-                    .build()
+
+                    if (BuildConfig.DEBUG) {
+                        // Dev-only: never ship destructive wipe to teachers
+                        builder.fallbackToDestructiveMigration(dropAllTables = true)
+                    }
+
+                    builder.build()
+                }
                 INSTANCE = instance
                 instance
             }
