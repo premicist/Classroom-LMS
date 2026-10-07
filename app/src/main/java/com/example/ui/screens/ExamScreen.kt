@@ -35,6 +35,8 @@ import com.example.data.entity.StudentEntity
 import com.example.ui.theme.EduPrimary
 import com.example.ui.theme.StatusError
 import com.example.ui.theme.StatusSuccess
+import com.example.ui.util.LocalWindowSizeCategory
+import com.example.ui.util.adaptiveHorizontalPadding
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.ExamUiState
 import com.example.ui.viewmodel.ExamViewModel
@@ -129,10 +131,14 @@ fun ExamScreen(
                 }
             }
         } else {
+            val windowSize = LocalWindowSizeCategory.current
+            val isCompact = windowSize.isCompact
+            val horizontalPadding = windowSize.adaptiveHorizontalPadding()
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp)
             ) {
                 item {
                     Row(
@@ -142,33 +148,37 @@ fun ExamScreen(
                     ) {
                         Text(
                             text = "${selectedCategory.displayName} Records (${examsForCategory.size})",
-                            fontSize = 15.sp,
+                            fontSize = if (isCompact) 14.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (!uiState.activeClassroom?.linkedSpreadsheetId.isNullOrBlank()) {
                                 Button(
                                     onClick = { 
                                         uiState.activeClassroom?.id?.let { id -> viewModel.syncGoogleSheet(id) } 
                                     },
                                     shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                    contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                                 ) {
-                                    Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Sync", fontSize = 12.sp)
+                                    Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(13.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Sync", fontSize = if (isCompact) 11.sp else 12.sp)
                                 }
                             }
                             Button(
                                 onClick = { examViewModel.openAddEditExamDialog(selectedCategory) },
                                 shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp)
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Add New", fontSize = 12.sp)
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Add", fontSize = if (isCompact) 11.sp else 12.sp)
                             }
                         }
                     }
@@ -231,13 +241,15 @@ fun ExamRecordCard(
     val gradedCount = marks.count { it.marksObtained != null }
     val passedCount = marks.count { it.marksObtained != null && it.marksObtained >= exam.passMarks }
     
+    val isCompact = LocalWindowSizeCategory.current.isCompact
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(if (isCompact) 12.dp else 16.dp)) {
             // Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -247,9 +259,11 @@ fun ExamRecordCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = exam.title,
-                        fontSize = 16.sp,
+                        fontSize = if (isCompact) 15.sp else 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -257,13 +271,13 @@ fun ExamRecordCard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = exam.date,
-                            fontSize = 12.sp,
+                            fontSize = if (isCompact) 11.sp else 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (exam.topicOrChapter.isNotBlank()) {
                             Text(
                                 text = " • ${exam.topicOrChapter}",
-                                fontSize = 12.sp,
+                                fontSize = if (isCompact) 11.sp else 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -272,16 +286,22 @@ fun ExamRecordCard(
                     }
                 }
                 Row {
-                    IconButton(onClick = { examViewModel.openAddEditExamDialog(exam.category, exam) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Exam", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    IconButton(
+                        onClick = { examViewModel.openAddEditExamDialog(exam.category, exam) },
+                        modifier = Modifier.size(if (isCompact) 32.dp else 40.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Exam", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     }
-                    IconButton(onClick = { showDeleteConfirmation = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Exam", tint = StatusError)
+                    IconButton(
+                        onClick = { showDeleteConfirmation = true },
+                        modifier = Modifier.size(if (isCompact) 32.dp else 40.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Exam", tint = StatusError, modifier = Modifier.size(18.dp))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Stats Row
             Row(
@@ -289,28 +309,28 @@ fun ExamRecordCard(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(12.dp),
+                    .padding(if (isCompact) 8.dp else 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Full Marks", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${exam.fullMarks.toInt()}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("Full", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${exam.fullMarks.toInt()}", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold)
                 }
                 Column {
-                    Text("Pass Marks", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${exam.passMarks.toInt()}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("Pass", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${exam.passMarks.toInt()}", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold)
                 }
                 Column {
-                    Text("Graded", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$gradedCount / $totalStudents", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (gradedCount == totalStudents) StatusSuccess else EduPrimary)
+                    Text("Graded", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("$gradedCount / $totalStudents", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold, color = if (gradedCount == totalStudents) StatusSuccess else EduPrimary)
                 }
                 Column {
-                    Text("Passed", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$passedCount", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (passedCount > 0) StatusSuccess else StatusError)
+                    Text("Passed", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("$passedCount", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold, color = if (passedCount > 0) StatusSuccess else StatusError)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Actions
             Row(
@@ -320,23 +340,23 @@ fun ExamRecordCard(
             ) {
                 Text(
                     text = if (expanded) "Hide Mark Entry" else "Enter / View Marks",
-                    fontSize = 13.sp,
+                    fontSize = if (isCompact) 12.sp else 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .clickable { expanded = !expanded }
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 6.dp)
                 )
                 
                 val context = LocalContext.current
                 Button(
                     onClick = { examViewModel.exportExamReport(context, exam) },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    contentPadding = PaddingValues(horizontal = if (isCompact) 10.dp else 12.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(13.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Export PDF", fontSize = 12.sp)
+                    Text("Export PDF", fontSize = if (isCompact) 11.sp else 12.sp)
                 }
             }
 

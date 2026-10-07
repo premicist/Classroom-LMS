@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -114,6 +115,7 @@ fun AddEditClassroomDialog(
     )
 
     AlertDialog(
+        modifier = Modifier.imePadding(),
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -303,6 +305,7 @@ fun AddEditStudentDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.imePadding(),
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -531,6 +534,7 @@ fun AddEditAssignmentDialog(
     var typeDropdownExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
+        modifier = Modifier.imePadding(),
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -678,6 +682,7 @@ fun GradeSubmissionDialog(
     var statusDropdownExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
+        modifier = Modifier.imePadding(),
         onDismissRequest = onDismiss,
         title = {
             Column {
@@ -820,6 +825,7 @@ fun AddEditExamDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.imePadding(),
         onDismissRequest = onDismiss,
         title = {
             Text(

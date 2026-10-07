@@ -1227,6 +1227,88 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun deleteExam(exam: ExamEntity) {
+        viewModelScope.launch {
+            try {
+                examDao.deleteExam(exam)
+                showToast("Exam deleted")
+            } catch (e: Exception) {
+                showToast("Failed to delete exam")
+            }
+        }
+    }
+
+    fun exportExamReport(context: Context, exam: ExamEntity) {
+        val marks = _uiState.value.examMarks.filter { it.examId == exam.id }
+        val students = _uiState.value.students
+        PdfReportExporter.exportExamReport(context, exam, marks, students)
+        showToast("Exporting PDF for ${exam.title}...")
+    }
+
+    fun exportAttendanceRollSheet(context: Context) {
+        val report = _uiState.value.attendanceReport
+        if (report == null) {
+            showToast("No attendance data available to export")
+            return
+        }
+        // In a full implementation, we would pass the actual attendance records
+        // For now, we'll use the report data (limited but functional)
+        PdfReportExporter.exportAttendanceRollSheet(context, report)
+        showToast("Exporting Attendance Roll Sheet...")
+    }
+
+    fun saveSettings(settings: LmsSettings) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveSettings(settings)
+                showToast("Settings & Templates Saved Successfully!")
+            } catch (e: Exception) {
+                showToast("Failed to save settings")
+            }
+        }
+    }
+
+    fun setAppLocked(locked: Boolean) {
+        _uiState.update { it.copy(isAppLocked = locked) }
+    }
+
+    fun importStudentsFromCsv(classroomId: Long, uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val csvContent = getApplication<Application>().contentResolver.openInputStream(uri)?.use { inputStream ->
+                    inputStream.bufferedReader().use { it.readText() }
+                } ?: throw IllegalStateException("Could not read file from selected URI")
+
+                val parsed = SpreadsheetUtils.parseCsvRosterText(csvContent)
+                if (parsed.isEmpty()) {
+                    showToast("No valid student rows found in file")
+                    return@launch
+                }
+
+                val avatarColors = listOf(
+                    0xFF6750A4, 0xFF00639B, 0xFF825500, 0xFF059669, 0xFF2563EB, 0xFF7D5260, 0xFFD97706, 0xFF0284C7
+                )
+
+                val entities = parsed.mapIndexed { idx, p ->
+                    StudentEntity(
+                        classroomId = classroomId,
+                        name = p.name,
+                        studentNumber = p.studentNumber,
+                        email = p.email,
+                        guardianContact = p.guardianContact,
+                        notes = p.notes,
+                        avatarColorHex = avatarColors[idx % avatarColors.size]
+                    )
+                }
+
+                repository.insertStudents(entities)
+                showToast("Successfully imported ${entities.size} students!")
+            } catch (e: Exception) {
+                showToast("CSV Import failed: ${e.localizedMessage ?: "Unknown error"}")
+            }
+        }
+    }
+
     fun showToast(message: String) {
         _uiState.update { it.copy(userNotificationMessage = message) }
     }

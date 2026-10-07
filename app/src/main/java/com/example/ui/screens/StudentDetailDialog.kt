@@ -55,8 +55,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.filled.Psychology
+import com.example.ui.util.LocalWindowSizeCategory
 import com.example.util.AiInsightUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -124,18 +126,21 @@ fun StudentDetailDialog(
         StudentTier.ON_TRACK -> StatusSuccessBg to StatusSuccess
     }
 
+    val isCompact = LocalWindowSizeCategory.current.isCompact
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
+        modifier = modifier.imePadding()
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = if (isCompact) 14.dp else 20.dp),
             contentPadding = PaddingValues(bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp)
         ) {
             // Header: Student Info & Actions
             item {
