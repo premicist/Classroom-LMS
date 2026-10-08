@@ -13,6 +13,8 @@ Allowed only:
 - Refactors that extract code out of it
 - Wiring calls to new focused ViewModels / UseCases
 
+**Status Note:** `ClassroomViewModel` is now fully migrated to `@HiltViewModel` using constructor injection. It operates as the session coordinator.
+
 ## Where work belongs / Status
 
 | Concern | Target | Status |

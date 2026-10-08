@@ -2,9 +2,9 @@ package com.example.ui.viewmodel
 
 import android.app.Application
 import android.content.Context
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.database.AppDatabase
+import com.example.data.auth.AuthManager
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.AttendanceRecordEntity
@@ -21,18 +21,14 @@ import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
 import com.example.data.repository.ClassroomRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import com.example.data.auth.AuthManager
-import com.example.data.repository.SyncRepository
 import com.example.data.repository.UpdateRepository
 import com.example.ui.screens.DateRangeOption
 import com.example.ui.screens.ReportType
@@ -52,9 +48,22 @@ import com.example.data.entity.DisciplineRecordEntity
 import com.example.data.entity.TermWeightConfig
 import com.example.data.repository.DatabaseBackupManager
 import com.example.data.repository.ScheduleRepository
-import java.util.Calendar
+
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import java.util.Calendar
 
 /**
  * ARCHITECTURE FREEZE: Do not add new feature logic here.
@@ -62,16 +71,18 @@ import kotlinx.coroutines.Dispatchers
  * See ARCHITECTURE_FREEZE.md in the repo root.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class ClassroomViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class ClassroomViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val repository: ClassroomRepository,
+    private val scheduleRepository: ScheduleRepository,
+    private val authManager: AuthManager,
+    private val updateRepository: UpdateRepository,
+    private val preferencesManager: PreferencesManager,
+    private val backupManager: DatabaseBackupManager
+) : ViewModel() {
 
-    private val repository: ClassroomRepository
-    private val scheduleRepository: ScheduleRepository
-    private val db = AppDatabase.getInstance(application)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    private val authManager = AuthManager(application)
-    private val updateRepository = UpdateRepository()
-    private val preferencesManager = PreferencesManager(application)
-    private val backupManager = DatabaseBackupManager(application, db)
     private val syncViewModel: SyncViewModel? = null // Placeholder for delegation
 
     private val _uiState = MutableStateFlow(
@@ -87,9 +98,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private var isFirstSettingsLoad = true
 
     init {
-        repository = ClassroomRepository(db)
-        scheduleRepository = ScheduleRepository(db.classScheduleDao())
-
         viewModelScope.launch {
             repository.checkAndSeedInitialData()
         }
@@ -235,7 +243,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val lessonPlans: List<LessonPlanEntity>,
         val dailyLogs: List<DailyLogEntity>,
         val schedules: List<ClassScheduleEntity>,
-        val disciplineRecords: List<com.example.data.entity.DisciplineRecordEntity>,
+        val disciplineRecords: List<DisciplineRecordEntity>,
         val liveAssessments: List<LiveAssessmentEntity>
     )
 
@@ -360,7 +368,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch(Dispatchers.IO) {
             val result = backupManager.importDatabaseBackup(uri)
             result.onSuccess {
-                val classrooms = db.classroomDao().getAllClassroomsOnce()
+                val classrooms = repository.getAllClassrooms().firstOrNull() ?: emptyList()
                 if (classrooms.isNotEmpty()) {
                     val firstId = classrooms.first().id
                     _selectedClassroomId.value = firstId
@@ -1120,7 +1128,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     fun importStudentsFromCsv(classroomId: Long, uri: Uri) {
         viewModelScope.launch {
             try {
-                val csvContent = getApplication<Application>().contentResolver.openInputStream(uri)?.use { inputStream ->
+                val csvContent = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     inputStream.bufferedReader().use { it.readText() }
                 } ?: throw IllegalStateException("Could not read file from selected URI")
 

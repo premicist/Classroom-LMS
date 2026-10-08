@@ -62,12 +62,10 @@ class GradingViewModel @Inject constructor(
     private val assignmentDao: AssignmentDao,
     private val submissionDao: SubmissionDao,
     private val studentDao: StudentDao,
-    private val preferencesManager: PreferencesManager,
-    database: AppDatabase
+    private val classroomDao: ClassroomDao,
+    private val repository: ClassroomRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
-
-    private val repository = ClassroomRepository(database)
-    private val classroomDao: ClassroomDao = database.classroomDao()
 
     private val _uiState = MutableStateFlow(GradingUiState())
     val uiState: StateFlow<GradingUiState> = _uiState.asStateFlow()

@@ -14,10 +14,12 @@ import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
+import com.example.data.dao.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import javax.inject.Inject
 
-class ClassroomRepository(private val database: AppDatabase) {
+open class ClassroomRepository(private val database: AppDatabase) {
 
     private val classroomDao = database.classroomDao()
     private val studentDao = database.studentDao()
@@ -49,8 +51,8 @@ class ClassroomRepository(private val database: AppDatabase) {
     // Assignments
     fun getAssignments(classroomId: Long): Flow<List<AssignmentEntity>> = assignmentDao.getAssignmentsByClassroom(classroomId)
     suspend fun getAssignmentsByClassroomOnce(classroomId: Long): List<AssignmentEntity> = assignmentDao.getAssignmentsByClassroomOnce(classroomId)
-    fun getAssignmentById(id: Long): Flow<AssignmentEntity?> = assignmentDao.getAssignmentById(id)
-    suspend fun insertAssignment(assignment: AssignmentEntity, autoCreateSubmissions: Boolean = true): Long {
+    open fun getAssignmentById(id: Long): Flow<AssignmentEntity?> = assignmentDao.getAssignmentById(id)
+    open suspend fun insertAssignment(assignment: AssignmentEntity, autoCreateSubmissions: Boolean = true): Long {
         val assignmentId = assignmentDao.insertAssignment(assignment)
         if (autoCreateSubmissions) {
             val students = studentDao.getStudentsByClassroomOnce(assignment.classroomId)
@@ -69,19 +71,19 @@ class ClassroomRepository(private val database: AppDatabase) {
         }
         return assignmentId
     }
-    suspend fun updateAssignment(assignment: AssignmentEntity) = assignmentDao.updateAssignment(assignment)
-    suspend fun deleteAssignment(id: Long) {
+    open suspend fun updateAssignment(assignment: AssignmentEntity) = assignmentDao.updateAssignment(assignment)
+    open suspend fun deleteAssignment(id: Long) {
         submissionDao.deleteSubmissionsByAssignmentId(id)
         assignmentDao.deleteAssignmentById(id)
     }
 
     // Submissions
-    fun getSubmissionsByAssignment(assignmentId: Long): Flow<List<SubmissionEntity>> = submissionDao.getSubmissionsByAssignment(assignmentId)
-    fun getSubmissionsByClassroom(classroomId: Long): Flow<List<SubmissionEntity>> = submissionDao.getSubmissionsByClassroom(classroomId)
-    suspend fun getSubmissionsForStudentOnce(studentId: Long): List<SubmissionEntity> = submissionDao.getSubmissionsByStudentOnce(studentId)
-    fun getSubmissionsByStudent(studentId: Long): Flow<List<SubmissionEntity>> = submissionDao.getSubmissionsByStudent(studentId)
-    suspend fun updateSubmission(submission: SubmissionEntity) = submissionDao.updateSubmission(submission)
-    suspend fun insertOrUpdateSubmissions(submissions: List<SubmissionEntity>) = submissionDao.insertSubmissions(submissions)
+    open fun getSubmissionsByAssignment(assignmentId: Long): Flow<List<SubmissionEntity>> = submissionDao.getSubmissionsByAssignment(assignmentId)
+    open fun getSubmissionsByClassroom(classroomId: Long): Flow<List<SubmissionEntity>> = submissionDao.getSubmissionsByClassroom(classroomId)
+    open suspend fun getSubmissionsForStudentOnce(studentId: Long): List<SubmissionEntity> = submissionDao.getSubmissionsByStudentOnce(studentId)
+    open fun getSubmissionsByStudent(studentId: Long): Flow<List<SubmissionEntity>> = submissionDao.getSubmissionsByStudent(studentId)
+    open suspend fun updateSubmission(submission: SubmissionEntity) = submissionDao.updateSubmission(submission)
+    open suspend fun insertOrUpdateSubmissions(submissions: List<SubmissionEntity>) = submissionDao.insertSubmissions(submissions)
 
     // Homework Records
     fun getHomeworkRecords(classroomId: Long, date: String): Flow<List<HomeworkRecordEntity>> = homeworkDao.getHomeworkRecords(classroomId, date)

@@ -8,7 +8,7 @@ To run unit tests locally from the command line:
 ./gradlew :app:testDebugUnitTest
 ```
 
-All ViewModel unit tests (including `AttendanceViewModelTest` and `ExamViewModelTest`) run deterministically using `kotlinx-coroutines-test`, `Robolectric`, and in-memory Fake DAOs without needing physical devices, emulator, or network access.
+All ViewModel unit tests (including `AttendanceViewModelTest`, `ExamViewModelTest`, and `GradingViewModelTest`) run deterministically using `kotlinx-coroutines-test`, `Robolectric`, and in-memory Fake DAOs without needing physical devices, emulator, or network access.
 
 ## Automated CI Pipeline (GitHub Actions)
 

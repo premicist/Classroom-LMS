@@ -110,16 +110,18 @@ object AppModule {
         return AuthManager(context)
     }
 
-    @Provides
-    @Singleton
-    fun provideClassroomRepository(database: AppDatabase): ClassroomRepository {
-        return ClassroomRepository(database)
-    }
+
 
     @Provides
     @Singleton
     fun provideScheduleRepository(classScheduleDao: ClassScheduleDao): ScheduleRepository {
         return ScheduleRepository(classScheduleDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideClassroomRepository(database: AppDatabase): ClassroomRepository {
+        return ClassroomRepository(database)
     }
 
     @Provides
