@@ -7,7 +7,6 @@ import com.example.data.dao.AttendanceDao
 import com.example.data.dao.ClassroomDao
 import com.example.data.dao.HomeworkRecordDao
 import com.example.data.dao.StudentDao
-import com.example.data.database.AppDatabase
 import com.example.data.database.PreferencesManager
 import com.example.data.entity.AttendanceRecordEntity
 import com.example.data.entity.AttendanceStatus
@@ -53,11 +52,10 @@ class AttendanceViewModel @Inject constructor(
     private val homeworkRecordDao: HomeworkRecordDao,
     private val studentDao: StudentDao,
     private val preferencesManager: PreferencesManager,
-    database: AppDatabase
+    private val classroomDao: ClassroomDao
 ) : ViewModel() {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    private val classroomDao: ClassroomDao = database.classroomDao()
 
     private val _uiState = MutableStateFlow(
         AttendanceUiState(selectedDate = dateFormat.format(Date()))

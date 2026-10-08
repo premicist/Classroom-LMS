@@ -45,14 +45,10 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 import android.net.Uri
-import com.example.data.dao.ExamDao
 import com.example.data.database.LmsSettings
 import com.example.data.database.PreferencesManager
 import com.example.data.entity.ClassScheduleEntity
 import com.example.data.entity.DisciplineRecordEntity
-import com.example.data.entity.ExamCategory
-import com.example.data.entity.ExamEntity
-import com.example.data.entity.ExamMarkEntity
 import com.example.data.entity.TermWeightConfig
 import com.example.data.repository.DatabaseBackupManager
 import com.example.data.repository.ScheduleRepository
@@ -71,7 +67,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
     private val repository: ClassroomRepository
     private val scheduleRepository: ScheduleRepository
     private val db = AppDatabase.getInstance(application)
-    private val examDao: ExamDao = db.examDao()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val authManager = AuthManager(application)
     private val updateRepository = UpdateRepository()
@@ -162,9 +157,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                         repository.getDailyLogs(id),
                         scheduleRepository.getSchedulesByClassroom(id),
                         repository.getDisciplineRecordsByClassroom(id),
-                        repository.getLiveAssessmentsByClassroom(id),
-                        examDao.getExamsForClassroom(id),
-                        examDao.getMarksForClassroom(id)
+                        repository.getLiveAssessmentsByClassroom(id)
                     ) { args: Array<Any?> ->
                         @Suppress("UNCHECKED_CAST")
                         CombinedClassData(
@@ -179,9 +172,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             dailyLogs = args[8] as List<DailyLogEntity>,
                             schedules = args[9] as List<ClassScheduleEntity>,
                             disciplineRecords = args[10] as List<DisciplineRecordEntity>,
-                            liveAssessments = args[11] as List<LiveAssessmentEntity>,
-                            exams = args[12] as List<ExamEntity>,
-                            examMarks = args[13] as List<ExamMarkEntity>
+                            liveAssessments = args[11] as List<LiveAssessmentEntity>
                         )
                     }
                 }
@@ -199,8 +190,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                     val schedules = combined.schedules
                     val disciplineRecords = combined.disciplineRecords
                     val liveAssessments = combined.liveAssessments
-                    val exams = combined.exams
-                    val examMarks = combined.examMarks
 
                     // Compute Grade Summaries (Offloaded to Dispatchers.Default)
                     val currentConfig = _uiState.value.termWeightConfig
@@ -224,8 +213,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                             schedules = schedules,
                             disciplineRecords = disciplineRecords,
                             liveAssessments = liveAssessments,
-                            exams = exams,
-                            examMarks = examMarks,
                             studentGradeSummaries = studentSummaries,
                             analytics = analytics,
                             attendanceReport = attendanceReport,
@@ -249,9 +236,7 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
         val dailyLogs: List<DailyLogEntity>,
         val schedules: List<ClassScheduleEntity>,
         val disciplineRecords: List<com.example.data.entity.DisciplineRecordEntity>,
-        val liveAssessments: List<LiveAssessmentEntity>,
-        val exams: List<ExamEntity>,
-        val examMarks: List<ExamMarkEntity>
+        val liveAssessments: List<LiveAssessmentEntity>
     )
 
     // --- NAVIGATION & TABS ---
@@ -1167,24 +1152,6 @@ class ClassroomViewModel(application: Application) : AndroidViewModel(applicatio
                 showToast("CSV Import failed: ${e.localizedMessage ?: "Unknown error"}")
             }
         }
-    }
-
-    fun deleteExam(exam: ExamEntity) {
-        viewModelScope.launch {
-            try {
-                examDao.deleteExam(exam)
-                showToast("Exam deleted")
-            } catch (e: Exception) {
-                showToast("Failed to delete exam")
-            }
-        }
-    }
-
-    fun exportExamReport(context: Context, exam: ExamEntity) {
-        val marks = _uiState.value.examMarks.filter { it.examId == exam.id }
-        val students = _uiState.value.students
-        PdfReportExporter.exportExamReport(context, exam, marks, students)
-        showToast("Exporting PDF for ${exam.title}...")
     }
 
     fun showToast(message: String) {

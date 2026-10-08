@@ -26,7 +26,7 @@ data class LmsSettings(
     val examWeight: Double = 30.0
 )
 
-class PreferencesManager(private val context: Context) {
+open class PreferencesManager(private val context: Context) {
     companion object {
         val ACTIVE_CLASSROOM_ID = longPreferencesKey("active_classroom_id")
         val SCHOOL_NAME = stringPreferencesKey("school_name")
@@ -42,13 +42,13 @@ class PreferencesManager(private val context: Context) {
         val WEIGHT_EXAM = doublePreferencesKey("weight_exam")
     }
 
-    val activeClassroomIdFlow: Flow<Long?> = context.dataStore.data
+    open val activeClassroomIdFlow: Flow<Long?> = context.dataStore.data
         .map { preferences ->
             val id = preferences[ACTIVE_CLASSROOM_ID]
             if (id == -1L) null else id
         }
 
-    val settingsFlow: Flow<LmsSettings> = context.dataStore.data
+    open val settingsFlow: Flow<LmsSettings> = context.dataStore.data
         .map { preferences ->
             LmsSettings(
                 schoolName = preferences[SCHOOL_NAME] ?: "Classroom LMS Institution",
@@ -65,7 +65,7 @@ class PreferencesManager(private val context: Context) {
             )
         }
 
-    suspend fun saveActiveClassroomId(id: Long?) {
+    open suspend fun saveActiveClassroomId(id: Long?) {
         context.dataStore.edit { preferences ->
             if (id != null) {
                 preferences[ACTIVE_CLASSROOM_ID] = id
@@ -75,7 +75,7 @@ class PreferencesManager(private val context: Context) {
         }
     }
 
-    suspend fun saveSettings(settings: LmsSettings) {
+    open suspend fun saveSettings(settings: LmsSettings) {
         context.dataStore.edit { preferences ->
             preferences[SCHOOL_NAME] = settings.schoolName
             preferences[REPORT_HEADER] = settings.reportHeader

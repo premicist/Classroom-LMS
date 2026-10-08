@@ -17,7 +17,7 @@ Allowed only:
 
 | Concern | Target | Status |
 |---------|--------|--------|
-| Exams & Exam Marks | `ExamViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
+| Exams & Exam Marks | `ExamViewModel` (`@HiltViewModel`) | ✅ Extracted & wired (Exam ownership fully removed from ClassroomViewModel) |
 | Attendance, homework day ops | `AttendanceViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
 | Grading / submissions | `GradingViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
 | Planner / lesson plans / daily log / timetable | `PlannerViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |

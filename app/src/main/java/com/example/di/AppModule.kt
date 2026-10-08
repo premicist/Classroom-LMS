@@ -23,6 +23,10 @@ import com.example.data.dao.ClassroomDao
 import com.example.data.dao.DisciplineDao
 import com.example.data.dao.InterventionDao
 import com.example.data.dao.LiveAssessmentDao
+import com.example.data.repository.ClassroomRepository
+import com.example.data.repository.DatabaseBackupManager
+import com.example.data.repository.ScheduleRepository
+import com.example.data.repository.UpdateRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -104,5 +108,29 @@ object AppModule {
     @Singleton
     fun provideAuthManager(@ApplicationContext context: Context): AuthManager {
         return AuthManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideClassroomRepository(database: AppDatabase): ClassroomRepository {
+        return ClassroomRepository(database)
+    }
+
+    @Provides
+    @Singleton
+    fun provideScheduleRepository(classScheduleDao: ClassScheduleDao): ScheduleRepository {
+        return ScheduleRepository(classScheduleDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDatabaseBackupManager(@ApplicationContext context: Context, database: AppDatabase): DatabaseBackupManager {
+        return DatabaseBackupManager(context, database)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUpdateRepository(): UpdateRepository {
+        return UpdateRepository()
     }
 }
