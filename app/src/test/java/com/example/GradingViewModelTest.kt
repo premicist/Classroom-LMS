@@ -75,7 +75,7 @@ class GradingViewModelTest {
         fakeClassroomDao = FakeClassroomDao()
         preferencesManager = FakePreferencesManager(context)
 
-        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().setTransactionExecutor(Runnable::run).setQueryExecutor(Runnable::run).build()
         // Create a fake repository
         repository = object : ClassroomRepository(db) {
             override suspend fun insertAssignment(assignment: AssignmentEntity, autoCreateSubmissions: Boolean): Long {

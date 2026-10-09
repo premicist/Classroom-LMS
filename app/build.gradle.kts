@@ -37,8 +37,6 @@ android {
         storePassword = System.getenv("STORE_PASSWORD")
         keyAlias = "upload"
         keyPassword = System.getenv("KEY_PASSWORD")
-      } else {
-        initWith(getByName("debug"))
       }
     }
     create("debugConfig") {
@@ -60,7 +58,11 @@ android {
       isMinifyEnabled = true
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+      val keystoreFile = file(keystorePath)
+      if (keystoreFile.exists()) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
     debug {
       isMinifyEnabled = false
@@ -75,7 +77,15 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions { 
+      unitTests { 
+          isIncludeAndroidResources = true
+          all { test ->
+              test.systemProperty("robolectric.dependency.repo.id", "central")
+              test.systemProperty("robolectric.dependency.repo.url", "https://repo1.maven.org/maven2")
+          }
+      } 
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
