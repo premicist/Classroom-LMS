@@ -13,7 +13,7 @@ Allowed only:
 - Refactors that extract code out of it
 - Wiring calls to new focused ViewModels / UseCases
 
-**Status Note:** `ClassroomViewModel` is now fully migrated to `@HiltViewModel` using constructor injection. It operates as the session coordinator.
+**Status Note:** `ClassroomViewModel` is now fully migrated to `@HiltViewModel` using constructor injection. It operates as the session coordinator. The `SyncViewModel` placeholder has been fully removed, and all sync actions are strictly owned by `SyncViewModel`.
 
 ## Where work belongs / Status
 

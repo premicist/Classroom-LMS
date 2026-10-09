@@ -31,6 +31,7 @@ import com.example.data.entity.LessonPlanEntity
 import com.example.data.entity.LiveAssessmentEntity
 import com.example.data.entity.StudentEntity
 import com.example.data.entity.SubmissionEntity
+import net.sqlcipher.database.SupportFactory
 
 @Database(
     entities = [
@@ -74,11 +75,15 @@ abstract class AppDatabase : RoomDatabase() {
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = INSTANCE ?: run {
+                    val passphrase = DatabaseSecurityHelper.getOrGeneratePassphrase(context)
+                    val factory = SupportFactory(passphrase)
+                    
                     val builder = Room.databaseBuilder(
                         context.applicationContext,
                         AppDatabase::class.java,
-                        "classroom_lms_db"
-                    ).addMigrations(
+                        "classroom_lms_db_encrypted"
+                    ).openHelperFactory(factory)
+                    .addMigrations(
                         com.example.data.database.Migrations.MIGRATION_6_7,
                         Migrations.MIGRATION_7_8,
                         Migrations.MIGRATION_8_9

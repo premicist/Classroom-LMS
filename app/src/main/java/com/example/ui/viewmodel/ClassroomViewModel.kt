@@ -83,7 +83,6 @@ class ClassroomViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    private val syncViewModel: SyncViewModel? = null // Placeholder for delegation
 
     private val _uiState = MutableStateFlow(
         LmsUiState(

@@ -18,6 +18,10 @@
 
 # Room
 -keep class * extends androidx.room.RoomDatabase
+
+# SQLCipher
+-keep class net.sqlcipher.** { *; }
+-dontwarn net.sqlcipher.**
 -keep @androidx.room.Entity class *
 -dontwarn androidx.room.paging.**
 
