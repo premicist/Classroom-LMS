@@ -1,9 +1,7 @@
 package com.example
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.example.data.dao.AttendanceDao
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AssignmentType
 import com.example.data.entity.ClassroomEntity
@@ -12,34 +10,17 @@ import com.example.data.entity.SubmissionEntity
 import com.example.data.entity.SubmissionStatus
 import com.example.data.repository.ClassroomRepository
 import com.example.fake.FakeAssignmentDao
-import com.example.fake.FakeAttendanceDao
 import com.example.fake.FakeClassroomDao
-import com.example.data.dao.DisciplineDao
-import com.example.data.dao.HomeworkRecordDao
-import com.example.data.dao.InterventionDao
-import com.example.data.dao.LiveAssessmentDao
-import com.example.data.dao.PlannerDao
-import com.example.data.database.AppDatabase
-import com.example.data.entity.DailyLogEntity
-import com.example.data.entity.DisciplineRecordEntity
-import com.example.data.entity.InterventionEntity
-import com.example.data.entity.LessonPlanEntity
-import com.example.data.entity.LiveAssessmentEntity
 import com.example.fake.FakeClassroomRepository
-import com.example.fake.FakeHomeworkRecordDao
 import com.example.fake.FakePreferencesManager
 import com.example.fake.FakeStudentDao
 import com.example.fake.FakeSubmissionDao
 import com.example.testutil.MainDispatcherRule
 import com.example.ui.viewmodel.GradingViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -68,34 +49,19 @@ class GradingViewModelTest {
     @Before
     fun setUp() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        
+
         fakeAssignmentDao = FakeAssignmentDao()
         fakeSubmissionDao = FakeSubmissionDao()
         fakeStudentDao = FakeStudentDao()
         fakeClassroomDao = FakeClassroomDao()
         preferencesManager = FakePreferencesManager(context)
 
-        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().setTransactionExecutor(Runnable::run).setQueryExecutor(Runnable::run).build()
-        // Create a fake repository
-        repository = object : ClassroomRepository(db) {
-            override suspend fun insertAssignment(assignment: AssignmentEntity, autoCreateSubmissions: Boolean): Long {
-                val id = fakeAssignmentDao.insertAssignment(assignment)
-                if (autoCreateSubmissions) {
-                    val students = fakeStudentDao.getStudentsByClassroomOnce(assignment.classroomId)
-                    val submissions = students.map {
-                        SubmissionEntity(assignmentId = id, studentId = it.id, classroomId = assignment.classroomId)
-                    }
-                    fakeSubmissionDao.insertSubmissions(submissions)
-                }
-                return id
-            }
-            override suspend fun updateAssignment(assignment: AssignmentEntity) = fakeAssignmentDao.updateAssignment(assignment)
-            override suspend fun deleteAssignment(id: Long) = fakeAssignmentDao.deleteAssignmentById(id)
-            override suspend fun updateSubmission(submission: SubmissionEntity) = fakeSubmissionDao.updateSubmission(submission)
-            override suspend fun insertOrUpdateSubmissions(submissions: List<SubmissionEntity>) {
-                fakeSubmissionDao.insertSubmissions(submissions)
-            }
-        }
+        repository = FakeClassroomRepository(
+            db = null,
+            fakeAssignmentDao = fakeAssignmentDao,
+            fakeSubmissionDao = fakeSubmissionDao,
+            fakeStudentDao = fakeStudentDao
+        )
 
         preferencesManager.saveActiveClassroomId(classroomId)
 
@@ -148,10 +114,7 @@ class GradingViewModelTest {
             score = 9.5
         )
         fakeSubmissionDao.insertSubmission(submission)
-        
-        // Re-trigger the activeClassroomIdFlow to force Room Flow to emit the new data
-        preferencesManager.saveActiveClassroomId(null)
-        preferencesManager.saveActiveClassroomId(classroomId)
+
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -160,7 +123,7 @@ class GradingViewModelTest {
         assertEquals("Algebra Worksheet", state.assignments[0].title)
         assertEquals(1, state.submissions.size)
         assertEquals(9.5, state.submissions[0].score)
-        assertEquals(1, state.studentGradeSummaries.size) // Analytics should compute automatically
+        assertEquals(1, state.studentGradeSummaries.size)
     }
 
     @Test
@@ -174,7 +137,7 @@ class GradingViewModelTest {
             type = AssignmentType.QUIZ
         )
         fakeAssignmentDao.insertAssignment(assignment)
-        
+
         val submission = SubmissionEntity(
             id = 1L,
             assignmentId = 1L,
@@ -183,10 +146,7 @@ class GradingViewModelTest {
             status = SubmissionStatus.SUBMITTED
         )
         fakeSubmissionDao.insertSubmission(submission)
-        
-        // Re-trigger flow
-        preferencesManager.saveActiveClassroomId(null)
-        preferencesManager.saveActiveClassroomId(classroomId)
+
         advanceUntilIdle()
 
         val updatedSubmission = submission.copy(status = SubmissionStatus.GRADED, score = 18.0)
@@ -211,7 +171,7 @@ class GradingViewModelTest {
 
     @Test
     fun emptyClassroomDoesNotCrashAndYieldsEmptyLists() = runTest {
-        preferencesManager.saveActiveClassroomId(999L) // Unknown ID
+        preferencesManager.saveActiveClassroomId(999L)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
