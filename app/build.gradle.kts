@@ -86,6 +86,15 @@ secrets {
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
 
+// Lock Robolectric version to prevent CI failures due to unsupported SDK levels
+configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == "org.robolectric") {
+            details.useVersion("4.16.1")
+        }
+    }
+}
+
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
