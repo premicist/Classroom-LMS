@@ -39,17 +39,6 @@ android {
         keyPassword = System.getenv("KEY_PASSWORD")
       }
     }
-    create("debugConfig") {
-      val customDebugKs = file("${rootDir}/debug.keystore")
-      if (customDebugKs.exists()) {
-        storeFile = customDebugKs
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-      } else {
-        initWith(getByName("debug"))
-      }
-    }
   }
 
   buildTypes {
@@ -66,7 +55,6 @@ android {
     }
     debug {
       isMinifyEnabled = false
-      signingConfig = signingConfigs.getByName("debugConfig")
     }
   }
   compileOptions {
@@ -80,10 +68,6 @@ android {
   testOptions { 
       unitTests { 
           isIncludeAndroidResources = true
-          all { test ->
-              test.systemProperty("robolectric.dependency.repo.id", "central")
-              test.systemProperty("robolectric.dependency.repo.url", "https://repo1.maven.org/maven2")
-          }
       } 
   }
   dependenciesInfo {
