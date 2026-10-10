@@ -142,7 +142,7 @@ open class ClassroomRepository(private val database: AppDatabase?) {
     // Initialize or Reset Demo Data
     suspend fun checkAndSeedInitialData() {
         val existing = classroomDao.getAllClassrooms().firstOrNull()
-            if (existing.isNullOrEmpty()) {
+        if (existing.isNullOrEmpty()) {
             if (database != null) {
                 SampleDataGenerator.populateSampleData(database)
             }
