@@ -19,18 +19,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
-open class ClassroomRepository(private val database: AppDatabase) {
+open class ClassroomRepository(private val database: AppDatabase?) {
 
-    private val classroomDao = database.classroomDao()
-    private val studentDao = database.studentDao()
-    private val assignmentDao = database.assignmentDao()
-    private val submissionDao = database.submissionDao()
-    private val homeworkDao = database.homeworkRecordDao()
-    private val attendanceDao = database.attendanceDao()
-    private val interventionDao = database.interventionDao()
-    private val plannerDao = database.plannerDao()
-    private val disciplineDao = database.disciplineDao()
-    private val liveAssessmentDao = database.liveAssessmentDao()
+    private val classroomDao by lazy { database!!.classroomDao() }
+    private val studentDao by lazy { database!!.studentDao() }
+    private val assignmentDao by lazy { database!!.assignmentDao() }
+    private val submissionDao by lazy { database!!.submissionDao() }
+    private val homeworkDao by lazy { database!!.homeworkRecordDao() }
+    private val attendanceDao by lazy { database!!.attendanceDao() }
+    private val interventionDao by lazy { database!!.interventionDao() }
+    private val plannerDao by lazy { database!!.plannerDao() }
+    private val disciplineDao by lazy { database!!.disciplineDao() }
+    private val liveAssessmentDao by lazy { database!!.liveAssessmentDao() }
 
     // Classrooms
     fun getAllClassrooms(): Flow<List<ClassroomEntity>> = classroomDao.getAllClassrooms()
@@ -142,13 +142,17 @@ open class ClassroomRepository(private val database: AppDatabase) {
     // Initialize or Reset Demo Data
     suspend fun checkAndSeedInitialData() {
         val existing = classroomDao.getAllClassrooms().firstOrNull()
-        if (existing.isNullOrEmpty()) {
-            SampleDataGenerator.populateSampleData(database)
+            if (existing.isNullOrEmpty()) {
+            if (database != null) {
+                SampleDataGenerator.populateSampleData(database)
+            }
         }
     }
 
     suspend fun resetWithSampleData() {
-        database.clearAllTables()
-        SampleDataGenerator.populateSampleData(database)
+        database?.clearAllTables()
+        if (database != null) {
+            SampleDataGenerator.populateSampleData(database)
+        }
     }
 }

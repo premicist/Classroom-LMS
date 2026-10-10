@@ -8,6 +8,10 @@
     <exclude domain="database" path="classroom_lms_db-journal"/>
     <exclude domain="database" path="classroom_lms_db-shm"/>
     <exclude domain="database" path="classroom_lms_db-wal"/>
+    <exclude domain="database" path="classroom_lms_db_encrypted"/>
+    <exclude domain="database" path="classroom_lms_db_encrypted-journal"/>
+    <exclude domain="database" path="classroom_lms_db_encrypted-shm"/>
+    <exclude domain="database" path="classroom_lms_db_encrypted-wal"/>
     <exclude domain="file" path="reports"/>
     <exclude domain="file" path="exports"/>
 </full-backup-content>

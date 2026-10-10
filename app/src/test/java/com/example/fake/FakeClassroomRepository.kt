@@ -6,7 +6,7 @@ import com.example.data.entity.SubmissionEntity
 import com.example.data.repository.ClassroomRepository
 
 class FakeClassroomRepository(
-    db: AppDatabase,
+    db: AppDatabase?,
     private val fakeAssignmentDao: FakeAssignmentDao,
     private val fakeSubmissionDao: FakeSubmissionDao,
     private val fakeStudentDao: FakeStudentDao

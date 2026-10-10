@@ -52,11 +52,9 @@ class PlannerViewModel @Inject constructor(
     private val plannerDao: PlannerDao,
     private val classScheduleDao: ClassScheduleDao,
     private val preferencesManager: PreferencesManager,
-    database: AppDatabase
+    private val classroomDao: ClassroomDao
 ) : ViewModel() {
 
-    private val classroomDao: ClassroomDao = database.classroomDao()
-    private val repository = ClassroomRepository(database)
     private val scheduleRepository = ScheduleRepository(classScheduleDao)
 
     private val _uiState = MutableStateFlow(PlannerUiState())
@@ -153,7 +151,7 @@ class PlannerViewModel @Inject constructor(
                     targetDate = targetDate,
                     status = status
                 )
-                repository.updateLessonPlan(updated)
+                plannerDao.updateLessonPlan(updated)
                 showToast("Lesson plan updated")
             } else {
                 val newPlan = LessonPlanEntity(
@@ -163,7 +161,7 @@ class PlannerViewModel @Inject constructor(
                     targetDate = targetDate,
                     status = status
                 )
-                repository.saveLessonPlan(newPlan)
+                plannerDao.insertLessonPlan(newPlan)
                 showToast("Lesson plan created")
             }
             closeLessonPlanDialog()
@@ -172,14 +170,14 @@ class PlannerViewModel @Inject constructor(
 
     fun updateLessonPlanStatus(plan: LessonPlanEntity, newStatus: String) {
         viewModelScope.launch {
-            repository.updateLessonPlan(plan.copy(status = newStatus))
+            plannerDao.updateLessonPlan(plan.copy(status = newStatus))
             showToast("Plan status set to $newStatus")
         }
     }
 
     fun deleteLessonPlan(plan: LessonPlanEntity) {
         viewModelScope.launch {
-            repository.deleteLessonPlan(plan)
+            plannerDao.deleteLessonPlan(plan)
             showToast("Lesson plan deleted")
         }
     }
@@ -212,7 +210,7 @@ class PlannerViewModel @Inject constructor(
                     reflectionNotes = reflectionNotes,
                     wasProxyClass = wasProxyClass
                 )
-                repository.updateDailyLog(updated)
+                plannerDao.updateDailyLog(updated)
                 showToast("Daily diary log updated")
             } else {
                 val newLog = DailyLogEntity(
@@ -221,7 +219,7 @@ class PlannerViewModel @Inject constructor(
                     reflectionNotes = reflectionNotes,
                     wasProxyClass = wasProxyClass
                 )
-                repository.saveDailyLog(newLog)
+                plannerDao.insertDailyLog(newLog)
                 showToast("Daily diary entry added")
             }
             closeDailyLogDialog()
@@ -230,7 +228,7 @@ class PlannerViewModel @Inject constructor(
 
     fun deleteDailyLog(log: DailyLogEntity) {
         viewModelScope.launch {
-            repository.deleteDailyLog(log)
+            plannerDao.deleteDailyLog(log)
             showToast("Daily diary entry deleted")
         }
     }
