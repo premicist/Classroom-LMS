@@ -34,6 +34,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideLegacyDatabaseMigrator(@ApplicationContext context: Context): com.example.data.database.LegacyDatabaseMigrator {
+        return com.example.data.database.LegacyDatabaseMigrator.getInstance(context)
+    }
+
+    @Provides
+    @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return AppDatabase.getInstance(context)
     }

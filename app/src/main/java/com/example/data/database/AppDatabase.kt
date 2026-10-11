@@ -75,6 +75,12 @@ abstract class AppDatabase : RoomDatabase() {
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = INSTANCE ?: run {
+                    // Check and perform one-time migration from unencrypted legacy database if present
+                    val migrator = LegacyDatabaseMigrator.getInstance(context)
+                    if (migrator.isMigrationRequired()) {
+                        migrator.performMigration()
+                    }
+
                     val passphrase = DatabaseSecurityHelper.getOrGeneratePassphrase(context)
                     val factory = SupportFactory(passphrase)
                     

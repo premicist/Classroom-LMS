@@ -141,6 +141,7 @@ fun LmsMainScreen(
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
     onAuthenticate: (() -> Unit)? = null,
+    upgradeViewModel: com.example.ui.viewmodel.DatabaseUpgradeViewModel = hiltViewModel(),
     studentSupportViewModel: StudentSupportViewModel = hiltViewModel(),
     syncViewModel: SyncViewModel = hiltViewModel(),
     analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
@@ -149,6 +150,44 @@ fun LmsMainScreen(
     gradingViewModel: GradingViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val upgradeState by upgradeViewModel.upgradeState.collectAsState()
+
+    // 1. Guard against unmigrated or failed database upgrades
+    when (val state = upgradeState) {
+        is com.example.ui.viewmodel.DatabaseUpgradeState.Upgrading -> {
+            com.example.ui.screens.DatabaseUpgradingScreen(modifier = modifier)
+            return
+        }
+        is com.example.ui.viewmodel.DatabaseUpgradeState.Failed -> {
+            val exportLegacyLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.CreateDocument("application/json")
+            ) { uri: Uri? ->
+                if (uri != null) {
+                    val result = upgradeViewModel.exportLegacyDatabaseBackup(uri)
+                    if (result.isSuccess) {
+                        viewModel.showToast("Legacy data successfully exported to JSON backup")
+                    } else {
+                        viewModel.showToast("Export failed: ${result.exceptionOrNull()?.message}")
+                    }
+                }
+            }
+
+            com.example.ui.screens.DatabaseUpgradeFailedScreen(
+                errorMessage = state.message,
+                onRetry = { upgradeViewModel.retryMigration() },
+                onExportLegacy = {
+                    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                    exportLegacyLauncher.launch("classroom_lms_legacy_backup_$timeStamp.json")
+                },
+                modifier = modifier
+            )
+            return
+        }
+        else -> {
+            // Upgrade not required or completed; continue to standard app flow
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsState()
 
     if (uiState.isAppLocked) {

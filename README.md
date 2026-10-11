@@ -43,6 +43,12 @@ Never commit the following sensitive or machine-local files to version control:
 - `app/google-services.json`
 - `keystore.properties` or `secrets.properties`
 
+## Safe Upgrade & Database Encryption (v1.7.0)
+
+- **SQLCipher at rest**: The local database is encrypted using SQLCipher with a 256-bit AES key managed via Android Keystore.
+- **Automated Migration**: Upgrades from pre-encryption builds automatically migrate existing unencrypted databases (`classroom_lms_db`) to the encrypted format (`classroom_lms_db_encrypted`) on first launch.
+- **Fail-Safe Mechanism**: The unencrypted database is renamed to `.bak` upon verified migration. If an unexpected error occurs during migration, normal app access is blocked to prevent data loss, and an emergency JSON export is provided.
+
 ## Architecture & Maintenance
 
 - **Architecture Freeze**: `ClassroomViewModel.kt` is currently frozen for new feature logic. Refer to [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md) before adding new capabilities.

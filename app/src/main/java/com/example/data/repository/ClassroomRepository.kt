@@ -141,6 +141,10 @@ open class ClassroomRepository(private val database: AppDatabase?) {
 
     // Initialize or Reset Demo Data
     suspend fun checkAndSeedInitialData() {
+        if (com.example.data.database.LegacyDatabaseMigrator.hasMigrationFailed) {
+            // Guard: Never seed dummy demo data if legacy migration failed
+            return
+        }
         val existing = classroomDao.getAllClassrooms().firstOrNull()
         if (existing.isNullOrEmpty()) {
             if (database != null) {
