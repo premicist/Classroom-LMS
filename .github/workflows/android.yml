@@ -57,7 +57,8 @@ jobs:
             echo "❌ robolectric.properties missing"
             exit 1
           fi
-          grep -q '^sdk=34$' app/src/test/resources/robolectric.properties || {
+          # Normalize line endings and check for sdk=34
+          if ! grep -qE '^[[:space:]]*sdk=34[[:space:]]*$' <(sed 's/\r$//' app/src/test/resources/robolectric.properties); then
             echo "❌ robolectric.properties does not contain sdk=34"
             exit 1
           }
