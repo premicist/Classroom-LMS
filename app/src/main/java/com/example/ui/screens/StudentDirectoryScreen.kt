@@ -63,15 +63,18 @@ import com.example.ui.theme.StatusErrorBg
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusSuccessBg
 import com.example.ui.theme.StatusWarning
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.LmsUiState
+import com.example.ui.viewmodel.RosterViewModel
 import com.example.ui.viewmodel.StudentTier
 
 @Composable
 fun StudentDirectoryScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    rosterViewModel: RosterViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
@@ -203,7 +206,7 @@ fun StudentDirectoryScreen(
                                                 text = { Text("Edit Student") },
                                                 onClick = {
                                                     showActionMenu = false
-                                                    viewModel.openEditStudent(s)
+                                                    rosterViewModel.openEditStudent(s)
                                                 },
                                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                                             )
@@ -286,7 +289,7 @@ fun StudentDirectoryScreen(
                     uiState.classrooms.filter { it.id != s.classroomId }.forEach { targetClass ->
                         Button(
                             onClick = {
-                                viewModel.reassignStudentClassroom(s, targetClass.id)
+                                rosterViewModel.reassignStudentClassroom(s, targetClass.id)
                                 studentToReassign = null
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -314,7 +317,7 @@ fun StudentDirectoryScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteStudent(s.id)
+                        rosterViewModel.deleteStudent(s.id)
                         studentToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = StatusError)

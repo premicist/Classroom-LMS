@@ -49,6 +49,7 @@ data class AnalyticsUiState(
     val analytics: ClassroomAnalytics = ClassroomAnalytics(),
     val studentGradeSummaries: List<StudentGradeSummary> = emptyList(),
     val attendanceReport: AttendanceReport? = null,
+    val interventions: List<InterventionEntity> = emptyList(),
     val isGenerateReportDialogOpen: Boolean = false,
     val isExportReportOpen: Boolean = false,
     val exportReportContent: String = "",
@@ -136,7 +137,8 @@ class AnalyticsViewModel @Inject constructor(
                             students = data.students,
                             studentGradeSummaries = summaries,
                             analytics = analytics,
-                            attendanceReport = attReport
+                            attendanceReport = attReport,
+                            interventions = data.interventions
                         )
                     }
                 }
@@ -248,6 +250,74 @@ class AnalyticsViewModel @Inject constructor(
             }
         }
 
+        return sb.toString()
+    }
+
+    fun generateProgressAnalyticsReportText(): String {
+        val activeClass = _uiState.value.activeClassroom ?: return "No active classroom selected."
+        val analytics = _uiState.value.analytics
+        val interventions = _uiState.value.interventions
+        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+        val sb = StringBuilder()
+
+        sb.append("====================================================\n")
+        sb.append("      STUDENT PROGRESS ANALYTICS & TEACHER AUDIT    \n")
+        sb.append("====================================================\n\n")
+        sb.append("Classroom: ${activeClass.name} • Subject: ${activeClass.subject}\n")
+        sb.append("Grade Level: ${activeClass.gradeLevel} | Room: ${activeClass.roomNumber}\n")
+        sb.append("Report Date: ${dateFormat.format(java.util.Date())}\n\n")
+
+        sb.append("1. CLASS PERFORMANCE OVERVIEW\n")
+        sb.append("----------------------------------------------------\n")
+        sb.append("• Class Average Score: ${"%.1f".format(analytics.averagePercentage)}% (GPA ${"%.2f".format(analytics.averageGpa)})\n")
+        sb.append("• Highest Score: ${"%.1f".format(analytics.highestPercentage)}% | Lowest Score: ${"%.1f".format(analytics.lowestPercentage)}%\n")
+        sb.append("• Overall Trajectory: ${analytics.classTrend.label} (${if (analytics.classTrendDelta >= 0) "+" else ""}${"%.1f".format(analytics.classTrendDelta)}%)\n")
+        sb.append("• Grade Breakdown: A: ${analytics.distribution.aCount} | B: ${analytics.distribution.bCount} | C: ${analytics.distribution.cCount} | D: ${analytics.distribution.dCount} | F: ${analytics.distribution.fCount}\n")
+        sb.append("• Today's Attendance Rate: ${"%.1f".format(analytics.todayAttendanceRate)}%\n\n")
+
+        sb.append("2. COMMON AREAS OF DIFFICULTY ACROSS THE CLASS\n")
+        sb.append("----------------------------------------------------\n")
+        if (analytics.difficultyAreas.isNotEmpty()) {
+            analytics.difficultyAreas.forEachIndexed { idx, diff ->
+                sb.append("${idx + 1}. [${diff.severity.label.uppercase()}] ${diff.assignment.title}\n")
+                sb.append("   • Class Avg: ${"%.1f".format(diff.averagePercentage)}% | Failing (<70%): ${diff.failingCount} students | Missing: ${diff.missingCount}\n")
+                sb.append("   • Action Plan: ${diff.teacherActionRecommendation}\n\n")
+            }
+        } else {
+            sb.append("No major difficulty areas identified across current assessments.\n\n")
+        }
+
+        sb.append("3. STUDENTS REQUIRING EXTRA SUPPORT (AT-RISK / INTERVENTION)\n")
+        sb.append("----------------------------------------------------\n")
+        if (analytics.atRiskStudents.isNotEmpty()) {
+            analytics.atRiskStudents.forEach { s ->
+                val sInters = interventions.filter { it.studentId == s.student.id }
+                sb.append("• ${s.student.name} (${s.student.studentNumber}): ${"%.1f".format(s.percentage)}% (${s.letterGrade})\n")
+                sb.append("  Triggers: ${s.riskReasons.joinToString(", ")}\n")
+                sb.append("  Logged Interventions: ${sInters.size} records on file\n")
+                if (sInters.isNotEmpty()) {
+                    sInters.take(2).forEach { inRec ->
+                        sb.append("   - [${inRec.date} • ${inRec.type.displayName}]: ${inRec.title}\n")
+                    }
+                }
+                sb.append("\n")
+            }
+        } else {
+            sb.append("All students are meeting baseline performance thresholds!\n\n")
+        }
+
+        sb.append("4. STUDENTS READY FOR ENRICHMENT (HONORS / ADVANCED)\n")
+        sb.append("----------------------------------------------------\n")
+        if (analytics.enrichmentStudents.isNotEmpty()) {
+            analytics.enrichmentStudents.forEach { s ->
+                sb.append("• ${s.student.name} (${s.student.studentNumber}): ${"%.1f".format(s.percentage)}% (${s.letterGrade}) | HW: ${"%.1f".format(s.homeworkCompletionRate)}%\n")
+                sb.append("  Enrichment Indicators: ${s.enrichmentReasons.joinToString(", ")}\n")
+            }
+        } else {
+            sb.append("No students currently categorized in the enrichment tier.\n")
+        }
+
+        sb.append("\n====================================================\n")
         return sb.toString()
     }
 

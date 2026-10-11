@@ -1,4 +1,4 @@
-package com.example.ui
+﻿package com.example.ui
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
@@ -727,7 +727,7 @@ fun LmsMainScreen(
             reportText = uiState.exportReportContent,
             reportTitle = uiState.exportReportTitle,
             onDismiss = {
-                analyticsViewModel.closeExportReport()
+                viewModel.closeExportReport()
             }
         )
     }
@@ -744,7 +744,7 @@ fun LmsMainScreen(
             onEditStudent = { rosterViewModel.openEditStudent(it) },
             onDeleteStudent = { rosterViewModel.deleteStudent(it.id) },
             onReassignClassroom = { student, newId ->
-                viewModel.reassignStudentClassroom(student, newId)
+                rosterViewModel.reassignStudentClassroom(student, newId)
             },
             onLogDiscipline = { student ->
                 studentSupportViewModel.openAddDiscipline(student)
@@ -877,9 +877,7 @@ fun LmsMainScreen(
             activeClassroomId = uiState.activeClassroom?.id,
             onDismiss = { viewModel.closeGenerateReportDialog() },
             onGeneratePdf = { reportType, targetClassId, dateRange, atRisk, diff, dist, att ->
-                viewModel.generateAndShareCustomPdf(
-                    context = context,
-                    reportType = reportType,
+                viewModel.generateAndShareCustomPdf(reportType = reportType,
                     targetClassroomId = targetClassId,
                     dateRange = dateRange,
                     includeAtRisk = atRisk,
@@ -889,7 +887,7 @@ fun LmsMainScreen(
                 )
             },
             onPreviewText = { reportType, targetClassId, dateRange, atRisk, diff, dist, att ->
-                val reportText = viewModel.generateCustomReportText(
+                val reportText = analyticsViewModel.generateCustomReportText(
                     reportType = reportType,
                     targetClassroomId = targetClassId,
                     dateRange = dateRange,
@@ -998,3 +996,6 @@ fun AppLockScreen(
         }
     }
 }
+
+
+

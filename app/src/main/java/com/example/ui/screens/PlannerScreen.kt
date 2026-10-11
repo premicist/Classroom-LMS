@@ -140,17 +140,9 @@ fun PlannerScreen(
                         IconButton(
                             onClick = {
                                 if (selectedTabIndex == 0) {
-                                    if (plannerUiState.lessonPlans.isNotEmpty()) {
-                                        plannerViewModel.exportLessonPlansPdf(context)
-                                    } else {
-                                        viewModel.exportLessonPlansPdf(context)
-                                    }
+                                    plannerViewModel.exportLessonPlansPdf(context)
                                 } else {
-                                    if (plannerUiState.dailyLogs.isNotEmpty()) {
-                                        plannerViewModel.exportDailyDiaryPdf(context)
-                                    } else {
-                                        viewModel.exportDailyDiaryPdf(context)
-                                    }
+                                    plannerViewModel.exportDailyDiaryPdf(context)
                                 }
                             }
                         ) {
@@ -190,7 +182,6 @@ fun PlannerScreen(
                         selected = currentFilterId == null,
                         onClick = {
                             plannerViewModel.setPlannerClassroomFilter(null)
-                            viewModel.setPlannerClassroomFilter(null)
                         },
                         label = { Text("All Classrooms", style = MaterialTheme.typography.labelSmall) }
                     )
@@ -199,7 +190,6 @@ fun PlannerScreen(
                             selected = currentFilterId == cls.id,
                             onClick = {
                                 plannerViewModel.setPlannerClassroomFilter(cls.id)
-                                viewModel.setPlannerClassroomFilter(cls.id)
                             },
                             label = { Text(cls.name, style = MaterialTheme.typography.labelSmall) }
                         )
@@ -212,10 +202,8 @@ fun PlannerScreen(
                 onClick = {
                     if (selectedTabIndex == 0) {
                         plannerViewModel.openAddLessonPlan()
-                        viewModel.openAddLessonPlan()
                     } else {
                         plannerViewModel.openAddDailyLog()
-                        viewModel.openAddDailyLog()
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -236,7 +224,6 @@ fun PlannerScreen(
                     classrooms = currentClassrooms,
                     onEdit = {
                         plannerViewModel.openEditLessonPlan(it)
-                        viewModel.openEditLessonPlan(it)
                     },
                     onDelete = { planToDelete = it },
                     onCycleStatus = { plan ->
@@ -246,7 +233,6 @@ fun PlannerScreen(
                             else -> "PLANNED"
                         }
                         plannerViewModel.updateLessonPlanStatus(plan, nextStatus)
-                        viewModel.updateLessonPlanStatus(plan, nextStatus)
                     }
                 )
                 1 -> DailyDiaryTab(
@@ -254,7 +240,6 @@ fun PlannerScreen(
                     classrooms = currentClassrooms,
                     onEdit = {
                         plannerViewModel.openEditDailyLog(it)
-                        viewModel.openEditDailyLog(it)
                     },
                     onDelete = { logToDelete = it }
                 )
@@ -272,11 +257,9 @@ fun PlannerScreen(
             activeClassroomId = plannerUiState.activeClassroomId ?: uiState.activeClassroom?.id,
             onDismiss = {
                 plannerViewModel.closeLessonPlanDialog()
-                viewModel.closeLessonPlanDialog()
             },
             onSave = { unitTitle, description, targetDate, status, targetClassroomId ->
                 plannerViewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId)
-                viewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId)
             }
         )
     }
@@ -290,11 +273,9 @@ fun PlannerScreen(
             activeClassroomId = plannerUiState.activeClassroomId ?: uiState.activeClassroom?.id,
             onDismiss = {
                 plannerViewModel.closeDailyLogDialog()
-                viewModel.closeDailyLogDialog()
             },
             onSave = { date, reflectionNotes, wasProxyClass, targetClassroomId ->
                 plannerViewModel.saveDailyLog(date, reflectionNotes, wasProxyClass, targetClassroomId)
-                viewModel.saveDailyLog(date, reflectionNotes, wasProxyClass, targetClassroomId)
             }
         )
     }
@@ -309,7 +290,6 @@ fun PlannerScreen(
                 TextButton(
                     onClick = {
                         plannerViewModel.deleteLessonPlan(plan)
-                        viewModel.deleteLessonPlan(plan)
                         planToDelete = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = StatusError)
@@ -334,7 +314,6 @@ fun PlannerScreen(
                 TextButton(
                     onClick = {
                         plannerViewModel.deleteDailyLog(log)
-                        viewModel.deleteDailyLog(log)
                         logToDelete = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = StatusError)

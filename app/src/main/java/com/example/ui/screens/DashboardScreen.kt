@@ -71,6 +71,7 @@ import com.example.ui.util.adaptiveHorizontalPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ui.viewmodel.ClassroomViewModel
 import com.example.ui.viewmodel.GradingViewModel
+import com.example.ui.viewmodel.AnalyticsViewModel
 import com.example.ui.viewmodel.RosterViewModel
 import com.example.ui.viewmodel.SyncViewModel
 import com.example.ui.viewmodel.LmsTab
@@ -91,7 +92,8 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     syncViewModel: SyncViewModel = hiltViewModel(),
     gradingViewModel: GradingViewModel = hiltViewModel(),
-    rosterViewModel: RosterViewModel = hiltViewModel()
+    rosterViewModel: RosterViewModel = hiltViewModel(),
+    analyticsViewModel: AnalyticsViewModel = hiltViewModel()
 ) {
     val analytics = uiState.analytics
 
@@ -174,7 +176,7 @@ fun DashboardScreen(
             icon = Icons.Default.AutoAwesome,
             color = Color(0xFF8B5CF6),
             onClick = {
-                val report = viewModel.generateProgressAnalyticsReportText()
+                val report = analyticsViewModel.generateProgressAnalyticsReportText()
                 viewModel.openExportReport(report, title = "TCMS AI Progress Insights & Audit")
             }
         )

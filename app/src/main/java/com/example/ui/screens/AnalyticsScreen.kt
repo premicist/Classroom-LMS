@@ -144,7 +144,7 @@ fun AnalyticsScreen(
 
                         Button(
                             onClick = {
-                                val reportText = viewModel.generateProgressAnalyticsReportText()
+                                val reportText = analyticsViewModel.generateProgressAnalyticsReportText()
                                 viewModel.openExportReport(reportText, "Classroom Progress & Diagnostic Audit")
                             },
                             shape = RoundedCornerShape(10.dp),

@@ -414,7 +414,7 @@ fun GradebookScreen(
                                                                 onClick = {
                                                                     val s = scoreInput.toDoubleOrNull()
                                                                     if (s != null) {
-                                                                        viewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
+                                                                        gradingViewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
                                                                     }
                                                                 },
                                                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),

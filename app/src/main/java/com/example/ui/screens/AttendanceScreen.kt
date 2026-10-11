@@ -468,7 +468,7 @@ private fun AutomatedAttendanceReportsView(
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Button(
                                 onClick = {
-                                    val text = viewModel.generateFormattedAttendanceReportText()
+                                    val text = attendanceViewModel.generateFormattedAttendanceReportText()
                                     viewModel.openExportReport(text)
                                 },
                                 shape = RoundedCornerShape(8.dp),
@@ -480,7 +480,7 @@ private fun AutomatedAttendanceReportsView(
                             }
                             Button(
                                 onClick = {
-                                    viewModel.exportAttendanceRollSheet(context)
+                                    attendanceViewModel.exportAttendanceRollSheet(context)
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = if (isCompact) 6.dp else 8.dp, vertical = 4.dp)
