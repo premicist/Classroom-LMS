@@ -18,5 +18,18 @@ The Room database for Classroom-LMS is encrypted at rest using **SQLCipher** (`n
 ## Sync 
 - Sync operations are fully decoupled from the core `ClassroomViewModel` and are managed securely and explicitly via `SyncViewModel`.
 
+## Network Security & Cleartext Traffic
+- The application enforces a strict `network_security_config.xml` that disallows all cleartext HTTP traffic (`cleartextTrafficPermitted="false"`).
+- All network interactions with Google Sheets and Firebase communicate solely over verified TLS.
+
+## Logging & PII Redaction
+- All network and synchronization logging routes through `SafeLogger`.
+- Authentication tokens, API keys, email addresses, spreadsheet identifiers, and raw exception stacktraces are automatically redacted before any log emission to Logcat.
+- Verbose debug logs are completely stripped in release builds.
+
+## Target SDK 36 (Android 15) Compliance
+- The application targets SDK 36 and complies with Android 15 background execution limitations.
+- Classroom LMS is an offline-first educational tool and does not employ foreground services, background location tracking, or exact alarm scheduling, ensuring zero runtime permission regressions on Android 15 devices.
+
 ## Tests
 - Database unit tests run against an unencrypted in-memory SQLite implementation to avoid dependency on native SQLCipher libraries inside Robolectric, ensuring stable and fast test executions without compromising real-world security.

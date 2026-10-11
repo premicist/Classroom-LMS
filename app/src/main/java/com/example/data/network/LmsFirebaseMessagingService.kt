@@ -6,10 +6,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
 import com.example.R
+import com.example.util.SafeLogger
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -19,13 +19,21 @@ class LmsFirebaseMessagingService : FirebaseMessagingService() {
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "New FCM Registration Token: $token")
+        SafeLogger.d(TAG, "FCM registration token refreshed (length: ${token.length})")
         // In production, token can be saved to Firestore or backend user profile
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
-        Log.d(TAG, "From: ${remoteMessage.from}")
+
+        // Defense-in-depth: Validate that message originates from valid Firebase source or registered topic
+        val from = remoteMessage.from
+        if (from.isNullOrBlank() || (!from.startsWith("/topics/") && !from.matches(Regex("^[0-9]+$")) && !from.startsWith("firebase"))) {
+            SafeLogger.w(TAG, "Ignored FCM message from unrecognized sender origin")
+            return
+        }
+
+        SafeLogger.d(TAG, "Received authorized FCM message from: ${SafeLogger.sanitize(from)}")
 
         // Extract title and body from notification payload or data payload
         val title = remoteMessage.notification?.title

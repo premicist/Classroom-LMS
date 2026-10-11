@@ -48,6 +48,8 @@ Never commit the following sensitive or machine-local files to version control:
 - **SQLCipher at rest**: The local database is encrypted using SQLCipher with a 256-bit AES key managed via Android Keystore.
 - **Automated Migration**: Upgrades from pre-encryption builds automatically migrate existing unencrypted databases (`classroom_lms_db`) to the encrypted format (`classroom_lms_db_encrypted`) on first launch.
 - **Fail-Safe Mechanism**: The unencrypted database is renamed to `.bak` upon verified migration. If an unexpected error occurs during migration, normal app access is blocked to prevent data loss, and an emergency JSON export is provided.
+- **Network & PII Security**: Cleartext traffic is blocked via `network_security_config.xml`. All runtime logs route through `SafeLogger` to prevent student PII or credential leakage.
+- **Target SDK 36**: Fully compliant with Android 15 requirements with zero foreground service or background location dependencies.
 
 ## Architecture & Maintenance
 

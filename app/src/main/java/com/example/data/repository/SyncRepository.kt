@@ -1,6 +1,6 @@
 package com.example.data.repository
 
-import android.util.Log
+import com.example.util.SafeLogger
 import com.example.data.database.AppDatabase
 import com.example.data.entity.AssignmentEntity
 import com.example.data.entity.AttendanceRecordEntity
@@ -66,7 +66,7 @@ class SyncRepository(
         val spreadsheet = try {
             api.getSpreadsheet(spreadsheetId, authHeader)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to connect to spreadsheet", e)
+            SafeLogger.e(TAG, "Failed to connect to spreadsheet", e)
             return@withContext "Failed to connect to Google Sheet. Check Sheet ID and permissions."
         }
 
@@ -79,7 +79,7 @@ class SyncRepository(
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to read sheet values", e)
+            SafeLogger.e(TAG, "Failed to read sheet values", e)
             return@withContext "Failed to read sheet '$rosterSheetTitle'."
         }
         
@@ -181,7 +181,7 @@ class SyncRepository(
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            Log.d(TAG, "Attendance tab not found or unreadable: ${e.message}")
+            SafeLogger.d(TAG, "Attendance tab not found or unreadable: ${e.message}")
             return
         }
         val rows = response.values ?: return
@@ -254,7 +254,7 @@ class SyncRepository(
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            Log.d(TAG, "Homework tab not found or unreadable: ${e.message}")
+            SafeLogger.d(TAG, "Homework tab not found or unreadable: ${e.message}")
             return
         }
         val rows = response.values ?: return
@@ -335,7 +335,7 @@ class SyncRepository(
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            Log.d(TAG, "Grades tab not found or unreadable: ${e.message}")
+            SafeLogger.d(TAG, "Grades tab not found or unreadable: ${e.message}")
             return
         }
         val rows = response.values ?: return
@@ -431,7 +431,7 @@ class SyncRepository(
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            Log.d(TAG, "Interventions tab not found or unreadable: ${e.message}")
+            SafeLogger.d(TAG, "Interventions tab not found or unreadable: ${e.message}")
             return
         }
         val rows = response.values ?: return
@@ -505,7 +505,7 @@ class SyncRepository(
         val response = try {
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
-            Log.d(TAG, "Discipline_Log tab not found or unreadable: ${e.message}")
+            SafeLogger.d(TAG, "Discipline_Log tab not found or unreadable: ${e.message}")
             return
         }
         val rows = response.values ?: return
@@ -700,7 +700,7 @@ class SyncRepository(
         val spreadsheet = try {
             api.getSpreadsheet(spreadsheetId, authHeader)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to get spreadsheet metadata", e)
+            SafeLogger.e(TAG, "Failed to get spreadsheet metadata", e)
             return@withContext "Export failed: Cannot access Google Sheet."
         }
 
@@ -715,7 +715,7 @@ class SyncRepository(
                 }
                 api.batchUpdate(spreadsheetId, authHeader, BatchUpdateSpreadsheetRequest(requests))
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to auto-create missing tabs, attempting export anyway: ${e.message}")
+                SafeLogger.w(TAG, "Failed to auto-create missing tabs, attempting export anyway: ${e.message}")
             }
         }
 
@@ -901,13 +901,13 @@ class SyncRepository(
                         body = ValueRange("'$sheetTitle'!A1", "ROWS", examRows)
                     )
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to push exam '$sheetTitle'", e)
+                    SafeLogger.e(TAG, "Failed to push exam '$sheetTitle'", e)
                 }
             }
 
             return@withContext "Sync & Export successful."
         } catch (e: Exception) {
-            Log.e(TAG, "Export error", e)
+            SafeLogger.e(TAG, "Export error", e)
             return@withContext "Export failed: ${e.message}"
         }
     }
