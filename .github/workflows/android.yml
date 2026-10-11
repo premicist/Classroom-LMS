@@ -61,7 +61,7 @@ jobs:
           if ! grep -qE '^[[:space:]]*sdk=34[[:space:]]*$' <(sed 's/\r$//' app/src/test/resources/robolectric.properties); then
             echo "❌ robolectric.properties does not contain sdk=34"
             exit 1
-          }
+          fi
 
       - name: Generate Dummy google-services.json
         run: |
