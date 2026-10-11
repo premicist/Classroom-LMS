@@ -1,0 +1,5 @@
+# Normalize line endings for all text files
+* text=auto
+
+# Force LF for test resource files to ensure cross-platform compatibility
+app/src/test/resources/robolectric.properties text eol=lf
