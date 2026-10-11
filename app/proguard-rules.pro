@@ -54,12 +54,12 @@
 -keep class com.google.android.gms.** { *; }
 
 # App domain entities (Room + Moshi / backup JSON)
--keep class com.example.data.entity.** { *; }
--keep class com.example.data.dao.** { *; }
--keep class com.example.data.database.** { *; }
+-keep class com.aistudio.classroomlms.data.entity.** { *; }
+-keep class com.aistudio.classroomlms.data.dao.** { *; }
+-keep class com.aistudio.classroomlms.data.database.** { *; }
 
 # Enums used in DB converters
--keepclassmembers enum com.example.data.entity.** {
+-keepclassmembers enum com.aistudio.classroomlms.data.entity.** {
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }

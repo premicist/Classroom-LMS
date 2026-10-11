@@ -15,7 +15,7 @@ android {
   // applicationId is the Play Store / Firebase identity — do not change without
   // updating google-services.json and accepting a new-install requirement.
   // Future work: migrate sources to com.aistudio.classroomlms and align both.
-  namespace = "com.example"
+  namespace = "com.aistudio.classroomlms"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {

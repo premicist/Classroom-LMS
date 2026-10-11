@@ -1,0 +1,109 @@
+package com.aistudio.classroomlms.data.database
+
+import androidx.room.TypeConverter
+import com.aistudio.classroomlms.data.entity.AssignmentType
+import com.aistudio.classroomlms.data.entity.AttendanceStatus
+import com.aistudio.classroomlms.data.entity.ExamCategory
+import com.aistudio.classroomlms.data.entity.HomeworkStatus
+import com.aistudio.classroomlms.data.entity.InterventionType
+import com.aistudio.classroomlms.data.entity.LiveAssessmentTaskType
+import com.aistudio.classroomlms.data.entity.MasteryLevel
+import com.aistudio.classroomlms.data.entity.SubmissionStatus
+
+class Converters {
+    @TypeConverter
+    fun fromAssignmentType(value: AssignmentType?): String? = value?.name
+
+    @TypeConverter
+    fun toAssignmentType(value: String?): AssignmentType? = value?.let {
+        try {
+            AssignmentType.valueOf(it)
+        } catch (e: Exception) {
+            AssignmentType.HOMEWORK
+        }
+    }
+
+    @TypeConverter
+    fun fromSubmissionStatus(value: SubmissionStatus?): String? = value?.name
+
+    @TypeConverter
+    fun toSubmissionStatus(value: String?): SubmissionStatus? = value?.let {
+        try {
+            SubmissionStatus.valueOf(it)
+        } catch (e: Exception) {
+            SubmissionStatus.PENDING
+        }
+    }
+
+    @TypeConverter
+    fun fromHomeworkStatus(value: HomeworkStatus?): String? = value?.name
+
+    @TypeConverter
+    fun toHomeworkStatus(value: String?): HomeworkStatus? = value?.let {
+        try {
+            HomeworkStatus.valueOf(it)
+        } catch (e: Exception) {
+            HomeworkStatus.DONE
+        }
+    }
+
+    @TypeConverter
+    fun fromAttendanceStatus(value: AttendanceStatus?): String? = value?.name
+
+    @TypeConverter
+    fun toAttendanceStatus(value: String?): AttendanceStatus? = value?.let {
+        try {
+            AttendanceStatus.valueOf(it)
+        } catch (e: Exception) {
+            AttendanceStatus.PRESENT
+        }
+    }
+
+    @TypeConverter
+    fun fromInterventionType(value: InterventionType?): String? = value?.name
+
+    @TypeConverter
+    fun toInterventionType(value: String?): InterventionType? = value?.let {
+        try {
+            InterventionType.valueOf(it)
+        } catch (e: Exception) {
+            InterventionType.TUTORING
+        }
+    }
+
+    @TypeConverter
+    fun fromLiveAssessmentTaskType(value: LiveAssessmentTaskType?): String? = value?.name
+
+    @TypeConverter
+    fun toLiveAssessmentTaskType(value: String?): LiveAssessmentTaskType? = value?.let {
+        try {
+            LiveAssessmentTaskType.valueOf(it)
+        } catch (e: Exception) {
+            LiveAssessmentTaskType.CONCEPT_EXPLANATION
+        }
+    }
+
+    @TypeConverter
+    fun fromMasteryLevel(value: MasteryLevel?): String? = value?.name
+
+    @TypeConverter
+    fun toMasteryLevel(value: String?): MasteryLevel? = value?.let {
+        try {
+            MasteryLevel.valueOf(it)
+        } catch (e: Exception) {
+            MasteryLevel.MASTERED
+        }
+    }
+
+    @TypeConverter
+    fun fromExamCategory(value: ExamCategory?): String? = value?.name
+
+    @TypeConverter
+    fun toExamCategory(value: String?): ExamCategory? = value?.let {
+        try {
+            ExamCategory.valueOf(it)
+        } catch (e: Exception) {
+            ExamCategory.CLASS_TEST
+        }
+    }
+}
