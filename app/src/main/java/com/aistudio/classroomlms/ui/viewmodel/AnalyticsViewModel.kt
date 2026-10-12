@@ -109,26 +109,29 @@ class AnalyticsViewModel @Inject constructor(
                     }
                 }
                 .collect { data ->
-                    val summaries = ClassroomAnalyticsEngine.computeStudentGrades(
-                        students = data.students,
-                        assignments = data.assignments,
-                        submissions = data.submissions,
-                        homeworks = data.homeworks,
-                        attendance = data.attendance,
-                        termWeightConfig = TermWeightConfig()
-                    )
-                    val analytics = ClassroomAnalyticsEngine.computeClassAnalytics(
-                        summaries = summaries,
-                        assignments = data.assignments,
-                        submissions = data.submissions,
-                        attendance = data.attendance,
-                        interventions = data.interventions
-                    )
-                    val attReport = ClassroomAnalyticsEngine.computeAttendanceReport(
-                        classroom = data.activeClassroom,
-                        students = data.students,
-                        records = data.attendance
-                    )
+                    val (summaries, analytics, attReport) = withContext(Dispatchers.Default) {
+                        val s = ClassroomAnalyticsEngine.computeStudentGrades(
+                            students = data.students,
+                            assignments = data.assignments,
+                            submissions = data.submissions,
+                            homeworks = data.homeworks,
+                            attendance = data.attendance,
+                            termWeightConfig = TermWeightConfig()
+                        )
+                        val a = ClassroomAnalyticsEngine.computeClassAnalytics(
+                            summaries = s,
+                            assignments = data.assignments,
+                            submissions = data.submissions,
+                            attendance = data.attendance,
+                            interventions = data.interventions
+                        )
+                        val r = ClassroomAnalyticsEngine.computeAttendanceReport(
+                            classroom = data.activeClassroom,
+                            students = data.students,
+                            records = data.attendance
+                        )
+                        Triple(s, a, r)
+                    }
 
                     _uiState.update { current ->
                         current.copy(
@@ -137,8 +140,7 @@ class AnalyticsViewModel @Inject constructor(
                             students = data.students,
                             studentGradeSummaries = summaries,
                             analytics = analytics,
-                            attendanceReport = attReport,
-                            interventions = data.interventions
+                            attendanceReport = attReport
                         )
                     }
                 }

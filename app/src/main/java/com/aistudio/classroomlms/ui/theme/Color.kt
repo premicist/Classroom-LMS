@@ -83,3 +83,29 @@ val EduBorderSubtle = VibrantBorderSubtleLight
 val EduTextPrimary = VibrantTextPrimary
 val EduTextSecondary = VibrantTextSecondary
 
+// Semantic Status Extensions for Dynamic Light/Dark Contrast
+val androidx.compose.material3.ColorScheme.statusSuccess: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusSuccessDark else StatusSuccess
+
+val androidx.compose.material3.ColorScheme.statusSuccessContainer: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusSuccessBgDark else StatusSuccessBg
+
+val androidx.compose.material3.ColorScheme.statusWarning: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusWarningDark else StatusWarning
+
+val androidx.compose.material3.ColorScheme.statusWarningContainer: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusWarningBgDark else StatusWarningBg
+
+val androidx.compose.material3.ColorScheme.statusInfo: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusInfoDark else StatusInfo
+
+val androidx.compose.material3.ColorScheme.statusInfoContainer: Color
+    @androidx.compose.runtime.Composable
+    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusInfoBgDark else StatusInfoBg
+
+

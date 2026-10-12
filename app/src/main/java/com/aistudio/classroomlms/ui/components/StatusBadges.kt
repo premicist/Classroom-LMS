@@ -45,6 +45,12 @@ import com.aistudio.classroomlms.ui.theme.StatusSuccess
 import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
 import com.aistudio.classroomlms.ui.theme.StatusWarning
 import com.aistudio.classroomlms.ui.theme.StatusWarningBg
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
+import com.aistudio.classroomlms.ui.theme.statusInfo
+import com.aistudio.classroomlms.ui.theme.statusInfoContainer
+import com.aistudio.classroomlms.ui.theme.statusWarning
+import com.aistudio.classroomlms.ui.theme.statusWarningContainer
 import java.util.Locale
 
 @Composable
@@ -53,12 +59,13 @@ fun GradeBadge(
     modifier: Modifier = Modifier,
     percentage: Double? = null
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val (bgColor, textColor) = when (letterGrade.uppercase(Locale.US)) {
-        "A+", "A" -> StatusSuccessBg to StatusSuccess
-        "B+", "B" -> Color(0xFFE0F2FE) to Color(0xFF0284C7)
-        "C+", "C" -> Color(0xFFFEF3C7) to Color(0xFFD97706)
-        "D", "E" -> StatusErrorBg to StatusError
-        else -> StatusErrorBg to StatusError
+        "A+", "A" -> colorScheme.statusSuccessContainer to colorScheme.statusSuccess
+        "B+", "B" -> colorScheme.statusInfoContainer to colorScheme.statusInfo
+        "C+", "C" -> colorScheme.statusWarningContainer to colorScheme.statusWarning
+        "D", "E" -> colorScheme.errorContainer to colorScheme.error
+        else -> colorScheme.errorContainer to colorScheme.error
     }
 
     Box(
@@ -94,11 +101,12 @@ fun AttendanceBadge(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val (bgColor, textColor, icon) = when (status) {
-        AttendanceStatus.PRESENT -> Triple(StatusSuccessBg, StatusSuccess, Icons.Default.Check)
-        AttendanceStatus.ABSENT -> Triple(StatusErrorBg, StatusError, Icons.Default.Close)
-        AttendanceStatus.LATE -> Triple(StatusWarningBg, StatusWarning, Icons.Default.HourglassEmpty)
-        AttendanceStatus.EXCUSED -> Triple(StatusInfoBg, StatusInfo, Icons.Default.Remove)
+        AttendanceStatus.PRESENT -> Triple(colorScheme.statusSuccessContainer, colorScheme.statusSuccess, Icons.Default.Check)
+        AttendanceStatus.ABSENT -> Triple(colorScheme.errorContainer, colorScheme.error, Icons.Default.Close)
+        AttendanceStatus.LATE -> Triple(colorScheme.statusWarningContainer, colorScheme.statusWarning, Icons.Default.HourglassEmpty)
+        AttendanceStatus.EXCUSED -> Triple(colorScheme.statusInfoContainer, colorScheme.statusInfo, Icons.Default.Remove)
     }
 
     val boxModifier = if (onClick != null) {
@@ -142,11 +150,12 @@ fun HomeworkStatusBadge(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val (bgColor, textColor) = when (status) {
-        HomeworkStatus.DONE -> StatusSuccessBg to StatusSuccess
-        HomeworkStatus.PARTIAL -> StatusWarningBg to StatusWarning
-        HomeworkStatus.MISSING -> StatusErrorBg to StatusError
-        HomeworkStatus.EXCUSED -> StatusInfoBg to StatusInfo
+        HomeworkStatus.DONE -> colorScheme.statusSuccessContainer to colorScheme.statusSuccess
+        HomeworkStatus.PARTIAL -> colorScheme.statusWarningContainer to colorScheme.statusWarning
+        HomeworkStatus.MISSING -> colorScheme.errorContainer to colorScheme.error
+        HomeworkStatus.EXCUSED -> colorScheme.statusInfoContainer to colorScheme.statusInfo
     }
 
     val boxModifier = if (onClick != null) {
@@ -183,12 +192,13 @@ fun SubmissionStatusBadge(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val (bgColor, textColor) = when (status) {
-        SubmissionStatus.GRADED -> StatusSuccessBg to StatusSuccess
-        SubmissionStatus.SUBMITTED -> StatusInfoBg to StatusInfo
-        SubmissionStatus.LATE -> StatusWarningBg to StatusWarning
-        SubmissionStatus.MISSING -> StatusErrorBg to StatusError
-        SubmissionStatus.PENDING -> StatusNeutralBg to StatusNeutral
+        SubmissionStatus.GRADED -> colorScheme.statusSuccessContainer to colorScheme.statusSuccess
+        SubmissionStatus.SUBMITTED -> colorScheme.statusInfoContainer to colorScheme.statusInfo
+        SubmissionStatus.LATE -> colorScheme.statusWarningContainer to colorScheme.statusWarning
+        SubmissionStatus.MISSING -> colorScheme.errorContainer to colorScheme.error
+        SubmissionStatus.PENDING -> colorScheme.surfaceVariant to colorScheme.onSurfaceVariant
     }
 
     val boxModifier = if (onClick != null) {

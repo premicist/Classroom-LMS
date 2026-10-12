@@ -18,6 +18,7 @@ import com.aistudio.classroomlms.data.entity.TermWeightConfig
 import com.aistudio.classroomlms.data.repository.ClassroomRepository
 import com.aistudio.classroomlms.util.ClassroomAnalyticsEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,6 +68,21 @@ class GradingViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
+    internal var defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
+
+    // Secondary constructor for tests
+    constructor(
+        assignmentDao: AssignmentDao,
+        submissionDao: SubmissionDao,
+        studentDao: StudentDao,
+        classroomDao: ClassroomDao,
+        repository: ClassroomRepository,
+        preferencesManager: PreferencesManager,
+        dispatcher: CoroutineDispatcher
+    ) : this(assignmentDao, submissionDao, studentDao, classroomDao, repository, preferencesManager) {
+        this.defaultDispatcher = dispatcher
+    }
+
     private val _uiState = MutableStateFlow(GradingUiState())
     val uiState: StateFlow<GradingUiState> = _uiState.asStateFlow()
 
@@ -89,21 +105,25 @@ class GradingViewModel @Inject constructor(
                     }
                 }
                 .collect { data ->
-                    val summaries = ClassroomAnalyticsEngine.computeStudentGrades(
-                        students = data.students,
-                        assignments = data.assignments,
-                        submissions = data.submissions,
-                        homeworks = emptyList(),
-                        attendance = emptyList(),
-                        termWeightConfig = _uiState.value.termWeightConfig
-                    )
-                    val analytics = ClassroomAnalyticsEngine.computeClassAnalytics(
-                        summaries = summaries,
-                        assignments = data.assignments,
-                        submissions = data.submissions,
-                        attendance = emptyList(),
-                        interventions = emptyList()
-                    )
+                    val config = _uiState.value.termWeightConfig
+                    val (summaries, analytics) = withContext(defaultDispatcher) {
+                        val s = ClassroomAnalyticsEngine.computeStudentGrades(
+                            students = data.students,
+                            assignments = data.assignments,
+                            submissions = data.submissions,
+                            homeworks = emptyList(),
+                            attendance = emptyList(),
+                            termWeightConfig = config
+                        )
+                        val a = ClassroomAnalyticsEngine.computeClassAnalytics(
+                            summaries = s,
+                            assignments = data.assignments,
+                            submissions = data.submissions,
+                            attendance = emptyList(),
+                            interventions = emptyList()
+                        )
+                        s to a
+                    }
                     _uiState.update { current ->
                         current.copy(
                             activeClassroom = data.classroom,
@@ -233,30 +253,35 @@ class GradingViewModel @Inject constructor(
     }
 
     fun saveTermWeightConfig(config: TermWeightConfig) {
-        val current = _uiState.value
-        val summaries = ClassroomAnalyticsEngine.computeStudentGrades(
-            students = current.students,
-            assignments = current.assignments,
-            submissions = current.submissions,
-            homeworks = emptyList(),
-            attendance = emptyList(),
-            termWeightConfig = config
-        )
-        val analytics = ClassroomAnalyticsEngine.computeClassAnalytics(
-            summaries = summaries,
-            assignments = current.assignments,
-            submissions = current.submissions,
-            attendance = emptyList(),
-            interventions = emptyList()
-        )
-        _uiState.update {
-            it.copy(
-                termWeightConfig = config,
-                studentGradeSummaries = summaries,
-                analytics = analytics,
-                isTermWeightingDialogOpen = false,
-                userNotificationMessage = "Term weighting configuration updated"
-            )
+        viewModelScope.launch {
+            val current = _uiState.value
+            val (summaries, analytics) = withContext(defaultDispatcher) {
+                val s = ClassroomAnalyticsEngine.computeStudentGrades(
+                    students = current.students,
+                    assignments = current.assignments,
+                    submissions = current.submissions,
+                    homeworks = emptyList(),
+                    attendance = emptyList(),
+                    termWeightConfig = config
+                )
+                val a = ClassroomAnalyticsEngine.computeClassAnalytics(
+                    summaries = s,
+                    assignments = current.assignments,
+                    submissions = current.submissions,
+                    attendance = emptyList(),
+                    interventions = emptyList()
+                )
+                s to a
+            }
+            _uiState.update {
+                it.copy(
+                    termWeightConfig = config,
+                    studentGradeSummaries = summaries,
+                    analytics = analytics,
+                    isTermWeightingDialogOpen = false,
+                    userNotificationMessage = "Term weighting configuration updated"
+                )
+            }
         }
     }
 

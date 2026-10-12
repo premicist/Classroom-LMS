@@ -17,6 +17,7 @@ import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.util.ClassroomAnalyticsEngine
 import com.aistudio.classroomlms.util.PdfReportExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +56,20 @@ class AttendanceViewModel @Inject constructor(
     private val classroomDao: ClassroomDao
 ) : ViewModel() {
 
+    internal var defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
+
+    // Secondary constructor for tests
+    constructor(
+        attendanceDao: AttendanceDao,
+        homeworkRecordDao: HomeworkRecordDao,
+        studentDao: StudentDao,
+        preferencesManager: PreferencesManager,
+        classroomDao: ClassroomDao,
+        dispatcher: CoroutineDispatcher
+    ) : this(attendanceDao, homeworkRecordDao, studentDao, preferencesManager, classroomDao) {
+        this.defaultDispatcher = dispatcher
+    }
+
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     private val _uiState = MutableStateFlow(
@@ -82,12 +97,15 @@ class AttendanceViewModel @Inject constructor(
                     }
                 }
                 .collect { data ->
+                    val report = withContext(defaultDispatcher) {
+                        ClassroomAnalyticsEngine.computeAttendanceReport(data.classroom, data.students, data.attendance)
+                    }
                     _uiState.update { current ->
                         current.copy(
                             activeClassroom = data.classroom,
                             students = data.students,
                             attendanceRecords = data.attendance,
-                            attendanceReport = data.report,
+                            attendanceReport = report,
                             homeworkRecords = data.homework
                         )
                     }

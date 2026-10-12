@@ -88,7 +88,8 @@ class GradingViewModelTest {
             studentDao = fakeStudentDao,
             classroomDao = fakeClassroomDao,
             repository = repository,
-            preferencesManager = preferencesManager
+            preferencesManager = preferencesManager,
+            dispatcher = mainDispatcherRule.testDispatcher
         )
 
         advanceUntilIdle()

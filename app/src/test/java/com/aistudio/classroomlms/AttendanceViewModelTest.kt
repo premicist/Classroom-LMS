@@ -81,7 +81,8 @@ class AttendanceViewModelTest {
             homeworkRecordDao = fakeHomeworkRecordDao,
             studentDao = fakeStudentDao,
             preferencesManager = preferencesManager,
-            classroomDao = fakeClassroomDao
+            classroomDao = fakeClassroomDao,
+            dispatcher = mainDispatcherRule.testDispatcher
         )
 
         advanceUntilIdle()

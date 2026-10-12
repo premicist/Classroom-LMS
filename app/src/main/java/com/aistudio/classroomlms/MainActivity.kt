@@ -19,12 +19,14 @@ import com.aistudio.classroomlms.data.network.LmsFirebaseMessagingService
 import com.aistudio.classroomlms.ui.LmsMainScreen
 import com.aistudio.classroomlms.ui.theme.MyApplicationTheme
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
+import com.aistudio.classroomlms.ui.viewmodel.SessionLockViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
     private val viewModel: ClassroomViewModel by viewModels()
+    private val sessionLockViewModel: SessionLockViewModel by viewModels()
 
     private val requestNotificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -85,9 +87,10 @@ class MainActivity : FragmentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     LmsMainScreen(
                         viewModel = viewModel,
+                        sessionLockViewModel = sessionLockViewModel,
                         onAuthenticate = {
                             promptBiometricUnlock {
-                                viewModel.setAppLocked(false)
+                                sessionLockViewModel.unlock()
                             }
                         }
                     )

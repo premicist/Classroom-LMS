@@ -133,14 +133,17 @@ import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
 import com.aistudio.classroomlms.ui.viewmodel.SettingsViewModel
 import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 import com.aistudio.classroomlms.ui.viewmodel.SyncViewModel
+import com.aistudio.classroomlms.ui.viewmodel.SessionLockViewModel
 import com.aistudio.classroomlms.util.PdfReportExporter
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun LmsMainScreen(
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
     onAuthenticate: (() -> Unit)? = null,
+    sessionLockViewModel: SessionLockViewModel = hiltViewModel(),
     upgradeViewModel: com.aistudio.classroomlms.ui.viewmodel.DatabaseUpgradeViewModel = hiltViewModel(),
     studentSupportViewModel: StudentSupportViewModel = hiltViewModel(),
     syncViewModel: SyncViewModel = hiltViewModel(),
@@ -150,7 +153,7 @@ fun LmsMainScreen(
     gradingViewModel: GradingViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val upgradeState by upgradeViewModel.upgradeState.collectAsState()
+    val upgradeState by upgradeViewModel.upgradeState.collectAsStateWithLifecycle()
 
     // 1. Guard against unmigrated or failed database upgrades
     when (val state = upgradeState) {
@@ -188,9 +191,10 @@ fun LmsMainScreen(
         }
     }
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isSessionLocked by sessionLockViewModel.isLocked.collectAsStateWithLifecycle()
 
-    if (uiState.isAppLocked) {
+    if (isSessionLocked || uiState.isAppLocked) {
         LaunchedEffect(Unit) {
             onAuthenticate?.invoke()
         }
@@ -607,7 +611,7 @@ fun LmsMainScreen(
     }
 
     // 3. Add / Edit Assignment Dialog
-    val gradingUiState by gradingViewModel.uiState.collectAsState()
+    val gradingUiState by gradingViewModel.uiState.collectAsStateWithLifecycle()
     if (gradingUiState.isAddEditAssignmentOpen) {
         val activeClassId = uiState.activeClassroom?.id ?: 1L
         AddEditAssignmentDialog(
@@ -855,10 +859,15 @@ fun LmsMainScreen(
     }
 
     if (uiState.isSettingsOpen) {
+        val settingsUiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
         SettingsScreen(
-            uiState = settingsViewModel.uiState.collectAsState().value,
+            uiState = settingsUiState,
             viewModel = settingsViewModel,
-            onDismiss = { settingsViewModel.setAppLocked(false); viewModel.closeSettings() }
+            onDismiss = {
+                sessionLockViewModel.unlock()
+                settingsViewModel.setAppLocked(false)
+                viewModel.closeSettings()
+            }
         )
     }
 
