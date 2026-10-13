@@ -75,7 +75,6 @@ class ClassroomViewModel @Inject constructor(
     val uiState: StateFlow<LmsUiState> = _uiState.asStateFlow()
 
     private val _selectedClassroomId = MutableStateFlow<Long?>(null)
-    private var isFirstSettingsLoad = true
 
     init {
         viewModelScope.launch {
@@ -98,6 +97,8 @@ class ClassroomViewModel @Inject constructor(
                         _selectedClassroomId.value = firstId
                         preferencesManager.saveActiveClassroomId(firstId)
                     }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, activeClassroom = null) }
                 }
             }.collect { }
         }
@@ -105,10 +106,8 @@ class ClassroomViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.settingsFlow.collect { settings ->
                 _uiState.update { state ->
-                    val shouldLock = if (isFirstSettingsLoad && settings.isBiometricLockEnabled) true else state.isAppLocked
-                    state.copy(settings = settings, isAppLocked = shouldLock)
+                    state.copy(settings = settings)
                 }
-                isFirstSettingsLoad = false
             }
         }
 
@@ -185,6 +184,16 @@ class ClassroomViewModel @Inject constructor(
                                 studentGradeSummaries = studentSummaries,
                                 analytics = analytics,
                                 attendanceReport = attendanceReport
+                            )
+                        }
+                    } else {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                activeClassroom = null,
+                                students = emptyList(),
+                                assignments = emptyList(),
+                                submissions = emptyList()
                             )
                         }
                     }
@@ -284,11 +293,10 @@ class ClassroomViewModel @Inject constructor(
         }
     }
 
-    // ---- Feedback & Lock ----
+    // ---- Feedback ----
     fun showToast(message: String) { _uiState.update { it.copy(userNotificationMessage = message) } }
     fun clearToast() { _uiState.update { it.copy(userNotificationMessage = null) } }
     fun clearNotificationMessage() { clearToast() }
-    fun setAppLocked(locked: Boolean) { _uiState.update { it.copy(isAppLocked = locked) } }
 
     // ---- Routine Summary ----
     fun getTodayClassesSummary(): Pair<Boolean, String> {

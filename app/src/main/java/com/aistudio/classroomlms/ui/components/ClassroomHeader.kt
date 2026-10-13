@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -81,8 +82,9 @@ fun ClassroomHeader(
                 Row(
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { onManageClassrooms() }
+                        .clickable(onClickLabel = "Manage classrooms") { onManageClassrooms() }
                         .padding(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -130,7 +132,10 @@ fun ClassroomHeader(
                 }
 
                 if (activeClassroom != null) {
-                    IconButton(onClick = onSyncClick) {
+                    IconButton(
+                        onClick = onSyncClick,
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.CloudSync,
                             contentDescription = "Sync with Google Sheets",
@@ -139,21 +144,25 @@ fun ClassroomHeader(
                     }
                 }
 
-                // Menu Quick Button
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .clickable { onMenuClick() },
-                    contentAlignment = Alignment.Center
+                // Menu Quick Button (48dp Touch Target)
+                IconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Menu",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Open navigation menu",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -170,12 +179,13 @@ fun ClassroomHeader(
                         
                         Box(
                             modifier = Modifier
+                                .heightIn(min = 40.dp)
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(
                                     if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                                 )
-                                .clickable { onSelectClassroom(cls) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .clickable(onClickLabel = "Switch to ${cls.name}") { onSelectClassroom(cls) }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(

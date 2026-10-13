@@ -274,6 +274,5 @@ data class LmsUiState(
     val isTermWeightingDialogOpen: Boolean = false,
 
     // Persisted App Settings & Security
-    val settings: LmsSettings = LmsSettings(),
-    val isAppLocked: Boolean = false
+    val settings: LmsSettings = LmsSettings()
 )

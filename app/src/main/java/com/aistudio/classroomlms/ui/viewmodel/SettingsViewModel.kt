@@ -23,7 +23,6 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val settings: LmsSettings = LmsSettings(),
-    val isAppLocked: Boolean = false,
     val isCheckingForUpdates: Boolean = false,
     val updateInfo: UpdateInfo? = null,
     val isUpdateDialogOpen: Boolean = false,
@@ -42,16 +41,13 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     private val backupManager by lazy { DatabaseBackupManager(application, database) }
-    private var isFirstSettingsLoad = true
 
     init {
         viewModelScope.launch {
             preferencesManager.settingsFlow.collect { settings ->
                 _uiState.update { state ->
-                    val shouldLock = if (isFirstSettingsLoad && settings.isBiometricLockEnabled) true else state.isAppLocked
-                    state.copy(settings = settings, isAppLocked = shouldLock)
+                    state.copy(settings = settings)
                 }
-                isFirstSettingsLoad = false
             }
         }
     }
@@ -65,10 +61,6 @@ class SettingsViewModel @Inject constructor(
                 showToast("Failed to save settings")
             }
         }
-    }
-
-    fun setAppLocked(locked: Boolean) {
-        _uiState.update { it.copy(isAppLocked = locked) }
     }
 
     fun exportBackup(uri: Uri) {
