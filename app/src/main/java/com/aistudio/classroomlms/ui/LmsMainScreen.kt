@@ -134,7 +134,6 @@ import com.aistudio.classroomlms.ui.viewmodel.SettingsViewModel
 import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 import com.aistudio.classroomlms.ui.viewmodel.SyncViewModel
 import com.aistudio.classroomlms.ui.viewmodel.SessionLockViewModel
-import com.aistudio.classroomlms.util.PdfReportExporter
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -210,14 +209,14 @@ fun LmsMainScreen(
         return
     }
 
-    val isClassroomModalOpen = rosterUiState.isClassroomModalOpen || uiState.isClassroomModalOpen
-    val isStudentRosterOpen = rosterUiState.isStudentRosterOpen || uiState.isStudentRosterOpen
-    val isAddEditClassroomOpen = rosterUiState.isAddEditClassroomOpen || uiState.isAddEditClassroomOpen
-    val isAddEditStudentOpen = rosterUiState.isAddEditStudentOpen || uiState.isAddEditStudentOpen
-    val isAddInterventionOpen = supportUiState.isAddInterventionOpen || uiState.isAddInterventionOpen
-    val isAddEditDisciplineOpen = supportUiState.isAddEditDisciplineOpen || uiState.isAddEditDisciplineOpen
-    val isLiveAssessmentDialogOpen = supportUiState.isLiveAssessmentDialogOpen || uiState.isLiveAssessmentDialogOpen
-    val isAddEditAssignmentOpen = gradingUiState.isAddEditAssignmentOpen || uiState.isAddEditAssignmentOpen
+    val isClassroomModalOpen = rosterUiState.isClassroomModalOpen
+    val isStudentRosterOpen = rosterUiState.isStudentRosterOpen
+    val isAddEditClassroomOpen = rosterUiState.isAddEditClassroomOpen
+    val isAddEditStudentOpen = rosterUiState.isAddEditStudentOpen
+    val isAddInterventionOpen = supportUiState.isAddInterventionOpen
+    val isAddEditDisciplineOpen = supportUiState.isAddEditDisciplineOpen
+    val isLiveAssessmentDialogOpen = supportUiState.isLiveAssessmentDialogOpen
+    val isAddEditAssignmentOpen = gradingUiState.isAddEditAssignmentOpen
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -272,24 +271,20 @@ fun LmsMainScreen(
     }
     BackHandler(enabled = isStudentRosterOpen) {
         rosterViewModel.closeStudentRoster()
-        viewModel.closeStudentRoster()
     }
     BackHandler(enabled = uiState.selectedStudentProfile != null) {
         viewModel.closeStudentProfile()
     }
     BackHandler(enabled = isClassroomModalOpen) {
         rosterViewModel.closeDialogs()
-        viewModel.closeDialogs()
     }
     BackHandler(enabled = isAddEditClassroomOpen) {
         rosterViewModel.closeAddEditClassroom()
         rosterViewModel.closeDialogs()
-        viewModel.closeDialogs()
     }
     BackHandler(enabled = isAddEditStudentOpen) {
         rosterViewModel.closeAddEditStudent()
         rosterViewModel.closeDialogs()
-        viewModel.closeDialogs()
     }
     BackHandler(enabled = isAddEditAssignmentOpen) {
         gradingViewModel.closeAddEditAssignment()
@@ -305,15 +300,12 @@ fun LmsMainScreen(
     }
     BackHandler(enabled = isLiveAssessmentDialogOpen) {
         studentSupportViewModel.closeLiveAssessmentDialog()
-        viewModel.closeLiveAssessmentDialog()
     }
     BackHandler(enabled = isAddInterventionOpen) {
         studentSupportViewModel.closeInterventionDialog()
-        viewModel.closeInterventionDialog()
     }
     BackHandler(enabled = isAddEditDisciplineOpen) {
         studentSupportViewModel.closeDisciplineDialog()
-        viewModel.closeDisciplineDialog()
     }
     
     // We observe a simple state variable for the Google Account to trigger recomposition when signed in/out
@@ -588,10 +580,28 @@ fun LmsMainScreen(
                 }
             } else {
                 when (uiState.selectedTab) {
-                    LmsTab.DASHBOARD -> DashboardScreen(uiState = uiState, viewModel = viewModel)
-                    LmsTab.ANALYTICS -> AnalyticsScreen(uiState = uiState, viewModel = viewModel)
-                    LmsTab.STUDENTS -> com.aistudio.classroomlms.ui.screens.StudentDirectoryScreen(uiState = uiState, viewModel = viewModel)
-                    LmsTab.ACADEMIC -> AcademicWorkScreen(uiState = uiState, viewModel = viewModel)
+                    LmsTab.DASHBOARD -> DashboardScreen(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        rosterViewModel = rosterViewModel,
+                        studentSupportViewModel = studentSupportViewModel
+                    )
+                    LmsTab.ANALYTICS -> AnalyticsScreen(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        studentSupportViewModel = studentSupportViewModel
+                    )
+                    LmsTab.STUDENTS -> com.aistudio.classroomlms.ui.screens.StudentDirectoryScreen(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        rosterViewModel = rosterViewModel,
+                        studentSupportViewModel = studentSupportViewModel
+                    )
+                    LmsTab.ACADEMIC -> AcademicWorkScreen(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        rosterViewModel = rosterViewModel
+                    )
                     LmsTab.ATTENDANCE -> AttendanceScreen(uiState = uiState, viewModel = viewModel)
                 }
             }
@@ -627,13 +637,12 @@ fun LmsMainScreen(
 
     // 1. Add / Edit Classroom Dialog
     if (isAddEditClassroomOpen) {
-        val initialClassroom = rosterUiState.editingClassroom ?: uiState.editingClassroom
+        val initialClassroom = rosterUiState.editingClassroom
         AddEditClassroomDialog(
             initialClassroom = initialClassroom,
             onDismiss = {
                 rosterViewModel.closeAddEditClassroom()
                 rosterViewModel.closeDialogs()
-                viewModel.closeDialogs()
             },
             onSave = { classroom ->
                 rosterViewModel.saveClassroom(classroom)
@@ -645,7 +654,7 @@ fun LmsMainScreen(
     if (isAddEditStudentOpen) {
         val activeClassId = uiState.activeClassroom?.id ?: 1L
         val isClassroomLinked = !uiState.activeClassroom?.linkedSpreadsheetId.isNullOrBlank()
-        val initialStudent = rosterUiState.editingStudent ?: uiState.editingStudent
+        val initialStudent = rosterUiState.editingStudent
         AddEditStudentDialog(
             classroomId = activeClassId,
             initialStudent = initialStudent,
@@ -653,7 +662,6 @@ fun LmsMainScreen(
             onDismiss = {
                 rosterViewModel.closeAddEditStudent()
                 rosterViewModel.closeDialogs()
-                viewModel.closeDialogs()
             },
             onSave = { student ->
                 rosterViewModel.saveStudent(student)
@@ -664,13 +672,12 @@ fun LmsMainScreen(
     // 3. Add / Edit Assignment Dialog
     if (isAddEditAssignmentOpen) {
         val activeClassId = uiState.activeClassroom?.id ?: 1L
-        val initialAssignment = gradingUiState.editingAssignment ?: uiState.editingAssignment
+        val initialAssignment = gradingUiState.editingAssignment
         AddEditAssignmentDialog(
             classroomId = activeClassId,
             initialAssignment = initialAssignment,
             onDismiss = {
                 gradingViewModel.closeAddEditAssignment()
-                viewModel.closeDialogs()
             },
             onSave = { assignment ->
                 gradingViewModel.saveAssignment(assignment)
@@ -731,7 +738,6 @@ fun LmsMainScreen(
             },
             onExportDisciplineIncidentSlip = { record ->
                 studentSupportViewModel.exportDisciplineIncidentSlip(context, student, record)
-                PdfReportExporter.exportDisciplineIncidentSlip(context, student, record, uiState.activeClassroom?.name ?: "Classroom")
             },
             onExportReport = {
                 val report = viewModel.generateStudentPortfolioReportText(student.id)
@@ -766,22 +772,22 @@ fun LmsMainScreen(
             onSelectClassroom = { viewModel.selectClassroom(it.id) },
             onAddClassroom = {
                 rosterViewModel.closeDialogs()
-                viewModel.closeDialogs()
                 rosterViewModel.openAddClassroom()
             },
             onEditClassroom = { cls ->
                 rosterViewModel.closeDialogs()
-                viewModel.closeDialogs()
                 rosterViewModel.openEditClassroom(cls)
             },
             onDeleteClassroom = { cls ->
                 classroomToDelete = cls
                 rosterViewModel.closeDialogs()
-                viewModel.closeDialogs()
             },
-            onOpenStudentRoster = { rosterViewModel.openStudentRoster() },
+            onOpenStudentRoster = {
+                rosterViewModel.closeDialogs()
+                rosterViewModel.openStudentRoster()
+            },
             onResetSampleData = { viewModel.resetSampleData() },
-            onDismiss = { rosterViewModel.closeDialogs(); viewModel.closeDialogs() }
+            onDismiss = { rosterViewModel.closeDialogs() }
         )
     }
 
@@ -803,7 +809,7 @@ fun LmsMainScreen(
             students = displayList,
             classrooms = uiState.classrooms,
             activeClassroomId = uiState.activeClassroom?.id,
-            onBack = { rosterViewModel.closeStudentRoster(); viewModel.closeStudentRoster() },
+            onBack = { rosterViewModel.closeStudentRoster() },
             onAddStudent = { rosterViewModel.openAddStudent() },
             onEditStudent = { rosterViewModel.openEditStudent(it) },
             onDeleteStudent = { rosterViewModel.deleteStudent(it.id) },
@@ -1063,6 +1069,3 @@ fun AppLockScreen(
         }
     }
 }
-
-
-

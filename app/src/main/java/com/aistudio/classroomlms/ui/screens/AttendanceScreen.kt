@@ -34,6 +34,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -413,13 +415,34 @@ private fun DailyAttendanceCheckInView(
                         }
                     }
 
-                    // 1-Tap Toggle Attendance Badge
-                    AttendanceBadge(
-                        status = currentStatus,
-                        onClick = {
-                            attendanceViewModel.cycleAttendanceStatus(student.id, selectedDate)
+                    var isStatusMenuExpanded by remember(student.id, selectedDate) {
+                        mutableStateOf(false)
+                    }
+                    Box {
+                        AttendanceBadge(
+                            status = currentStatus,
+                            onClick = { isStatusMenuExpanded = true }
+                        )
+                        DropdownMenu(
+                            expanded = isStatusMenuExpanded,
+                            onDismissRequest = { isStatusMenuExpanded = false }
+                        ) {
+                            AttendanceStatus.values().forEach { status ->
+                                DropdownMenuItem(
+                                    text = { Text(status.displayName) },
+                                    onClick = {
+                                        isStatusMenuExpanded = false
+                                        attendanceViewModel.recordAttendanceStatus(
+                                            studentId = student.id,
+                                            date = selectedDate,
+                                            status = status
+                                        )
+                                    },
+                                    modifier = Modifier.testTag("attendance_status_${status.name.lowercase()}")
+                                )
+                            }
                         }
-                    )
+                    }
                 }
             }
         }

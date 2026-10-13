@@ -68,13 +68,15 @@ import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
 import com.aistudio.classroomlms.ui.viewmodel.StudentTier
+import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 
 @Composable
 fun StudentDirectoryScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    rosterViewModel: RosterViewModel = hiltViewModel()
+    rosterViewModel: RosterViewModel = hiltViewModel(),
+    studentSupportViewModel: StudentSupportViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
@@ -103,7 +105,7 @@ fun StudentDirectoryScreen(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.openAddStudent() },
+                onClick = { rosterViewModel.openAddStudent() },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
             ) {
@@ -146,8 +148,22 @@ fun StudentDirectoryScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (filteredSummaries.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No students match your search/filter.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = if (summaries.isEmpty()) "No students have been added to this classroom yet."
+                        else "No students match your search or filter.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (summaries.isEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = { rosterViewModel.openAddStudent() }) {
+                            Text("Add Student")
+                        }
+                    }
                 }
             } else {
                 LazyColumn(
@@ -214,7 +230,7 @@ fun StudentDirectoryScreen(
                                                 text = { Text("Live Assessment") },
                                                 onClick = {
                                                     showActionMenu = false
-                                                    viewModel.openLiveAssessment(s)
+                                                    studentSupportViewModel.openLiveAssessment(s)
                                                 },
                                                 leadingIcon = { Icon(Icons.Default.AddComment, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                                             )
@@ -222,7 +238,7 @@ fun StudentDirectoryScreen(
                                                 text = { Text("Log Discipline / Merit") },
                                                 onClick = {
                                                     showActionMenu = false
-                                                    viewModel.openAddDiscipline(s)
+                                                    studentSupportViewModel.openAddDiscipline(s)
                                                 },
                                                 leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = StatusWarning) }
                                             )

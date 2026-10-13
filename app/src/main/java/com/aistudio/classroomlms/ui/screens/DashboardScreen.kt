@@ -73,6 +73,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
 import com.aistudio.classroomlms.ui.viewmodel.AnalyticsViewModel
+import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
 import com.aistudio.classroomlms.ui.viewmodel.SyncViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsTab
@@ -94,7 +95,8 @@ fun DashboardScreen(
     syncViewModel: SyncViewModel = hiltViewModel(),
     gradingViewModel: GradingViewModel = hiltViewModel(),
     rosterViewModel: RosterViewModel = hiltViewModel(),
-    analyticsViewModel: AnalyticsViewModel = hiltViewModel()
+    analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
+    studentSupportViewModel: StudentSupportViewModel = hiltViewModel()
 ) {
     val analytics = uiState.analytics
 
@@ -141,7 +143,7 @@ fun DashboardScreen(
             color = Color(0xFFEA580C),
             onClick = {
                 val firstStudent = uiState.students.firstOrNull()
-                if (firstStudent != null) viewModel.openAddDiscipline(firstStudent)
+                if (firstStudent != null) studentSupportViewModel.openAddDiscipline(firstStudent)
                 else viewModel.showToast("Add a student to log behavior")
             }
         ),
@@ -164,13 +166,13 @@ fun DashboardScreen(
             title = "Assessment",
             icon = Icons.Default.Grade,
             color = Color(0xFFDC2626),
-            onClick = { viewModel.openLiveAssessment() }
+            onClick = { studentSupportViewModel.openLiveAssessment() }
         ),
         ServicePortalTile(
             title = "Classrooms",
             icon = Icons.Default.School,
             color = Color(0xFF475569),
-            onClick = { viewModel.openClassroomManagement() }
+            onClick = { rosterViewModel.openClassroomManagement() }
         ),
         ServicePortalTile(
             title = "AI Insights",

@@ -86,13 +86,15 @@ import com.aistudio.classroomlms.ui.viewmodel.StudentTier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aistudio.classroomlms.ui.viewmodel.AnalyticsViewModel
+import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 
 @Composable
 fun AnalyticsScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    analyticsViewModel: AnalyticsViewModel = hiltViewModel()
+    analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
+    studentSupportViewModel: StudentSupportViewModel = hiltViewModel()
 ) {
     val analyticsUiState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val analytics = if (analyticsUiState.analytics.totalStudents > 0) analyticsUiState.analytics else uiState.analytics
@@ -519,7 +521,7 @@ fun AnalyticsScreen(
                         Surface(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .clickable { viewModel.openAddIntervention() },
+                                .clickable { studentSupportViewModel.openAddIntervention() },
                             color = MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Row(
@@ -624,7 +626,7 @@ fun AnalyticsScreen(
                         viewModel.openStudentProfile(trajectory.summary)
                     },
                     onLogIntervention = {
-                        viewModel.openAddIntervention(trajectory.student)
+                        studentSupportViewModel.openAddIntervention(trajectory.student)
                     }
                 )
             }

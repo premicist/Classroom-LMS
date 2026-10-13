@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
+import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 
@@ -47,7 +48,8 @@ fun AcademicWorkScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     initialSubTab: Int = 0,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    rosterViewModel: RosterViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     val isCompact = LocalWindowSizeCategory.current.isCompact
     var selectedSubTab by remember(initialSubTab) { mutableIntStateOf(initialSubTab) }
@@ -134,7 +136,7 @@ fun AcademicWorkScreen(
 
         Box(modifier = Modifier.weight(1f)) {
             when (selectedSubTab) {
-                0 -> GradebookScreen(uiState = uiState, viewModel = viewModel)
+                0 -> GradebookScreen(uiState = uiState, viewModel = viewModel, rosterViewModel = rosterViewModel)
                 1 -> ExamScreen(uiState = uiState, viewModel = viewModel)
                 2 -> AssignmentsScreen(uiState = uiState, viewModel = viewModel)
                 3 -> HomeworkCheckScreen(uiState = uiState, viewModel = viewModel)
@@ -142,4 +144,3 @@ fun AcademicWorkScreen(
         }
     }
 }
-

@@ -221,35 +221,8 @@ class ClassroomViewModel @Inject constructor(
     fun openSettings() { _uiState.update { it.copy(isSettingsOpen = true) } }
     fun closeSettings() { _uiState.update { it.copy(isSettingsOpen = false) } }
 
-    fun openStudentRoster() { _uiState.update { it.copy(isStudentRosterOpen = true) } }
-    fun closeStudentRoster() { _uiState.update { it.copy(isStudentRosterOpen = false) } }
-
     fun openStudentProfile(summary: StudentGradeSummary) { _uiState.update { it.copy(selectedStudentProfile = summary) } }
     fun closeStudentProfile() { _uiState.update { it.copy(selectedStudentProfile = null) } }
-
-    fun openAddIntervention(student: StudentEntity? = null) {
-        _uiState.update { it.copy(isAddInterventionOpen = true, interventionStudent = student, editingIntervention = null) }
-    }
-    fun closeInterventionDialog() {
-        _uiState.update { it.copy(isAddInterventionOpen = false, interventionStudent = null, editingIntervention = null) }
-    }
-
-    fun openAddDiscipline(student: StudentEntity) {
-        _uiState.update { it.copy(isAddEditDisciplineOpen = true, disciplineStudent = student, editingDisciplineRecord = null) }
-    }
-    fun closeDisciplineDialog() {
-        _uiState.update { it.copy(isAddEditDisciplineOpen = false, disciplineStudent = null, editingDisciplineRecord = null) }
-    }
-
-    fun openLiveAssessment(student: StudentEntity? = null) {
-        _uiState.update { it.copy(isLiveAssessmentDialogOpen = true, liveAssessmentStudent = student, editingLiveAssessment = null) }
-    }
-    fun closeLiveAssessmentDialog() {
-        _uiState.update { it.copy(isLiveAssessmentDialogOpen = false, liveAssessmentStudent = null, editingLiveAssessment = null) }
-    }
-
-    fun openClassroomManagement() { _uiState.update { it.copy(isClassroomModalOpen = true) } }
-    fun setClassroomModalOpen(open: Boolean) { _uiState.update { it.copy(isClassroomModalOpen = open) } }
 
     fun openExportReport(content: String, title: String = "Class Progress & Intervention Report") {
         _uiState.update { it.copy(isExportReportOpen = true, exportReportContent = content, exportReportTitle = title) }
@@ -277,20 +250,6 @@ class ClassroomViewModel @Inject constructor(
     fun saveTermWeightConfig(config: TermWeightConfig) {
         _uiState.update { it.copy(termWeightConfig = config) }
         closeTermWeightingDialog()
-    }
-
-    fun openAddClassroom() { _uiState.update { it.copy(isAddEditClassroomOpen = true, editingClassroom = null, isClassroomModalOpen = true) } }
-    fun openAddStudent() { _uiState.update { it.copy(isAddEditStudentOpen = true, editingStudent = null) } }
-    fun openAddAssignment() { _uiState.update { it.copy(isAddEditAssignmentOpen = true, editingAssignment = null) } }
-
-    fun closeDialogs() {
-        _uiState.update { state ->
-            state.copy(
-                isAddEditClassroomOpen = false, editingClassroom = null,
-                isAddEditStudentOpen = false, editingStudent = null,
-                isAddEditAssignmentOpen = false, editingAssignment = null
-            )
-        }
     }
 
     // ---- Feedback ----

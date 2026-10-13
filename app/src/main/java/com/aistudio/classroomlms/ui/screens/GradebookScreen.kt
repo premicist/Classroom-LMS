@@ -79,13 +79,15 @@ import com.aistudio.classroomlms.data.entity.TermWeightConfig
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
+import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
 
 @Composable
 fun GradebookScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    gradingViewModel: GradingViewModel = hiltViewModel()
+    gradingViewModel: GradingViewModel = hiltViewModel(),
+    rosterViewModel: RosterViewModel = hiltViewModel()
 ) {
     val gradingUiState by gradingViewModel.uiState.collectAsStateWithLifecycle()
     val windowSize = LocalWindowSizeCategory.current
@@ -232,7 +234,7 @@ fun GradebookScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
                 Button(
-                    onClick = { viewModel.openAddStudent() },
+                    onClick = { rosterViewModel.openAddStudent() },
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
                 ) {
@@ -253,6 +255,28 @@ fun GradebookScreen(
         }
 
         // Student Grade Cards List
+        if (filteredSummaries.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = if (rawSummaries.isEmpty()) "No students to grade yet."
+                        else "No students match your search.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (rawSummaries.isEmpty()) {
+                        Button(onClick = { rosterViewModel.openAddStudent() }) {
+                            Text("Add Student")
+                        }
+                    }
+                }
+            }
+        }
         itemsIndexed(filteredSummaries, key = { _, summary -> summary.student.id }) { index, summary ->
             val isExpanded = expandedStudentId == summary.student.id
             val assignMap = uiState.assignments.associateBy { it.id }

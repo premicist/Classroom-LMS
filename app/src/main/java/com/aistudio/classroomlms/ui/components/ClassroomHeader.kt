@@ -179,7 +179,7 @@ fun ClassroomHeader(
                         
                         Box(
                             modifier = Modifier
-                                .heightIn(min = 40.dp)
+                                .heightIn(min = 48.dp)
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(
                                     if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)

@@ -164,7 +164,7 @@ class StudentSupportViewModel @Inject constructor(
 
     // --- TEACHER INTERVENTIONS ---
 
-    fun openAddIntervention(student: StudentEntity) {
+    fun openAddIntervention(student: StudentEntity? = null) {
         _uiState.update {
             it.copy(
                 isAddInterventionOpen = true,
