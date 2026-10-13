@@ -204,7 +204,7 @@ fun HomeworkCheckScreen(
                             )
                             IconButton(
                                 onClick = { showDatePicker = true },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CalendarMonth,

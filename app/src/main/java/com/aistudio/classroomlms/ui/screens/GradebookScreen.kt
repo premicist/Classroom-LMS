@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.SubmissionStatus
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.GradeDistributionBarChart
+import com.aistudio.classroomlms.ui.components.InlineGradeEntry
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.theme.EduPrimary
 import com.aistudio.classroomlms.ui.theme.StatusError
@@ -75,6 +76,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.Role
 import com.aistudio.classroomlms.data.entity.TermWeightConfig
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -291,7 +293,13 @@ fun GradebookScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { expandedStudentId = if (isExpanded) null else summary.student.id },
+                            .clickable(
+                                onClickLabel = if (isExpanded) "Collapse grades for ${summary.student.name}"
+                                else "Expand grades for ${summary.student.name}",
+                                role = Role.Button
+                            ) {
+                                expandedStudentId = if (isExpanded) null else summary.student.id
+                            },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Rank Index
@@ -344,7 +352,7 @@ fun GradebookScreen(
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = "Expand",
+                            contentDescription = if (isExpanded) "Collapse grades" else "Expand grades",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -399,103 +407,18 @@ fun GradebookScreen(
                                     val assign = assignMap[sub.assignmentId]
                                     if (assign != null) {
                                         if (isInlineGradeMode) {
-                                            var scoreInput by remember(sub.id) { mutableStateOf(sub.score?.toInt()?.toString() ?: "") }
-                                            if (isCompact) {
-                                                Column(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(vertical = 4.dp)
-                                                ) {
-                                                    Text(
-                                                        text = assign.title,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
+                                            InlineGradeEntry(
+                                                submissionId = sub.id,
+                                                assignmentTitle = assign.title,
+                                                maxPoints = assign.maxPoints,
+                                                initialScore = sub.score,
+                                                isCompact = isCompact,
+                                                onSave = { score ->
+                                                    gradingViewModel.saveSubmission(
+                                                        sub.copy(score = score, status = SubmissionStatus.GRADED)
                                                     )
-                                                    Spacer(modifier = Modifier.height(2.dp))
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.SpaceBetween
-                                                    ) {
-                                                        Text(
-                                                            text = "Max: ${assign.maxPoints.toInt()} pts",
-                                                            fontSize = 10.sp,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                                            OutlinedTextField(
-                                                                value = scoreInput,
-                                                                onValueChange = { scoreInput = it },
-                                                                label = { Text("Score", fontSize = 10.sp) },
-                                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                                                                modifier = Modifier.width(76.dp),
-                                                                singleLine = true
-                                                            )
-                                                            Spacer(modifier = Modifier.width(6.dp))
-                                                            Button(
-                                                                onClick = {
-                                                                    val s = scoreInput.toDoubleOrNull()
-                                                                    if (s != null) {
-                                                                        gradingViewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
-                                                                    }
-                                                                },
-                                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                                                shape = RoundedCornerShape(8.dp),
-                                                                modifier = Modifier.height(36.dp)
-                                                            ) {
-                                                                Text("Save", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                            }
-                                                        }
-                                                    }
                                                 }
-                                            } else {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(vertical = 4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Column(modifier = Modifier.weight(1f)) {
-                                                        Text(
-                                                            text = assign.title,
-                                                            fontSize = 12.sp,
-                                                            fontWeight = FontWeight.SemiBold,
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Ellipsis
-                                                        )
-                                                        Text(
-                                                            text = "Max: ${assign.maxPoints.toInt()}",
-                                                            fontSize = 10.sp,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    }
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    OutlinedTextField(
-                                                        value = scoreInput,
-                                                        onValueChange = { scoreInput = it },
-                                                        label = { Text("Score", fontSize = 10.sp) },
-                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                                                        modifier = Modifier.width(72.dp),
-                                                        singleLine = true
-                                                    )
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    Button(
-                                                        onClick = {
-                                                            val s = scoreInput.toDoubleOrNull()
-                                                            if (s != null) {
-                                                                gradingViewModel.saveSubmission(sub.copy(score = s, status = SubmissionStatus.GRADED))
-                                                            }
-                                                        },
-                                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        modifier = Modifier.height(36.dp)
-                                                    ) {
-                                                        Text("Save", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                    }
-                                                }
-                                            }
+                                            )
                                         } else {
                                             Row(
                                                 modifier = Modifier

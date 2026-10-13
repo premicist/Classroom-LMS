@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -55,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -325,7 +328,7 @@ private fun AssignmentsListView(
                                     )
                                     IconButton(
                                         onClick = { onEdit(assignment) },
-                                        modifier = Modifier.size(28.dp)
+                                        modifier = Modifier.size(48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
@@ -336,7 +339,7 @@ private fun AssignmentsListView(
                                     }
                                     IconButton(
                                         onClick = { onDelete(assignment) },
-                                        modifier = Modifier.size(28.dp)
+                                        modifier = Modifier.size(48.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
@@ -559,13 +562,17 @@ private fun SubmissionsChecklistMatrixView(
                         // Quick Checkbox Icon
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                 .clip(CircleShape)
                                 .background(
                                     if (sub.isChecked) StatusSuccess.copy(alpha = 0.15f)
                                     else MaterialTheme.colorScheme.surfaceVariant
                                 )
-                                .clickable { onToggleCheck(sub) },
+                                .toggleable(
+                                    value = sub.isChecked,
+                                    role = Role.Checkbox,
+                                    onValueChange = { onToggleCheck(sub) }
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             if (sub.isChecked) {
@@ -611,7 +618,7 @@ private fun SubmissionsChecklistMatrixView(
                         Spacer(modifier = Modifier.width(6.dp))
                         IconButton(
                             onClick = { onGradeSubmission(sub, currentAssign, student) },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,

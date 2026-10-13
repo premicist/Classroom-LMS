@@ -193,7 +193,7 @@ fun ClassroomManagementDialog(
 
                             IconButton(
                                 onClick = { onEditClassroom(cls) },
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -206,7 +206,7 @@ fun ClassroomManagementDialog(
                             if (classrooms.size > 1) {
                                 IconButton(
                                     onClick = { onDeleteClassroom(cls) },
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,

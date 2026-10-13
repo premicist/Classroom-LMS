@@ -34,8 +34,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,7 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.AttendanceStatus
-import com.aistudio.classroomlms.ui.components.AttendanceBadge
+import com.aistudio.classroomlms.ui.components.AttendanceStatusSelector
 import com.aistudio.classroomlms.ui.components.CircularProgressGauge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.theme.EduPrimary
@@ -240,7 +238,7 @@ private fun DailyAttendanceCheckInView(
 
                         IconButton(
                             onClick = { showDatePicker = true },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
@@ -415,34 +413,16 @@ private fun DailyAttendanceCheckInView(
                         }
                     }
 
-                    var isStatusMenuExpanded by remember(student.id, selectedDate) {
-                        mutableStateOf(false)
-                    }
-                    Box {
-                        AttendanceBadge(
-                            status = currentStatus,
-                            onClick = { isStatusMenuExpanded = true }
-                        )
-                        DropdownMenu(
-                            expanded = isStatusMenuExpanded,
-                            onDismissRequest = { isStatusMenuExpanded = false }
-                        ) {
-                            AttendanceStatus.values().forEach { status ->
-                                DropdownMenuItem(
-                                    text = { Text(status.displayName) },
-                                    onClick = {
-                                        isStatusMenuExpanded = false
-                                        attendanceViewModel.recordAttendanceStatus(
-                                            studentId = student.id,
-                                            date = selectedDate,
-                                            status = status
-                                        )
-                                    },
-                                    modifier = Modifier.testTag("attendance_status_${status.name.lowercase()}")
-                                )
-                            }
+                    AttendanceStatusSelector(
+                        status = currentStatus,
+                        onStatusSelected = { status ->
+                            attendanceViewModel.recordAttendanceStatus(
+                                studentId = student.id,
+                                date = selectedDate,
+                                status = status
+                            )
                         }
-                    }
+                    )
                 }
             }
         }

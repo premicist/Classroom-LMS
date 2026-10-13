@@ -20,7 +20,13 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -114,7 +120,7 @@ fun AttendanceBadge(
         modifier
             .clip(RoundedCornerShape(20.dp))
             .background(bgColor)
-            .clickable { onClick() }
+            .clickable(onClickLabel = "Change attendance status") { onClick() }
             .heightIn(min = 48.dp)
             .padding(horizontal = 10.dp, vertical = 6.dp)
     } else {
@@ -147,6 +153,37 @@ fun AttendanceBadge(
 }
 
 @Composable
+fun AttendanceStatusSelector(
+    status: AttendanceStatus,
+    onStatusSelected: (AttendanceStatus) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isMenuExpanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        AttendanceBadge(
+            status = status,
+            onClick = { isMenuExpanded = true }
+        )
+        DropdownMenu(
+            expanded = isMenuExpanded,
+            onDismissRequest = { isMenuExpanded = false }
+        ) {
+            AttendanceStatus.values().forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.displayName) },
+                    onClick = {
+                        isMenuExpanded = false
+                        onStatusSelected(option)
+                    },
+                    modifier = Modifier.testTag("attendance_status_${option.name.lowercase()}")
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun HomeworkStatusBadge(
     status: HomeworkStatus,
     modifier: Modifier = Modifier,
@@ -164,7 +201,8 @@ fun HomeworkStatusBadge(
         modifier
             .clip(RoundedCornerShape(16.dp))
             .background(bgColor)
-            .clickable { onClick() }
+            .clickable(onClickLabel = "Change homework status") { onClick() }
+            .heightIn(min = 48.dp)
             .padding(horizontal = 10.dp, vertical = 6.dp)
     } else {
         modifier
@@ -207,7 +245,8 @@ fun SubmissionStatusBadge(
         modifier
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
-            .clickable { onClick() }
+            .clickable(onClickLabel = "Open grading") { onClick() }
+            .heightIn(min = 48.dp)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     } else {
         modifier
