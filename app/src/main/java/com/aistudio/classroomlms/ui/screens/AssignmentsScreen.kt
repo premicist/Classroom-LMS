@@ -71,10 +71,7 @@ import com.aistudio.classroomlms.data.entity.SubmissionStatus
 import com.aistudio.classroomlms.ui.components.AssignmentTypeBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.components.SubmissionStatusBadge
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
+import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
@@ -186,7 +183,7 @@ fun AssignmentsScreen(
         FloatingActionButton(
             onClick = { gradingViewModel.openAddAssignment() },
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 75.dp, end = 20.dp)
@@ -208,7 +205,7 @@ fun AssignmentsScreen(
                         assignmentToDelete?.let { gradingViewModel.deleteAssignment(it.id) }
                         assignmentToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }
@@ -344,7 +341,7 @@ private fun AssignmentsListView(
                                         Icon(
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = "Delete",
-                                            tint = StatusError,
+                                            tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
@@ -385,7 +382,7 @@ private fun AssignmentsListView(
                                     text = "$graded/$total Graded",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (graded == total) StatusSuccess else EduPrimary
+                                    color = if (graded == total) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -396,8 +393,8 @@ private fun AssignmentsListView(
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(CircleShape),
-                                color = if (graded == total) StatusSuccess else EduPrimary,
-                                trackColor = Color(0xFFE2E8F0)
+                                color = if (graded == total) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.outlineVariant
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -523,7 +520,7 @@ private fun SubmissionsChecklistMatrixView(
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        Text("Unset Missing", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = StatusError)
+                        Text("Unset Missing", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -565,7 +562,7 @@ private fun SubmissionsChecklistMatrixView(
                                 .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (sub.isChecked) StatusSuccess.copy(alpha = 0.15f)
+                                    if (sub.isChecked) MaterialTheme.colorScheme.statusSuccess.copy(alpha = 0.15f)
                                     else MaterialTheme.colorScheme.surfaceVariant
                                 )
                                 .toggleable(
@@ -579,7 +576,7 @@ private fun SubmissionsChecklistMatrixView(
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = "Checked",
-                                    tint = StatusSuccess,
+                                    tint = MaterialTheme.colorScheme.statusSuccess,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -655,7 +652,7 @@ private fun FilterChipItem(
             text = label,
             fontSize = 12.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

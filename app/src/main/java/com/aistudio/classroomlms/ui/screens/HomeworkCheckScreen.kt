@@ -56,10 +56,6 @@ import com.aistudio.classroomlms.data.entity.HomeworkStatus
 import com.aistudio.classroomlms.ui.components.HomeworkStatusBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.components.TieredHorizontalProgressBar
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import java.text.SimpleDateFormat
@@ -77,11 +73,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import com.aistudio.classroomlms.data.entity.StudentEntity
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
-import com.aistudio.classroomlms.ui.theme.StatusInfo
-import com.aistudio.classroomlms.ui.theme.StatusInfoBg
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarningBg
+import com.aistudio.classroomlms.ui.theme.onStatusSuccess
+import com.aistudio.classroomlms.ui.theme.statusInfo
+import com.aistudio.classroomlms.ui.theme.statusInfoContainer
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
+import com.aistudio.classroomlms.ui.theme.statusWarning
+import com.aistudio.classroomlms.ui.theme.statusWarningContainer
 import java.util.TimeZone
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -311,8 +309,8 @@ fun HomeworkCheckScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = StatusSuccess,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.statusSuccess,
+                            contentColor = MaterialTheme.colorScheme.onStatusSuccess
                         )
                     ) {
                         Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -382,7 +380,7 @@ fun HomeworkCheckScreen(
                             Text(
                                 text = "Note: ${record?.notes}",
                                 fontSize = 11.sp,
-                                color = StatusWarning,
+                                color = MaterialTheme.colorScheme.statusWarning,
                                 maxLines = 1
                             )
                         }
@@ -393,10 +391,10 @@ fun HomeworkCheckScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { selectedStudentForStatus = student },
                         color = when (record?.status) {
-                            HomeworkStatus.DONE -> StatusSuccessBg
-                            HomeworkStatus.PARTIAL -> StatusWarningBg
-                            HomeworkStatus.MISSING -> StatusErrorBg
-                            HomeworkStatus.EXCUSED -> StatusInfoBg
+                            HomeworkStatus.DONE -> MaterialTheme.colorScheme.statusSuccessContainer
+                            HomeworkStatus.PARTIAL -> MaterialTheme.colorScheme.statusWarningContainer
+                            HomeworkStatus.MISSING -> MaterialTheme.colorScheme.errorContainer
+                            HomeworkStatus.EXCUSED -> MaterialTheme.colorScheme.statusInfoContainer
                             null -> MaterialTheme.colorScheme.surfaceVariant
                         }
                     ) {
@@ -409,10 +407,10 @@ fun HomeworkCheckScreen(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = when (record?.status) {
-                                    HomeworkStatus.DONE -> StatusSuccess
-                                    HomeworkStatus.PARTIAL -> StatusWarning
-                                    HomeworkStatus.MISSING -> StatusError
-                                    HomeworkStatus.EXCUSED -> StatusInfo
+                                    HomeworkStatus.DONE -> MaterialTheme.colorScheme.statusSuccess
+                                    HomeworkStatus.PARTIAL -> MaterialTheme.colorScheme.statusWarning
+                                    HomeworkStatus.MISSING -> MaterialTheme.colorScheme.error
+                                    HomeworkStatus.EXCUSED -> MaterialTheme.colorScheme.statusInfo
                                     null -> MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                             )
@@ -506,7 +504,7 @@ fun HomeworkCheckScreen(
                     HomeworkOptionRow(
                         title = "Done (Complete)",
                         subtitle = "Full completion (100%)",
-                        color = StatusSuccess,
+                        color = MaterialTheme.colorScheme.statusSuccess,
                         isSelected = currentRec?.status == HomeworkStatus.DONE
                     ) {
                         attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.DONE)
@@ -516,7 +514,7 @@ fun HomeworkCheckScreen(
                     HomeworkOptionRow(
                         title = "Partial (Incomplete)",
                         subtitle = "Partially completed (50%)",
-                        color = StatusWarning,
+                        color = MaterialTheme.colorScheme.statusWarning,
                         isSelected = currentRec?.status == HomeworkStatus.PARTIAL
                     ) {
                         attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.PARTIAL)
@@ -526,7 +524,7 @@ fun HomeworkCheckScreen(
                     HomeworkOptionRow(
                         title = "Missing (Not Done)",
                         subtitle = "No homework submitted (0%)",
-                        color = StatusError,
+                        color = MaterialTheme.colorScheme.error,
                         isSelected = currentRec?.status == HomeworkStatus.MISSING
                     ) {
                         attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.MISSING)
@@ -536,7 +534,7 @@ fun HomeworkCheckScreen(
                     HomeworkOptionRow(
                         title = "Excused (Exempt)",
                         subtitle = "Excused absence or medical",
-                        color = StatusInfo,
+                        color = MaterialTheme.colorScheme.statusInfo,
                         isSelected = currentRec?.status == HomeworkStatus.EXCUSED
                     ) {
                         attendanceViewModel.recordHomeworkStatus(student.id, topicText, selectedDate, HomeworkStatus.EXCUSED)
@@ -632,7 +630,7 @@ private fun DatePill(
             text = label,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

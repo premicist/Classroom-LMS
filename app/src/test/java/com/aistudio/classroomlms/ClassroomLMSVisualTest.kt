@@ -1,9 +1,22 @@
 package com.aistudio.classroomlms
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.graphics.Color
+import com.aistudio.classroomlms.ui.theme.CalmBackgroundDark
+import com.aistudio.classroomlms.ui.theme.CalmBackgroundLight
+import com.aistudio.classroomlms.ui.theme.CalmPrimary
+import com.aistudio.classroomlms.ui.theme.CalmPrimaryDark
+import com.aistudio.classroomlms.ui.theme.CalmSecondary
+import com.aistudio.classroomlms.ui.theme.CalmSecondaryDark
+import com.aistudio.classroomlms.ui.theme.StatusSuccess
+import com.aistudio.classroomlms.ui.theme.StatusSuccessDark
 import com.aistudio.classroomlms.ui.theme.MyApplicationTheme
+import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -12,6 +25,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.junit.Assert.assertEquals
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -19,6 +33,55 @@ import org.robolectric.annotation.GraphicsMode
 class ClassroomLMSVisualTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  @Test
+  fun themeUsesCalmAcademicPaletteInLightAndDarkModes() {
+    var lightPrimary: Color? = null
+    var lightSecondary: Color? = null
+    var lightBackground: Color? = null
+    var lightSuccess: Color? = null
+    var darkPrimary: Color? = null
+    var darkSecondary: Color? = null
+    var darkBackground: Color? = null
+    var darkSuccess: Color? = null
+
+    composeTestRule.setContent {
+      Column {
+        MyApplicationTheme(darkTheme = false) {
+          val colors = MaterialTheme.colorScheme
+          val successColor = colors.statusSuccess
+          SideEffect {
+            lightPrimary = colors.primary
+            lightSecondary = colors.secondary
+            lightBackground = colors.background
+            lightSuccess = successColor
+          }
+          Text("Light theme")
+        }
+        MyApplicationTheme(darkTheme = true) {
+          val colors = MaterialTheme.colorScheme
+          val successColor = colors.statusSuccess
+          SideEffect {
+            darkPrimary = colors.primary
+            darkSecondary = colors.secondary
+            darkBackground = colors.background
+            darkSuccess = successColor
+          }
+          Text("Dark theme")
+        }
+      }
+    }
+    composeTestRule.runOnIdle {
+      assertEquals(CalmPrimary, lightPrimary)
+      assertEquals(CalmSecondary, lightSecondary)
+      assertEquals(CalmBackgroundLight, lightBackground)
+      assertEquals(StatusSuccess, lightSuccess)
+      assertEquals(CalmPrimaryDark, darkPrimary)
+      assertEquals(CalmSecondaryDark, darkSecondary)
+      assertEquals(CalmBackgroundDark, darkBackground)
+      assertEquals(StatusSuccessDark, darkSuccess)
+    }
+  }
 
   @Test
   fun dashboard_screenshot() {

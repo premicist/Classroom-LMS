@@ -75,14 +75,10 @@ import com.aistudio.classroomlms.data.entity.MasteryLevel
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.components.VoiceDictationButton
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
-import com.aistudio.classroomlms.ui.theme.StatusInfo
-import com.aistudio.classroomlms.ui.theme.StatusInfoBg
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarning
-import com.aistudio.classroomlms.ui.theme.StatusWarningBg
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
+import com.aistudio.classroomlms.ui.theme.statusWarning
+import com.aistudio.classroomlms.ui.theme.statusWarningContainer
 import com.aistudio.classroomlms.util.StudentPhotoStorage
 import kotlinx.coroutines.launch
 import java.io.File
@@ -184,7 +180,7 @@ fun LiveAssessmentDialog(
                 }
                 if (initialAssessment != null && onDelete != null) {
                     IconButton(onClick = { onDelete(initialAssessment) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = StatusError)
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -303,9 +299,9 @@ fun LiveAssessmentDialog(
                         MasteryLevel.entries.forEach { level ->
                             val isSelected = masteryLevel == level
                             val (bg, fg) = when (level) {
-                                MasteryLevel.MASTERED -> StatusSuccessBg to StatusSuccess
-                                MasteryLevel.DEVELOPING -> StatusWarningBg to StatusWarning
-                                MasteryLevel.NEEDS_SUPPORT -> StatusErrorBg to StatusError
+                                MasteryLevel.MASTERED -> MaterialTheme.colorScheme.statusSuccessContainer to MaterialTheme.colorScheme.statusSuccess
+                                MasteryLevel.DEVELOPING -> MaterialTheme.colorScheme.statusWarningContainer to MaterialTheme.colorScheme.statusWarning
+                                MasteryLevel.NEEDS_SUPPORT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
                             }
 
                             Surface(
@@ -388,7 +384,7 @@ fun LiveAssessmentDialog(
                                         .clip(RoundedCornerShape(8.dp))
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
-                                Text("Photo Attached", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = StatusSuccess)
+                                Text("Photo Attached", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.statusSuccess)
                             } else {
                                 Icon(Icons.Default.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -398,7 +394,7 @@ fun LiveAssessmentDialog(
 
                         if (!photoEvidencePath.isNullOrBlank()) {
                             IconButton(onClick = { photoEvidencePath = null }) {
-                                Icon(Icons.Default.Close, contentDescription = "Remove Photo", tint = StatusError)
+                                Icon(Icons.Default.Close, contentDescription = "Remove Photo", tint = MaterialTheme.colorScheme.error)
                             }
                         } else {
                             Button(
@@ -411,7 +407,7 @@ fun LiveAssessmentDialog(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 if (isSavingPhoto) {
-                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = MaterialTheme.colorScheme.onPrimary)
                                 } else {
                                     Text("Attach Photo", fontSize = 11.sp)
                                 }

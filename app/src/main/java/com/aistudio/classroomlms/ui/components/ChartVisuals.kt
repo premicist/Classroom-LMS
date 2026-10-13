@@ -56,13 +56,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.AssignmentType
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
-import com.aistudio.classroomlms.ui.theme.StatusInfo
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarning
-import com.aistudio.classroomlms.ui.theme.StatusWarningBg
+import com.aistudio.classroomlms.ui.theme.statusInfo
+import com.aistudio.classroomlms.ui.theme.statusEnrichment
+import com.aistudio.classroomlms.ui.theme.statusEnrichmentContainer
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
+import com.aistudio.classroomlms.ui.theme.statusWarning
+import com.aistudio.classroomlms.ui.theme.statusWarningContainer
 import com.aistudio.classroomlms.ui.viewmodel.AssignmentTimelinePoint
 import com.aistudio.classroomlms.ui.viewmodel.CategoryMastery
 import com.aistudio.classroomlms.ui.viewmodel.ClassDifficultyArea
@@ -79,10 +79,10 @@ fun GradeDistributionBarChart(
     modifier: Modifier = Modifier
 ) {
     val grades = listOf(
-        Triple("A+/A (80-100)", distribution.aCount, StatusSuccess),
-        Triple("B+/B (60-79)", distribution.bCount, Color(0xFF0284C7)),
-        Triple("C+/C (40-59)", distribution.cCount, Color(0xFFD97706)),
-        Triple("D/E (<40)", distribution.dCount + distribution.fCount, StatusError)
+        Triple("A+/A (80-100)", distribution.aCount, MaterialTheme.colorScheme.statusSuccess),
+        Triple("B+/B (60-79)", distribution.bCount, MaterialTheme.colorScheme.statusInfo),
+        Triple("C+/C (40-59)", distribution.cCount, MaterialTheme.colorScheme.statusWarning),
+        Triple("D/E (<40)", distribution.dCount + distribution.fCount, MaterialTheme.colorScheme.error)
     )
     val maxCount = grades.maxOf { it.second }.coerceAtLeast(1)
 
@@ -142,12 +142,14 @@ fun CircularProgressGauge(
     percentage: Double,
     title: String,
     modifier: Modifier = Modifier,
-    accentColor: Color = StatusSuccess,
-    trackColor: Color = Color(0xFFE2E8F0),
+    accentColor: Color? = null,
+    trackColor: Color? = null,
     sizeDp: Int = 80,
     strokeWidthDp: Int = 8
 ) {
     val progress = (percentage / 100.0).toFloat().coerceIn(0f, 1f)
+    val resolvedAccentColor = accentColor ?: MaterialTheme.colorScheme.statusSuccess
+    val resolvedTrackColor = trackColor ?: MaterialTheme.colorScheme.outlineVariant
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(durationMillis = 800),
@@ -166,7 +168,7 @@ fun CircularProgressGauge(
 
             // Background Track
             drawArc(
-                color = trackColor,
+                color = resolvedTrackColor,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -177,7 +179,7 @@ fun CircularProgressGauge(
 
             // Active Progress
             drawArc(
-                color = accentColor,
+                color = resolvedAccentColor,
                 startAngle = -90f,
                 sweepAngle = 360f * animatedProgress,
                 useCenter = false,
@@ -227,14 +229,14 @@ fun TieredHorizontalProgressBar(
                 .fillMaxWidth()
                 .height(10.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFE2E8F0))
+                .background(MaterialTheme.colorScheme.outlineVariant)
         ) {
             if (doneFrac > 0) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(doneFrac)
-                        .background(StatusSuccess)
+                        .background(MaterialTheme.colorScheme.statusSuccess)
                 )
             }
             if (partialFrac > 0) {
@@ -242,7 +244,7 @@ fun TieredHorizontalProgressBar(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(partialFrac)
-                        .background(StatusWarning)
+                        .background(MaterialTheme.colorScheme.statusWarning)
                 )
             }
             if (missingFrac > 0) {
@@ -250,7 +252,7 @@ fun TieredHorizontalProgressBar(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(missingFrac)
-                        .background(StatusError)
+                        .background(MaterialTheme.colorScheme.error)
                 )
             }
             if (excusedFrac > 0) {
@@ -258,7 +260,7 @@ fun TieredHorizontalProgressBar(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(excusedFrac)
-                        .background(StatusInfo)
+                        .background(MaterialTheme.colorScheme.statusInfo)
                 )
             }
         }
@@ -267,10 +269,10 @@ fun TieredHorizontalProgressBar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            LegendItem(color = StatusSuccess, label = "Done ($done)")
-            LegendItem(color = StatusWarning, label = "Partial ($partial)")
-            LegendItem(color = StatusError, label = "Missing ($missing)")
-            LegendItem(color = StatusInfo, label = "Excused ($excused)")
+            LegendItem(color = MaterialTheme.colorScheme.statusSuccess, label = "Done ($done)")
+            LegendItem(color = MaterialTheme.colorScheme.statusWarning, label = "Partial ($partial)")
+            LegendItem(color = MaterialTheme.colorScheme.error, label = "Missing ($missing)")
+            LegendItem(color = MaterialTheme.colorScheme.statusInfo, label = "Excused ($excused)")
         }
     }
 }
@@ -295,14 +297,14 @@ fun StudentTierDistributionBar(
                 .fillMaxWidth()
                 .height(12.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFE2E8F0))
+                .background(MaterialTheme.colorScheme.outlineVariant)
         ) {
             if (sFrac > 0.001f) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(sFrac)
-                        .background(StatusError)
+                        .background(MaterialTheme.colorScheme.error)
                 )
             }
             if (oFrac > 0.001f) {
@@ -310,7 +312,7 @@ fun StudentTierDistributionBar(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(oFrac)
-                        .background(Color(0xFF0284C7))
+                        .background(MaterialTheme.colorScheme.statusInfo)
                 )
             }
             if (eFrac > 0.001f) {
@@ -318,7 +320,7 @@ fun StudentTierDistributionBar(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(eFrac)
-                        .background(StatusSuccess)
+                        .background(MaterialTheme.colorScheme.statusSuccess)
                 )
             }
         }
@@ -328,9 +330,9 @@ fun StudentTierDistributionBar(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            LegendItem(color = StatusError, label = "Support: $supportCount (${(sFrac * 100).toInt()}%)")
-            LegendItem(color = Color(0xFF0284C7), label = "On Track: $onTrackCount (${(oFrac * 100).toInt()}%)")
-            LegendItem(color = StatusSuccess, label = "Enrichment: $enrichmentCount (${(eFrac * 100).toInt()}%)")
+            LegendItem(color = MaterialTheme.colorScheme.error, label = "Support: $supportCount (${(sFrac * 100).toInt()}%)")
+            LegendItem(color = MaterialTheme.colorScheme.statusInfo, label = "On Track: $onTrackCount (${(oFrac * 100).toInt()}%)")
+            LegendItem(color = MaterialTheme.colorScheme.statusSuccess, label = "Enrichment: $enrichmentCount (${(eFrac * 100).toInt()}%)")
         }
     }
 }
@@ -376,8 +378,10 @@ fun PerformanceTimelineChart(
     }
 
     val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = Color(0xFFEA580C)
+    val secondaryColor = MaterialTheme.colorScheme.secondary
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+    val chartSurface = MaterialTheme.colorScheme.surface
+    val chartError = MaterialTheme.colorScheme.error
 
     Column(modifier = modifier.fillMaxWidth()) {
         // Legend row
@@ -495,9 +499,9 @@ fun PerformanceTimelineChart(
             // Draw Class Points
             classOffsets.forEachIndexed { idx, offset ->
                 val point = points[idx]
-                val dotColor = if (point.isDifficult) StatusError else primaryColor
+                val dotColor = if (point.isDifficult) chartError else primaryColor
                 drawCircle(
-                    color = Color.White,
+                    color = chartSurface,
                     radius = 6.dp.toPx(),
                     center = offset
                 )
@@ -537,7 +541,7 @@ fun PerformanceTimelineChart(
                         style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
                     )
                     studentOffsets.forEach { offset ->
-                        drawCircle(color = Color.White, radius = 5.dp.toPx(), center = offset)
+                        drawCircle(color = chartSurface, radius = 5.dp.toPx(), center = offset)
                         drawCircle(color = secondaryColor, radius = 3.5.dp.toPx(), center = offset)
                     }
                 }
@@ -558,7 +562,7 @@ fun PerformanceTimelineChart(
                         text = "${point.classAveragePercentage.toInt()}%",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (point.isDifficult) StatusError else MaterialTheme.colorScheme.onSurface
+                        color = if (point.isDifficult) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = point.title,
@@ -581,9 +585,9 @@ fun ClassDifficultyAreaCard(
     onReviewClick: () -> Unit
 ) {
     val (badgeBg, badgeText, badgeIcon) = when (area.severity) {
-        DifficultySeverity.HIGH_DIFFICULTY -> Triple(StatusErrorBg, StatusError, Icons.Default.Warning)
-        DifficultySeverity.MODERATE_CHALLENGE -> Triple(StatusWarningBg, StatusWarning, Icons.Default.Psychology)
-        DifficultySeverity.WELL_MASTERED -> Triple(StatusSuccessBg, StatusSuccess, Icons.Default.CheckCircle)
+        DifficultySeverity.HIGH_DIFFICULTY -> Triple(MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.error, Icons.Default.Warning)
+        DifficultySeverity.MODERATE_CHALLENGE -> Triple(MaterialTheme.colorScheme.statusWarningContainer, MaterialTheme.colorScheme.statusWarning, Icons.Default.Psychology)
+        DifficultySeverity.WELL_MASTERED -> Triple(MaterialTheme.colorScheme.statusSuccessContainer, MaterialTheme.colorScheme.statusSuccess, Icons.Default.CheckCircle)
     }
 
     Card(
@@ -667,7 +671,7 @@ fun ClassDifficultyAreaCard(
                 }
                 Column {
                     Text("Below Passing (<70%)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${area.failingCount} students", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (area.failingCount > 0) StatusError else StatusSuccess)
+                    Text("${area.failingCount} students", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (area.failingCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.statusSuccess)
                 }
             }
 
@@ -689,14 +693,14 @@ fun ClassDifficultyAreaCard(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(StatusErrorBg)
+                                .background(MaterialTheme.colorScheme.errorContainer)
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = student.name,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = StatusError
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -709,7 +713,7 @@ fun ClassDifficultyAreaCard(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFFF8FAFC),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                 tonalElevation = 0.dp
             ) {
                 Row(
@@ -764,15 +768,15 @@ fun StudentTrajectoryCard(
     val trend = trajectory.trend
 
     val (trendColor, trendIcon) = when (trend) {
-        TrajectoryTrend.IMPROVING -> StatusSuccess to Icons.AutoMirrored.Filled.TrendingUp
-        TrajectoryTrend.STEADY -> Color(0xFF0284C7) to Icons.AutoMirrored.Filled.TrendingFlat
-        TrajectoryTrend.DECLINING -> StatusError to Icons.AutoMirrored.Filled.TrendingDown
+        TrajectoryTrend.IMPROVING -> MaterialTheme.colorScheme.statusSuccess to Icons.AutoMirrored.Filled.TrendingUp
+        TrajectoryTrend.STEADY -> MaterialTheme.colorScheme.statusInfo to Icons.AutoMirrored.Filled.TrendingFlat
+        TrajectoryTrend.DECLINING -> MaterialTheme.colorScheme.error to Icons.AutoMirrored.Filled.TrendingDown
     }
 
     val (tierBg, tierText) = when (trajectory.tier) {
-        StudentTier.EXTRA_SUPPORT -> StatusErrorBg to StatusError
-        StudentTier.ENRICHMENT_NEEDED -> Color(0xFFF3E8FF) to Color(0xFF7E22CE)
-        StudentTier.ON_TRACK -> StatusSuccessBg to StatusSuccess
+        StudentTier.EXTRA_SUPPORT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+        StudentTier.ENRICHMENT_NEEDED -> MaterialTheme.colorScheme.statusEnrichmentContainer to MaterialTheme.colorScheme.statusEnrichment
+        StudentTier.ON_TRACK -> MaterialTheme.colorScheme.statusSuccessContainer to MaterialTheme.colorScheme.statusSuccess
     }
 
     Card(
@@ -972,10 +976,10 @@ fun CategoryMasteryBreakdown(
     ) {
         masteries.forEach { cat ->
             val color = when (cat.type) {
-                AssignmentType.HOMEWORK -> Color(0xFF2563EB)
-                AssignmentType.QUIZ -> Color(0xFF7C3AED)
-                AssignmentType.PROJECT -> Color(0xFF059669)
-                AssignmentType.EXAM -> Color(0xFFE11D48)
+                AssignmentType.HOMEWORK -> MaterialTheme.colorScheme.primary
+                AssignmentType.QUIZ -> MaterialTheme.colorScheme.secondary
+                AssignmentType.PROJECT -> MaterialTheme.colorScheme.tertiary
+                AssignmentType.EXAM -> MaterialTheme.colorScheme.error
             }
             val frac = (cat.averagePercentage / 100.0).toFloat().coerceIn(0f, 1f)
 

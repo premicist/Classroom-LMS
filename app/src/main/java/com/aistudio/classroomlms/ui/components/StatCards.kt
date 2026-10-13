@@ -38,9 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 
 @Composable
@@ -177,7 +174,7 @@ fun AlertBanner(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFFEF2F2),
+        color = MaterialTheme.colorScheme.errorContainer,
         tonalElevation = 0.dp
     ) {
         Row(
@@ -188,13 +185,13 @@ fun AlertBanner(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(StatusError.copy(alpha = 0.15f)),
+                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = "Alert",
-                    tint = StatusError,
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -204,12 +201,12 @@ fun AlertBanner(
                     text = title,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF991B1B)
+                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
                     text = message,
                     fontSize = 12.sp,
-                    color = Color(0xFFB91C1C)
+                    color = MaterialTheme.colorScheme.error
                 )
             }
             if (actionText != null && onAction != null) {
@@ -217,7 +214,7 @@ fun AlertBanner(
                     text = actionText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = StatusError,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .clickable { onAction() }

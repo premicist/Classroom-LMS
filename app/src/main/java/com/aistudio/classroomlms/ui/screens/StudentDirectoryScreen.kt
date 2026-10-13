@@ -57,12 +57,11 @@ import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarning
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
+import com.aistudio.classroomlms.ui.theme.statusWarning
+import com.aistudio.classroomlms.ui.theme.statusEnrichment
+import com.aistudio.classroomlms.ui.theme.statusEnrichmentContainer
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
@@ -107,7 +106,7 @@ fun StudentDirectoryScreen(
             FloatingActionButton(
                 onClick = { rosterViewModel.openAddStudent() },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Student")
             }
@@ -173,9 +172,9 @@ fun StudentDirectoryScreen(
                     items(filteredSummaries, key = { it.student.id }) { summary ->
                         val s = summary.student
                         val (tierBg, tierText) = when (summary.tier) {
-                            StudentTier.EXTRA_SUPPORT -> StatusErrorBg to StatusError
-                            StudentTier.ENRICHMENT_NEEDED -> Color(0xFFF3E8FF) to Color(0xFF7E22CE)
-                            StudentTier.ON_TRACK -> StatusSuccessBg to StatusSuccess
+                            StudentTier.EXTRA_SUPPORT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+                            StudentTier.ENRICHMENT_NEEDED -> MaterialTheme.colorScheme.statusEnrichmentContainer to MaterialTheme.colorScheme.statusEnrichment
+                            StudentTier.ON_TRACK -> MaterialTheme.colorScheme.statusSuccessContainer to MaterialTheme.colorScheme.statusSuccess
                         }
                         val trajectory = uiState.analytics.studentTrajectories.find { it.student.id == s.id }
 
@@ -240,7 +239,7 @@ fun StudentDirectoryScreen(
                                                     showActionMenu = false
                                                     studentSupportViewModel.openAddDiscipline(s)
                                                 },
-                                                leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = StatusWarning) }
+                                                leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.statusWarning) }
                                             )
                                             DropdownMenuItem(
                                                 text = { Text("Move to Another Class") },
@@ -251,12 +250,12 @@ fun StudentDirectoryScreen(
                                                 leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null) }
                                             )
                                             DropdownMenuItem(
-                                                text = { Text("Delete Student", color = StatusError) },
+                                                text = { Text("Delete Student", color = MaterialTheme.colorScheme.error) },
                                                 onClick = {
                                                     showActionMenu = false
                                                     studentToDelete = s
                                                 },
-                                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = StatusError) }
+                                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                                             )
                                         }
                                     }
@@ -274,11 +273,11 @@ fun StudentDirectoryScreen(
                                     }
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("HW", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("${summary.homeworkCompletionRate.toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = EduPrimary)
+                                        Text("${summary.homeworkCompletionRate.toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("Attend", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("${summary.attendanceRate.toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (summary.attendanceRate < 85.0) StatusError else StatusSuccess)
+                                        Text("${summary.attendanceRate.toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (summary.attendanceRate < 85.0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.statusSuccess)
                                     }
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("Trend", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -336,7 +335,7 @@ fun StudentDirectoryScreen(
                         rosterViewModel.deleteStudent(s.id)
                         studentToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }

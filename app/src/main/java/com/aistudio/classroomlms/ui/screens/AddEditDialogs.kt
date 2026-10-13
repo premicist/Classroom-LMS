@@ -74,7 +74,6 @@ import com.aistudio.classroomlms.data.entity.ExamEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.data.entity.SubmissionEntity
 import com.aistudio.classroomlms.data.entity.SubmissionStatus
-import com.aistudio.classroomlms.ui.theme.EduPrimary
 import com.aistudio.classroomlms.ui.theme.SubjectArt
 import com.aistudio.classroomlms.ui.theme.SubjectEnglish
 import com.aistudio.classroomlms.ui.theme.SubjectHistory
@@ -214,7 +213,7 @@ fun AddEditClassroomDialog(
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = "Selected",
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -373,7 +372,7 @@ fun AddEditStudentDialog(
                                 Icon(
                                     imageVector = Icons.Filled.Close,
                                     contentDescription = "Remove photo",
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onError,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }

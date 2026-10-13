@@ -1,111 +1,168 @@
 package com.aistudio.classroomlms.ui.theme
 
+import androidx.compose.material3.ColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
-// Vibrant Palette - Primary Purple / Violet
-val VibrantPrimary = Color(0xFF6750A4)
-val VibrantOnPrimary = Color(0xFFFFFFFF)
-val VibrantPrimaryContainer = Color(0xFFEADDFF)
-val VibrantOnPrimaryContainer = Color(0xFF21005D)
+val CalmPrimary = Color(0xFF263B50)
+val CalmOnPrimary = Color(0xFFFFFFFF)
+val CalmPrimaryContainer = Color(0xFFDCE5EB)
+val CalmOnPrimaryContainer = Color(0xFF172B3B)
 
-// Secondary Cyan / Light Blue Accent
-val VibrantSecondary = Color(0xFF00639B)
-val VibrantOnSecondary = Color(0xFFFFFFFF)
-val VibrantSecondaryContainer = Color(0xFFD3E3FD)
-val VibrantOnSecondaryContainer = Color(0xFF041E49)
+val CalmSecondary = Color(0xFF896A32)
+val CalmOnSecondary = Color(0xFFFFFFFF)
+val CalmSecondaryContainer = Color(0xFFF0E5CA)
+val CalmOnSecondaryContainer = Color(0xFF3F2F12)
 
-// Tertiary Rose / Plum Accent
-val VibrantTertiary = Color(0xFF7D5260)
-val VibrantOnTertiary = Color(0xFFFFFFFF)
-val VibrantTertiaryContainer = Color(0xFFFFD8E4)
-val VibrantOnTertiaryContainer = Color(0xFF31111D)
+val CalmTertiary = Color(0xFF526F70)
+val CalmOnTertiary = Color(0xFFFFFFFF)
+val CalmTertiaryContainer = Color(0xFFD6E7E4)
+val CalmOnTertiaryContainer = Color(0xFF203838)
 
-// Surfaces & Backgrounds
-val VibrantBackgroundLight = Color(0xFFFEF7FF)
-val VibrantSurfaceLight = Color(0xFFFFFFFF)
-val VibrantSurfaceContainerLight = Color(0xFFF3EDF7)
-val VibrantSurfaceVariantLight = Color(0xFFE8DEF8)
-val VibrantBorderLight = Color(0xFFCAC4D0)
-val VibrantBorderSubtleLight = Color(0xFFE6E0E9)
+val CalmBackgroundLight = Color(0xFFF6F4EF)
+val CalmSurfaceLight = Color(0xFFFFFEFB)
+val CalmSurfaceContainerLight = Color(0xFFEDEAE3)
+val CalmSurfaceVariantLight = Color(0xFFE8E5DD)
+val CalmBorderLight = Color(0xFF77776F)
+val CalmBorderSubtleLight = Color(0xFFD6D2C9)
+val CalmTextPrimaryLight = Color(0xFF202A32)
+val CalmTextSecondaryLight = Color(0xFF4E5960)
 
-val VibrantBackgroundDark = Color(0xFF141218)
-val VibrantSurfaceDark = Color(0xFF1D1B20)
-val VibrantSurfaceContainerDark = Color(0xFF211F26)
-val VibrantSurfaceVariantDark = Color(0xFF49454F)
-val VibrantBorderDark = Color(0xFF938F99)
-val VibrantBorderSubtleDark = Color(0xFF49454F)
+val CalmPrimaryDark = Color(0xFFB9C9D7)
+val CalmOnPrimaryDark = Color(0xFF203548)
+val CalmPrimaryContainerDark = Color(0xFF394F63)
+val CalmOnPrimaryContainerDark = Color(0xFFD7E3EC)
 
-// Text Colors
-val VibrantTextPrimary = Color(0xFF1D1B20)
-val VibrantTextSecondary = Color(0xFF49454F)
+val CalmSecondaryDark = Color(0xFFE2C88E)
+val CalmOnSecondaryDark = Color(0xFF392B10)
+val CalmSecondaryContainerDark = Color(0xFF57451F)
+val CalmOnSecondaryContainerDark = Color(0xFFF3E4C1)
 
-// Status & Performance Colors (Vibrant & M3 Harmonized)
-val StatusSuccess = Color(0xFF146C2E)       // Rich Green - Present / Done / A Grade
-val StatusSuccessBg = Color(0xFFC4EED0)
-val StatusSuccessDark = Color(0xFF81C995)
-val StatusSuccessBgDark = Color(0xFF0F5223)
+val CalmTertiaryDark = Color(0xFFB9D1CE)
+val CalmOnTertiaryDark = Color(0xFF243A39)
+val CalmTertiaryContainerDark = Color(0xFF3A5352)
+val CalmOnTertiaryContainerDark = Color(0xFFD5E7E3)
 
-val StatusWarning = Color(0xFF825500)       // Warm Amber - Late / Partial / B-C Grade
-val StatusWarningBg = Color(0xFFFFE086)
-val StatusWarningDark = Color(0xFFFDD663)
-val StatusWarningBgDark = Color(0xFF5E3C00)
+val CalmBackgroundDark = Color(0xFF171C20)
+val CalmSurfaceDark = Color(0xFF1E2428)
+val CalmSurfaceContainerDark = Color(0xFF252C30)
+val CalmSurfaceVariantDark = Color(0xFF41494D)
+val CalmBorderDark = Color(0xFF929B9F)
+val CalmBorderSubtleDark = Color(0xFF41494D)
+val CalmTextPrimaryDark = Color(0xFFE2E7E8)
+val CalmTextSecondaryDark = Color(0xFFC1C9CB)
 
-val StatusError = Color(0xFFB3261E)         // Rich Crimson - Absent / Missing / D-F Grade
-val StatusErrorBg = Color(0xFFF9DEDC)
-val StatusErrorDark = Color(0xFFF2B8B5)
-val StatusErrorBgDark = Color(0xFF601410)
+val StatusSuccess = Color(0xFF356847)
+val StatusSuccessBg = Color(0xFFDCEBDD)
+val StatusSuccessDark = Color(0xFFA5D2AE)
+val StatusSuccessBgDark = Color(0xFF263D2D)
+val StatusSuccessOnDark = Color(0xFF203728)
 
-val StatusInfo = Color(0xFF00639B)          // Crisp Deep Sky - Late / Excused / Submitted
-val StatusInfoBg = Color(0xFFD3E3FD)
-val StatusInfoDark = Color(0xFFA8C7FA)
-val StatusInfoBgDark = Color(0xFF042B57)
+val StatusWarning = Color(0xFF795A1C)
+val StatusWarningBg = Color(0xFFF0E5C9)
+val StatusWarningDark = Color(0xFFE6C77E)
+val StatusWarningBgDark = Color(0xFF453919)
+val StatusWarningOnDark = Color(0xFF3C2D0D)
 
-val StatusNeutral = Color(0xFF49454F)       // Slate Neutral - Pending
-val StatusNeutralBg = Color(0xFFE6E0E9)
+val StatusError = Color(0xFFB3261E)
+val StatusErrorBg = Color(0xFFF4DEDB)
+val StatusErrorDark = Color(0xFFFFB4AB)
+val StatusErrorBgDark = Color(0xFF5B2521)
 
-// Subject Accent Colors (Vibrant Palette)
-val SubjectMath = Color(0xFF6750A4)
-val SubjectScience = Color(0xFF00639B)
-val SubjectHistory = Color(0xFF825500)
-val SubjectEnglish = Color(0xFF9C27B0)
-val SubjectArt = Color(0xFFC2185B)
-val SubjectTech = Color(0xFF0288D1)
+val StatusInfo = Color(0xFF3C667D)
+val StatusInfoBg = Color(0xFFDCE8ED)
+val StatusInfoDark = Color(0xFFA8CADA)
+val StatusInfoBgDark = Color(0xFF263C48)
 
-// Backward Compatibility Aliases for Theme tokens
-val EduPrimary = VibrantPrimary
-val EduPrimaryContainer = VibrantPrimaryContainer
-val EduOnPrimaryContainer = VibrantOnPrimaryContainer
-val EduSecondary = VibrantSecondary
-val EduBackground = VibrantBackgroundLight
-val EduSurface = VibrantSurfaceLight
-val EduBorder = VibrantBorderLight
-val EduBorderSubtle = VibrantBorderSubtleLight
-val EduTextPrimary = VibrantTextPrimary
-val EduTextSecondary = VibrantTextSecondary
+val StatusNeutral = Color(0xFF596166)
+val StatusNeutralBg = Color(0xFFE6E5E0)
+val StatusNeutralDark = Color(0xFFC2C8C9)
+val StatusNeutralBgDark = Color(0xFF353B3F)
 
-// Semantic Status Extensions for Dynamic Light/Dark Contrast
-val androidx.compose.material3.ColorScheme.statusSuccess: Color
-    @androidx.compose.runtime.Composable
-    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusSuccessDark else StatusSuccess
+val StatusEnrichment = Color(0xFF5E607F)
+val StatusEnrichmentBg = Color(0xFFE5E2EE)
+val StatusEnrichmentDark = Color(0xFFC8C3E0)
+val StatusEnrichmentBgDark = Color(0xFF38364D)
+val StatusEnrichmentOnDark = Color(0xFF302E43)
 
-val androidx.compose.material3.ColorScheme.statusSuccessContainer: Color
-    @androidx.compose.runtime.Composable
-    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusSuccessBgDark else StatusSuccessBg
+val SubjectMath = Color(0xFF334F69)
+val SubjectScience = Color(0xFF426E6B)
+val SubjectHistory = Color(0xFF896A32)
+val SubjectEnglish = Color(0xFF685B70)
+val SubjectArt = Color(0xFF9A5B49)
+val SubjectTech = Color(0xFF526F8A)
 
-val androidx.compose.material3.ColorScheme.statusWarning: Color
-    @androidx.compose.runtime.Composable
-    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusWarningDark else StatusWarning
+val VibrantPrimary = CalmPrimary
+val VibrantOnPrimary = CalmOnPrimary
+val VibrantPrimaryContainer = CalmPrimaryContainer
+val VibrantOnPrimaryContainer = CalmOnPrimaryContainer
+val VibrantSecondary = CalmSecondary
+val VibrantOnSecondary = CalmOnSecondary
+val VibrantSecondaryContainer = CalmSecondaryContainer
+val VibrantOnSecondaryContainer = CalmOnSecondaryContainer
+val VibrantTertiary = CalmTertiary
+val VibrantOnTertiary = CalmOnTertiary
+val VibrantTertiaryContainer = CalmTertiaryContainer
+val VibrantOnTertiaryContainer = CalmOnTertiaryContainer
+val VibrantBackgroundLight = CalmBackgroundLight
+val VibrantSurfaceLight = CalmSurfaceLight
+val VibrantSurfaceContainerLight = CalmSurfaceContainerLight
+val VibrantSurfaceVariantLight = CalmSurfaceVariantLight
+val VibrantBorderLight = CalmBorderLight
+val VibrantBorderSubtleLight = CalmBorderSubtleLight
+val VibrantBackgroundDark = CalmBackgroundDark
+val VibrantSurfaceDark = CalmSurfaceDark
+val VibrantSurfaceContainerDark = CalmSurfaceContainerDark
+val VibrantSurfaceVariantDark = CalmSurfaceVariantDark
+val VibrantBorderDark = CalmBorderDark
+val VibrantBorderSubtleDark = CalmBorderSubtleDark
+val VibrantTextPrimary = CalmTextPrimaryLight
+val VibrantTextSecondary = CalmTextSecondaryLight
 
-val androidx.compose.material3.ColorScheme.statusWarningContainer: Color
-    @androidx.compose.runtime.Composable
-    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusWarningBgDark else StatusWarningBg
+val EduPrimary = CalmPrimary
+val EduPrimaryContainer = CalmPrimaryContainer
+val EduOnPrimaryContainer = CalmOnPrimaryContainer
+val EduSecondary = CalmSecondary
+val EduBackground = CalmBackgroundLight
+val EduSurface = CalmSurfaceLight
+val EduBorder = CalmBorderLight
+val EduBorderSubtle = CalmBorderSubtleLight
+val EduTextPrimary = CalmTextPrimaryLight
+val EduTextSecondary = CalmTextSecondaryLight
 
-val androidx.compose.material3.ColorScheme.statusInfo: Color
-    @androidx.compose.runtime.Composable
-    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusInfoDark else StatusInfo
+@Composable
+private fun ColorScheme.usesDarkSurfaces(): Boolean = surface.luminance() < 0.5f
 
-val androidx.compose.material3.ColorScheme.statusInfoContainer: Color
-    @androidx.compose.runtime.Composable
-    get() = if (androidx.compose.foundation.isSystemInDarkTheme()) StatusInfoBgDark else StatusInfoBg
+val ColorScheme.statusSuccess: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusSuccessDark else StatusSuccess
 
+val ColorScheme.onStatusSuccess: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusSuccessOnDark else Color.White
 
+val ColorScheme.statusSuccessContainer: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusSuccessBgDark else StatusSuccessBg
+
+val ColorScheme.statusWarning: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusWarningDark else StatusWarning
+
+val ColorScheme.onStatusWarning: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusWarningOnDark else Color.White
+
+val ColorScheme.statusWarningContainer: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusWarningBgDark else StatusWarningBg
+
+val ColorScheme.statusInfo: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusInfoDark else StatusInfo
+
+val ColorScheme.statusInfoContainer: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusInfoBgDark else StatusInfoBg
+
+val ColorScheme.statusEnrichment: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusEnrichmentDark else StatusEnrichment
+
+val ColorScheme.onStatusEnrichment: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusEnrichmentOnDark else Color.White
+
+val ColorScheme.statusEnrichmentContainer: Color
+    @Composable get() = if (usesDarkSurfaces()) StatusEnrichmentBgDark else StatusEnrichmentBg

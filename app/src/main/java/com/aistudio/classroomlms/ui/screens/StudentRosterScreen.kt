@@ -367,7 +367,7 @@ private fun StudentRosterRow(
             ) {
                 Text(
                     text = student.name.take(1).uppercase(),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )

@@ -122,7 +122,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.CompositionLocalProvider
-import com.aistudio.classroomlms.ui.theme.StatusError
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.rememberWindowSizeCategory
 import com.aistudio.classroomlms.ui.viewmodel.AnalyticsViewModel
@@ -878,7 +877,7 @@ fun LmsMainScreen(
                         studentToDelete?.let { rosterViewModel.deleteStudent(it.id) }
                         studentToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }
@@ -903,7 +902,7 @@ fun LmsMainScreen(
                         classroomToDelete?.let { rosterViewModel.deleteClassroom(it.id) }
                         classroomToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }
@@ -993,7 +992,7 @@ fun LmsMainScreen(
                         scope.launch { drawerState.close() }
                         uriToRestore?.let { settingsViewModel.restoreBackup(it) }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Restore")
                 }

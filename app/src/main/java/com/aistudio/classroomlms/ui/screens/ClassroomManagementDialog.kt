@@ -52,7 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
-import com.aistudio.classroomlms.ui.theme.StatusError
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,7 +154,7 @@ fun ClassroomManagementDialog(
                                 Icon(
                                     imageVector = Icons.Default.School,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -211,7 +210,7 @@ fun ClassroomManagementDialog(
                                     Icon(
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = "Delete",
-                                        tint = StatusError,
+                                        tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }

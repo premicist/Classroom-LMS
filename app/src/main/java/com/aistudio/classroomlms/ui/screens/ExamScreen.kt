@@ -32,9 +32,7 @@ import com.aistudio.classroomlms.data.entity.ExamCategory
 import com.aistudio.classroomlms.data.entity.ExamEntity
 import com.aistudio.classroomlms.data.entity.ExamMarkEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
@@ -226,7 +224,7 @@ fun ExamRecordCard(
                         showDeleteConfirmation = false
                         examViewModel.deleteExam(exam)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }
@@ -298,7 +296,7 @@ fun ExamRecordCard(
                         onClick = { showDeleteConfirmation = true },
                         modifier = Modifier.size(if (isCompact) 32.dp else 40.dp)
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Exam", tint = StatusError, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Exam", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -324,11 +322,11 @@ fun ExamRecordCard(
                 }
                 Column {
                     Text("Graded", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$gradedCount / $totalStudents", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold, color = if (gradedCount == totalStudents) StatusSuccess else EduPrimary)
+                    Text("$gradedCount / $totalStudents", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold, color = if (gradedCount == totalStudents) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.primary)
                 }
                 Column {
                     Text("Passed", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$passedCount", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold, color = if (passedCount > 0) StatusSuccess else StatusError)
+                    Text("$passedCount", fontSize = if (isCompact) 13.sp else 14.sp, fontWeight = FontWeight.Bold, color = if (passedCount > 0) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error)
                 }
             }
 
@@ -423,7 +421,7 @@ fun ExamStudentMarkRow(
             // Absent Toggle
             Surface(
                 shape = RoundedCornerShape(6.dp),
-                color = if (isAbsent) StatusError else MaterialTheme.colorScheme.surfaceVariant,
+                color = if (isAbsent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.clickable { 
                     isAbsent = !isAbsent
                     if (isAbsent) marksInput = ""
@@ -443,7 +441,7 @@ fun ExamStudentMarkRow(
                     text = "ABS", 
                     fontSize = 10.sp, 
                     fontWeight = FontWeight.Bold, 
-                    color = if (isAbsent) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isAbsent) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                 )
             }

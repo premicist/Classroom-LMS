@@ -25,6 +25,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.aistudio.classroomlms.ui.theme.statusSuccess
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -44,8 +45,6 @@ import com.aistudio.classroomlms.data.entity.BehaviorSeverity
 import com.aistudio.classroomlms.data.entity.DisciplineRecordEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.VoiceDictationButton
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -111,7 +110,7 @@ fun DisciplineLogDialog(
                 }
                 if (initialRecord != null && onDelete != null) {
                     IconButton(onClick = { onDelete(initialRecord) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Record", tint = StatusError)
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Record", tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -148,9 +147,9 @@ fun DisciplineLogDialog(
                             label = { Text(preset.title, fontSize = 11.sp) },
                             leadingIcon = {
                                 if (preset.category.isPositive) {
-                                    Icon(Icons.Default.Star, contentDescription = null, tint = StatusSuccess, modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.statusSuccess, modifier = Modifier.size(14.dp))
                                 } else {
-                                    Icon(Icons.Default.Warning, contentDescription = null, tint = StatusError, modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
                                 }
                             }
                         )

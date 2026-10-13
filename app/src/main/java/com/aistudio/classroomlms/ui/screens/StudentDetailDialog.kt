@@ -77,17 +77,16 @@ import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.InterventionEntity
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
 import com.aistudio.classroomlms.data.entity.BehaviorCategory
 import com.aistudio.classroomlms.data.entity.DisciplineRecordEntity
 import com.aistudio.classroomlms.data.entity.LiveAssessmentEntity
 import com.aistudio.classroomlms.data.entity.MasteryLevel
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarning
-import com.aistudio.classroomlms.ui.theme.StatusWarningBg
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
+import com.aistudio.classroomlms.ui.theme.statusEnrichment
+import com.aistudio.classroomlms.ui.theme.statusEnrichmentContainer
+import com.aistudio.classroomlms.ui.theme.statusWarning
+import com.aistudio.classroomlms.ui.theme.statusWarningContainer
 import com.aistudio.classroomlms.ui.viewmodel.StudentGradeSummary
 import com.aistudio.classroomlms.ui.viewmodel.StudentProgressTrajectory
 import com.aistudio.classroomlms.ui.viewmodel.StudentTier
@@ -121,9 +120,9 @@ fun StudentDetailDialog(
     val context = LocalContext.current
 
     val (tierBg, tierText) = when (summary.tier) {
-        StudentTier.EXTRA_SUPPORT -> StatusErrorBg to StatusError
-        StudentTier.ENRICHMENT_NEEDED -> Color(0xFFF3E8FF) to Color(0xFF7E22CE)
-        StudentTier.ON_TRACK -> StatusSuccessBg to StatusSuccess
+        StudentTier.EXTRA_SUPPORT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+        StudentTier.ENRICHMENT_NEEDED -> MaterialTheme.colorScheme.statusEnrichmentContainer to MaterialTheme.colorScheme.statusEnrichment
+        StudentTier.ON_TRACK -> MaterialTheme.colorScheme.statusSuccessContainer to MaterialTheme.colorScheme.statusSuccess
     }
 
     val isCompact = LocalWindowSizeCategory.current.isCompact
@@ -202,7 +201,7 @@ fun StudentDetailDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        color = StatusSuccessBg,
+                        color = MaterialTheme.colorScheme.statusSuccessContainer,
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
@@ -211,14 +210,14 @@ fun StudentDetailDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Default.Star, contentDescription = null, tint = StatusSuccess, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Star, contentDescription = null, tint = MaterialTheme.colorScheme.statusSuccess, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("+$meritCount Merits", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
+                            Text("+$meritCount Merits", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.statusSuccess)
                         }
                     }
 
                     Surface(
-                        color = if (infractionCount > 0) StatusErrorBg else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (infractionCount > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
@@ -230,7 +229,7 @@ fun StudentDetailDialog(
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = null,
-                                tint = if (infractionCount > 0) StatusError else MaterialTheme.colorScheme.outline,
+                                tint = if (infractionCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -238,7 +237,7 @@ fun StudentDetailDialog(
                                 text = "$infractionCount Infraction${if (infractionCount == 1) "" else "s"}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (infractionCount > 0) StatusError else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (infractionCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -258,10 +257,10 @@ fun StudentDetailDialog(
                             .padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        MetricItem("Overall Score", "${summary.percentage}%", EduPrimary)
+                        MetricItem("Overall Score", "${summary.percentage}%", MaterialTheme.colorScheme.primary)
                         MetricItem("GPA", "${summary.gpa}", MaterialTheme.colorScheme.onSurface)
-                        MetricItem("HW Check", "${summary.homeworkCompletionRate.toInt()}%", EduPrimary)
-                        MetricItem("Attendance", "${summary.attendanceRate.toInt()}%", StatusSuccess)
+                        MetricItem("HW Check", "${summary.homeworkCompletionRate.toInt()}%", MaterialTheme.colorScheme.primary)
+                        MetricItem("Attendance", "${summary.attendanceRate.toInt()}%", MaterialTheme.colorScheme.statusSuccess)
                     }
                 }
             }
@@ -307,7 +306,7 @@ fun StudentDetailDialog(
                                     text = aiInsight.riskScore,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onError,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -351,14 +350,14 @@ fun StudentDetailDialog(
                                         color = if (!isNepaliLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                         modifier = Modifier.clickable { isNepaliLanguage = false }
                                     ) {
-                                        Text("English", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (!isNepaliLanguage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                        Text("English", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (!isNepaliLanguage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                                     }
                                     Surface(
                                         shape = RoundedCornerShape(6.dp),
                                         color = if (isNepaliLanguage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                         modifier = Modifier.clickable { isNepaliLanguage = true }
                                     ) {
-                                        Text("नेपाली", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isNepaliLanguage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                                        Text("नेपाली", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isNepaliLanguage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                                     }
                                 }
                             }
@@ -450,9 +449,9 @@ fun StudentDetailDialog(
             if (trajectory != null) {
                 item {
                     val (trendColor, trendIcon) = when (trajectory.trend) {
-                        TrajectoryTrend.IMPROVING -> StatusSuccess to Icons.AutoMirrored.Filled.TrendingUp
-                        TrajectoryTrend.STEADY -> Color(0xFF0284C7) to Icons.AutoMirrored.Filled.TrendingFlat
-                        TrajectoryTrend.DECLINING -> StatusError to Icons.AutoMirrored.Filled.TrendingDown
+                        TrajectoryTrend.IMPROVING -> MaterialTheme.colorScheme.statusSuccess to Icons.AutoMirrored.Filled.TrendingUp
+                        TrajectoryTrend.STEADY -> MaterialTheme.colorScheme.tertiary to Icons.AutoMirrored.Filled.TrendingFlat
+                        TrajectoryTrend.DECLINING -> MaterialTheme.colorScheme.error to Icons.AutoMirrored.Filled.TrendingDown
                     }
 
                     Card(
@@ -510,19 +509,19 @@ fun StudentDetailDialog(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = StatusErrorBg)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = Icons.Default.Warning, contentDescription = null, tint = StatusError)
+                            Icon(imageVector = Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Support Focus: ${summary.riskReasons.joinToString(" • ")}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = StatusError
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -581,9 +580,9 @@ fun StudentDetailDialog(
                         } else {
                             liveAssessments.forEach { live ->
                                 val (bg, fg) = when (live.masteryLevel) {
-                                    MasteryLevel.MASTERED -> StatusSuccessBg to StatusSuccess
-                                    MasteryLevel.DEVELOPING -> StatusWarningBg to StatusWarning
-                                    MasteryLevel.NEEDS_SUPPORT -> StatusErrorBg to StatusError
+                                    MasteryLevel.MASTERED -> MaterialTheme.colorScheme.statusSuccessContainer to MaterialTheme.colorScheme.statusSuccess
+                                    MasteryLevel.DEVELOPING -> MaterialTheme.colorScheme.statusWarningContainer to MaterialTheme.colorScheme.statusWarning
+                                    MasteryLevel.NEEDS_SUPPORT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
                                 }
 
                                 Column(
@@ -809,7 +808,7 @@ fun StudentDetailDialog(
                                             text = "${disc.category.displayName} • ${disc.severity.displayName}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (disc.category.isPositive) StatusSuccess else StatusError
+                                            color = if (disc.category.isPositive) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error
                                         )
                                         Text(
                                             text = disc.date,
@@ -1011,7 +1010,7 @@ fun StudentDetailDialog(
                             }
                             Button(
                                 onClick = onDeleteStudent,
-                                colors = ButtonDefaults.buttonColors(containerColor = StatusError),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))

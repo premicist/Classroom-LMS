@@ -59,10 +59,9 @@ import androidx.compose.ui.unit.dp
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.DailyLogEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusInfo
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
+import com.aistudio.classroomlms.ui.theme.statusInfo
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.PlannerViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -292,7 +291,7 @@ fun PlannerScreen(
                         plannerViewModel.deleteLessonPlan(plan)
                         planToDelete = null
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = StatusError)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }
@@ -316,7 +315,7 @@ fun PlannerScreen(
                         plannerViewModel.deleteDailyLog(log)
                         logToDelete = null
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = StatusError)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Delete")
                 }
@@ -375,9 +374,9 @@ fun LessonPlansTab(
         } else {
             items(plans, key = { it.id }) { plan ->
                 val (badgeBg, badgeText) = when (plan.status) {
-                    "IN_PROGRESS" -> StatusWarning to "In Progress"
-                    "COMPLETED" -> StatusSuccess to "Completed"
-                    else -> StatusInfo to "Planned"
+                    "IN_PROGRESS" -> MaterialTheme.colorScheme.statusWarning to "In Progress"
+                    "COMPLETED" -> MaterialTheme.colorScheme.statusSuccess to "Completed"
+                    else -> MaterialTheme.colorScheme.statusInfo to "Planned"
                 }
 
                 val classroomName = classrooms.find { it.id == plan.classroomId }?.name ?: "Classroom #${plan.classroomId}"
@@ -452,7 +451,7 @@ fun LessonPlansTab(
                                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                                 }
                                 IconButton(onClick = { onDelete(plan) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = StatusError)
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -530,8 +529,8 @@ fun DailyDiaryTab(
                                     onClick = {},
                                     label = { Text("Proxy Class", style = MaterialTheme.typography.labelSmall) },
                                     colors = AssistChipDefaults.assistChipColors(
-                                        containerColor = StatusWarning.copy(alpha = 0.2f),
-                                        labelColor = StatusWarning
+                                        containerColor = MaterialTheme.colorScheme.statusWarning.copy(alpha = 0.2f),
+                                        labelColor = MaterialTheme.colorScheme.statusWarning
                                     )
                                 )
                             }
@@ -563,7 +562,7 @@ fun DailyDiaryTab(
                                 Icon(Icons.Default.Edit, contentDescription = "Edit")
                             }
                             IconButton(onClick = { onDelete(log) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = StatusError)
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }

@@ -65,10 +65,9 @@ import com.aistudio.classroomlms.data.entity.AttendanceStatus
 import com.aistudio.classroomlms.ui.components.AttendanceStatusSelector
 import com.aistudio.classroomlms.ui.components.CircularProgressGauge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
+import com.aistudio.classroomlms.ui.theme.onStatusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
 import com.aistudio.classroomlms.ui.viewmodel.AttendanceUiState
@@ -286,19 +285,19 @@ private fun DailyAttendanceCheckInView(
                     ) {
                         Column {
                             Text(text = if (isCompact) "Rate" else "Attendance Rate", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$attendanceRate%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = if (attendanceRate >= 85) StatusSuccess else StatusError)
+                            Text(text = "$attendanceRate%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = if (attendanceRate >= 85) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error)
                         }
                         Column {
                             Text(text = "Present", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$presCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
+                            Text(text = "$presCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.statusSuccess)
                         }
                         Column {
                             Text(text = "Absent", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$absCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
+                            Text(text = "$absCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                         }
                         Column {
                             Text(text = "Late", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "$lateCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusWarning)
+                            Text(text = "$lateCount", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.statusWarning)
                         }
                     }
 
@@ -310,8 +309,8 @@ private fun DailyAttendanceCheckInView(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = StatusSuccess,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.statusSuccess,
+                            contentColor = MaterialTheme.colorScheme.onStatusSuccess
                         )
                     ) {
                         Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -408,7 +407,7 @@ private fun DailyAttendanceCheckInView(
                             Text(
                                 text = "Note: ${record?.remarks}",
                                 fontSize = 11.sp,
-                                color = StatusWarning
+                                color = MaterialTheme.colorScheme.statusWarning
                             )
                         }
                     }
@@ -533,14 +532,14 @@ private fun AutomatedAttendanceReportsView(
                             title = "Overall Rate",
                             sizeDp = if (isCompact) 78 else 90,
                             strokeWidthDp = if (isCompact) 7 else 9,
-                            accentColor = if (report.overallAttendanceRate >= 85) StatusSuccess else StatusError
+                            accentColor = if (report.overallAttendanceRate >= 85) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error
                         )
 
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            ReportStatLine("Total Sessions", "${report.totalDaysRecorded} days", EduPrimary)
-                            ReportStatLine("Present Logged", "${report.totalPresent}", StatusSuccess)
-                            ReportStatLine("Absent Logged", "${report.totalAbsent}", StatusError)
-                            ReportStatLine("Late Logged", "${report.totalLate}", StatusWarning)
+                            ReportStatLine("Total Sessions", "${report.totalDaysRecorded} days", MaterialTheme.colorScheme.primary)
+                            ReportStatLine("Present Logged", "${report.totalPresent}", MaterialTheme.colorScheme.statusSuccess)
+                            ReportStatLine("Absent Logged", "${report.totalAbsent}", MaterialTheme.colorScheme.error)
+                            ReportStatLine("Late Logged", "${report.totalLate}", MaterialTheme.colorScheme.statusWarning)
                         }
                     }
                 }
@@ -553,7 +552,7 @@ private fun AutomatedAttendanceReportsView(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
@@ -561,7 +560,7 @@ private fun AutomatedAttendanceReportsView(
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = "Alert",
-                                tint = StatusError,
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -569,7 +568,7 @@ private fun AutomatedAttendanceReportsView(
                                 text = "Chronic Absenteeism Alert (${report.chronicAbsentees.size})",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF991B1B)
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -584,13 +583,13 @@ private fun AutomatedAttendanceReportsView(
                                     text = "• ${s.student.name}",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFFB91C1C)
+                                    color = MaterialTheme.colorScheme.error
                                 )
                                 Text(
                                     text = "${s.attendanceRate}% (${s.absentCount} absences)",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = StatusError
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             }
                         }
@@ -605,7 +604,7 @@ private fun AutomatedAttendanceReportsView(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                     elevation = CardDefaults.cardElevation(0.dp)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
@@ -613,7 +612,7 @@ private fun AutomatedAttendanceReportsView(
                             Icon(
                                 imageVector = Icons.Default.Star,
                                 contentDescription = "Star",
-                                tint = StatusSuccess,
+                                tint = MaterialTheme.colorScheme.statusSuccess,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -621,7 +620,7 @@ private fun AutomatedAttendanceReportsView(
                                 text = "Perfect Attendance Honor Roll (${report.perfectAttendance.size})",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF065F46)
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -630,7 +629,7 @@ private fun AutomatedAttendanceReportsView(
                                 text = "★ ${s.student.name} (${s.student.studentNumber})",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF047857),
+                                color = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.padding(vertical = 2.dp)
                             )
                         }
@@ -688,9 +687,9 @@ private fun AutomatedAttendanceReportsView(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(
-                                if (s.attendanceRate >= 90) StatusSuccess.copy(alpha = 0.15f)
-                                else if (s.attendanceRate >= 85) StatusWarning.copy(alpha = 0.15f)
-                                else StatusError.copy(alpha = 0.15f)
+                                if (s.attendanceRate >= 90) MaterialTheme.colorScheme.statusSuccess.copy(alpha = 0.15f)
+                                else if (s.attendanceRate >= 85) MaterialTheme.colorScheme.statusWarning.copy(alpha = 0.15f)
+                                else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                             )
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
@@ -698,9 +697,9 @@ private fun AutomatedAttendanceReportsView(
                             text = "${s.attendanceRate}%",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (s.attendanceRate >= 90) StatusSuccess
-                            else if (s.attendanceRate >= 85) StatusWarning
-                            else StatusError
+                            color = if (s.attendanceRate >= 90) MaterialTheme.colorScheme.statusSuccess
+                            else if (s.attendanceRate >= 85) MaterialTheme.colorScheme.statusWarning
+                            else MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -754,7 +753,7 @@ private fun DatePill(
             text = label,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

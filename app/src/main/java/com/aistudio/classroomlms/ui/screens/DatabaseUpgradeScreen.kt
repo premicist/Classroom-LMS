@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.aistudio.classroomlms.ui.theme.StatusError
 
 /**
  * Non-dismissible full screen shown when migrating unencrypted SQLite data to SQLCipher.
@@ -132,7 +131,7 @@ fun DatabaseUpgradeFailedScreen(
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = "Upgrade Error",
-                        tint = StatusError,
+                        tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(44.dp)
                     )
                 }
@@ -182,7 +181,7 @@ fun DatabaseUpgradeFailedScreen(
                         Text(
                             text = "Error detail: $errorMessage",
                             style = MaterialTheme.typography.labelSmall,
-                            color = StatusError
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }

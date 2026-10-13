@@ -61,11 +61,9 @@ import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.GradeDistributionBarChart
 import com.aistudio.classroomlms.ui.components.QuickStatCard
 import com.aistudio.classroomlms.ui.components.StudentAvatar
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusInfo
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
+import com.aistudio.classroomlms.ui.theme.statusInfo
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.adaptiveGridColumns
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
@@ -104,43 +102,43 @@ fun DashboardScreen(
         ServicePortalTile(
             title = "Attendance",
             icon = Icons.Default.EventAvailable,
-            color = StatusSuccess,
+            color = MaterialTheme.colorScheme.statusSuccess,
             onClick = { viewModel.selectTab(LmsTab.ATTENDANCE) }
         ),
         ServicePortalTile(
             title = "Homework",
             icon = Icons.AutoMirrored.Filled.MenuBook,
-            color = EduPrimary,
+            color = MaterialTheme.colorScheme.primary,
             onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
         ),
         ServicePortalTile(
             title = "New Task",
             icon = Icons.Default.Add,
-            color = Color(0xFF7C3AED),
+            color = MaterialTheme.colorScheme.primary,
             onClick = { gradingViewModel.openAddAssignment() }
         ),
         ServicePortalTile(
             title = "Roster",
             icon = Icons.Default.People,
-            color = Color(0xFF0F766E),
+            color = MaterialTheme.colorScheme.tertiary,
             onClick = { rosterViewModel.openStudentRoster() }
         ),
         ServicePortalTile(
             title = "Timetable",
             icon = Icons.Default.Schedule,
-            color = Color(0xFF0284C7),
+            color = MaterialTheme.colorScheme.tertiary,
             onClick = { viewModel.openScheduleScreen() }
         ),
         ServicePortalTile(
             title = "Planner",
             icon = Icons.AutoMirrored.Filled.EventNote,
-            color = Color(0xFFD97706),
+            color = MaterialTheme.colorScheme.secondary,
             onClick = { viewModel.openPlanner() }
         ),
         ServicePortalTile(
             title = "Behavior",
             icon = Icons.Default.Warning,
-            color = Color(0xFFEA580C),
+            color = MaterialTheme.colorScheme.secondary,
             onClick = {
                 val firstStudent = uiState.students.firstOrNull()
                 if (firstStudent != null) studentSupportViewModel.openAddDiscipline(firstStudent)
@@ -150,13 +148,13 @@ fun DashboardScreen(
         ServicePortalTile(
             title = "PDF Reports",
             icon = Icons.Default.Share,
-            color = StatusInfo,
+            color = MaterialTheme.colorScheme.statusInfo,
             onClick = { viewModel.openGenerateReportDialog() }
         ),
         ServicePortalTile(
             title = "Google Sync",
             icon = Icons.Default.CloudSync,
-            color = Color(0xFF0284C7),
+            color = MaterialTheme.colorScheme.tertiary,
             onClick = {
                 uiState.activeClassroom?.id?.let { syncViewModel.syncGoogleSheet(it) }
                     ?: viewModel.showToast("No active classroom")
@@ -165,19 +163,19 @@ fun DashboardScreen(
         ServicePortalTile(
             title = "Assessment",
             icon = Icons.Default.Grade,
-            color = Color(0xFFDC2626),
+            color = MaterialTheme.colorScheme.error,
             onClick = { studentSupportViewModel.openLiveAssessment() }
         ),
         ServicePortalTile(
             title = "Classrooms",
             icon = Icons.Default.School,
-            color = Color(0xFF475569),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = { rosterViewModel.openClassroomManagement() }
         ),
         ServicePortalTile(
             title = "AI Insights",
             icon = Icons.Default.AutoAwesome,
-            color = Color(0xFF8B5CF6),
+            color = MaterialTheme.colorScheme.primary,
             onClick = {
                 val report = analyticsViewModel.generateProgressAnalyticsReportText()
                 viewModel.openExportReport(report, title = "TCMS AI Progress Insights & Audit")
@@ -279,7 +277,7 @@ fun DashboardScreen(
                         Icon(
                             imageVector = if (isHoliday) Icons.Default.BeachAccess else Icons.Default.Schedule,
                             contentDescription = null,
-                            tint = if (isHoliday) Color.White else MaterialTheme.colorScheme.primary,
+                            tint = if (isHoliday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(if (isCompact) 20.dp else 22.dp)
                         )
                     }
@@ -374,7 +372,7 @@ fun DashboardScreen(
                         value = "${"%.1f".format(analytics.averagePercentage)}%",
                         subtitle = "GPA: ${"%.2f".format(analytics.averageGpa)}",
                         icon = Icons.Default.Grade,
-                        accentColor = EduPrimary,
+                        accentColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.selectTab(LmsTab.ANALYTICS) }
                     )
@@ -383,7 +381,7 @@ fun DashboardScreen(
                         value = "${"%.1f".format(analytics.todayAttendanceRate)}%",
                         subtitle = "Today's check-in",
                         icon = Icons.Default.EventAvailable,
-                        accentColor = StatusSuccess,
+                        accentColor = MaterialTheme.colorScheme.statusSuccess,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.selectTab(LmsTab.ATTENDANCE) }
                     )
@@ -398,7 +396,7 @@ fun DashboardScreen(
                         value = "${analytics.totalStudents}",
                         subtitle = "Tap to manage roster",
                         icon = Icons.Default.People,
-                        accentColor = Color(0xFF0F766E),
+                        accentColor = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.weight(1f),
                         onClick = { rosterViewModel.openStudentRoster() }
                     )
@@ -407,7 +405,7 @@ fun DashboardScreen(
                         value = "${analytics.pendingGradingCount}",
                         subtitle = "${analytics.totalAssignments} total tasks",
                         icon = Icons.AutoMirrored.Filled.Assignment,
-                        accentColor = if (analytics.pendingGradingCount > 0) StatusWarning else StatusSuccess,
+                        accentColor = if (analytics.pendingGradingCount > 0) MaterialTheme.colorScheme.statusWarning else MaterialTheme.colorScheme.statusSuccess,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
                     )
@@ -525,7 +523,7 @@ fun DashboardScreen(
                                     text = "$graded/$total Graded",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (graded == total) StatusSuccess else EduPrimary
+                                    color = if (graded == total) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.primary
                                 )
                             }
                         }

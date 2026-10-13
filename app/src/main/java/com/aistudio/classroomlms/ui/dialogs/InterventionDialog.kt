@@ -48,7 +48,6 @@ import androidx.compose.ui.window.Dialog
 import com.aistudio.classroomlms.data.entity.InterventionEntity
 import com.aistudio.classroomlms.data.entity.InterventionType
 import com.aistudio.classroomlms.data.entity.StudentEntity
-import com.aistudio.classroomlms.ui.theme.StatusError
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -147,7 +146,7 @@ fun InterventionDialog(
                                 text = s.name,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
@@ -268,7 +267,7 @@ fun InterventionDialog(
                         IconButton(
                             onClick = { onDelete(intervention.id) }
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Record", tint = StatusError)
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Record", tint = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.weight(1f))
                     }

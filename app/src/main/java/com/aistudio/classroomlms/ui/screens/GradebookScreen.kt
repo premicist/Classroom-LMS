@@ -60,10 +60,8 @@ import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.GradeDistributionBarChart
 import com.aistudio.classroomlms.ui.components.InlineGradeEntry
 import com.aistudio.classroomlms.ui.components.StudentAvatar
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusWarning
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
@@ -194,7 +192,7 @@ fun GradebookScreen(
                     ) {
                         Column {
                             Text(text = "Class Avg", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${analytics.averagePercentage}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = EduPrimary)
+                            Text(text = "${analytics.averagePercentage}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                         Column {
                             Text(text = "Avg GPA", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -202,11 +200,11 @@ fun GradebookScreen(
                         }
                         Column {
                             Text(text = "Highest", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${analytics.highestPercentage.toInt()}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusSuccess)
+                            Text(text = "${analytics.highestPercentage.toInt()}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.statusSuccess)
                         }
                         Column {
                             Text(text = "Lowest", fontSize = if (isCompact) 10.sp else 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(text = "${analytics.lowestPercentage.toInt()}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = StatusError)
+                            Text(text = "${analytics.lowestPercentage.toInt()}%", fontSize = if (isCompact) 14.sp else 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                         }
                     }
 
@@ -331,7 +329,7 @@ fun GradebookScreen(
                                     Icon(
                                         imageVector = Icons.Default.Warning,
                                         contentDescription = "At Risk",
-                                        tint = StatusError,
+                                        tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -372,9 +370,9 @@ fun GradebookScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                MiniMetricPill(label = "HW Completion", value = "${summary.homeworkCompletionRate.toInt()}%", color = EduPrimary)
-                                MiniMetricPill(label = "Attendance", value = "${summary.attendanceRate.toInt()}%", color = StatusSuccess)
-                                MiniMetricPill(label = "Missing Tasks", value = "${summary.missingCount}", color = if (summary.missingCount > 0) StatusError else StatusSuccess)
+                                MiniMetricPill(label = "HW Completion", value = "${summary.homeworkCompletionRate.toInt()}%", color = MaterialTheme.colorScheme.primary)
+                                MiniMetricPill(label = "Attendance", value = "${summary.attendanceRate.toInt()}%", color = MaterialTheme.colorScheme.statusSuccess)
+                                MiniMetricPill(label = "Missing Tasks", value = "${summary.missingCount}", color = if (summary.missingCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.statusSuccess)
                             }
 
                             if (summary.riskReasons.isNotEmpty()) {
@@ -383,7 +381,7 @@ fun GradebookScreen(
                                     text = "Alerts: ${summary.riskReasons.joinToString(" • ")}",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = StatusError
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             }
 
@@ -440,9 +438,9 @@ fun GradebookScreen(
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = when (sub.status) {
-                                                        SubmissionStatus.GRADED -> StatusSuccess
-                                                        SubmissionStatus.MISSING -> StatusError
-                                                        SubmissionStatus.LATE -> StatusWarning
+                                                        SubmissionStatus.GRADED -> MaterialTheme.colorScheme.statusSuccess
+                                                        SubmissionStatus.MISSING -> MaterialTheme.colorScheme.error
+                                                        SubmissionStatus.LATE -> MaterialTheme.colorScheme.statusWarning
                                                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                                                     }
                                                 )
@@ -578,7 +576,7 @@ fun TermWeightingDialog(
                         text = "Total Weight Sum: ${totalSum.toInt()}% (Must equal 100%)",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isValidSum) StatusSuccess else StatusError
+                        color = if (isValidSum) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error
                     )
                 }
             }

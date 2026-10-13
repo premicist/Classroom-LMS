@@ -73,12 +73,12 @@ import com.aistudio.classroomlms.ui.components.QuickStatCard
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.components.StudentTierDistributionBar
 import com.aistudio.classroomlms.ui.components.StudentTrajectoryCard
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarning
-import com.aistudio.classroomlms.ui.theme.StatusWarningBg
+import com.aistudio.classroomlms.ui.theme.onStatusSuccess
+import com.aistudio.classroomlms.ui.theme.onStatusEnrichment
+import com.aistudio.classroomlms.ui.theme.statusEnrichment
+import com.aistudio.classroomlms.ui.theme.statusEnrichmentContainer
+import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import com.aistudio.classroomlms.ui.viewmodel.StudentTier
@@ -203,7 +203,7 @@ fun AnalyticsScreen(
                                     Icon(
                                         imageVector = if (analytics.classTrendDelta >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                         contentDescription = null,
-                                        tint = if (analytics.classTrendDelta >= 0) StatusSuccess else StatusError,
+                                        tint = if (analytics.classTrendDelta >= 0) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(2.dp))
@@ -211,7 +211,7 @@ fun AnalyticsScreen(
                                         text = "${if (analytics.classTrendDelta >= 0) "+" else ""}${analytics.classTrendDelta}%",
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (analytics.classTrendDelta >= 0) StatusSuccess else StatusError
+                                        color = if (analytics.classTrendDelta >= 0) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.error
                                     )
                                 }
                                 Text(analytics.classTrend.label, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
@@ -222,18 +222,18 @@ fun AnalyticsScreen(
                         Surface(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
-                            color = if (analytics.atRiskStudents.isNotEmpty()) StatusErrorBg else MaterialTheme.colorScheme.surface
+                            color = if (analytics.atRiskStudents.isNotEmpty()) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface
                         ) {
                             Column(
                                 modifier = Modifier.padding(10.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("Needs Support", fontSize = 10.sp, color = if (analytics.atRiskStudents.isNotEmpty()) StatusError else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Needs Support", fontSize = 10.sp, color = if (analytics.atRiskStudents.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
                                     text = "${analytics.atRiskStudents.size} students",
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (analytics.atRiskStudents.isNotEmpty()) StatusError else MaterialTheme.colorScheme.onSurface
+                                    color = if (analytics.atRiskStudents.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text("Interventions ready", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -325,7 +325,7 @@ fun AnalyticsScreen(
                                     text = "Whole Class Average",
                                     fontSize = 11.sp,
                                     fontWeight = if (isAll) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isAll) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isAll) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
@@ -334,14 +334,14 @@ fun AnalyticsScreen(
                             val isSelected = student.id == uiState.analyticsSelectedStudentId
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isSelected) Color(0xFFEA580C) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                 modifier = Modifier.clickable { viewModel.setAnalyticsSelectedStudent(student.id) }
                             ) {
                                 Text(
                                     text = student.name,
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
@@ -452,7 +452,7 @@ fun AnalyticsScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = StatusSuccessBg)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.statusSuccessContainer)
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -461,7 +461,7 @@ fun AnalyticsScreen(
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = StatusSuccess,
+                                tint = MaterialTheme.colorScheme.statusSuccess,
                                 modifier = Modifier.size(32.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -470,7 +470,7 @@ fun AnalyticsScreen(
                                     text = "Curriculum Mastery is High!",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
-                                    color = StatusSuccess
+                                    color = MaterialTheme.colorScheme.statusSuccess
                                 )
                                 Text(
                                     text = "No assignments currently have low average scores or critical failure clusters.",
@@ -557,7 +557,7 @@ fun AnalyticsScreen(
                                     text = "All Students (${analytics.studentTrajectories.size})",
                                     fontSize = 11.sp,
                                     fontWeight = if (isAll) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isAll) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isAll) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
                             }
@@ -566,14 +566,14 @@ fun AnalyticsScreen(
                             val isSupport = uiState.analyticsTierFilter == StudentTier.EXTRA_SUPPORT
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = if (isSupport) StatusError else StatusErrorBg,
+                                color = if (isSupport) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.errorContainer,
                                 modifier = Modifier.clickable { viewModel.setAnalyticsTierFilter(StudentTier.EXTRA_SUPPORT) }
                             ) {
                                 Text(
                                     text = "⚠️ Needs Support (${analytics.atRiskStudents.size})",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSupport) Color.White else StatusError,
+                                    color = if (isSupport) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
                             }
@@ -582,14 +582,14 @@ fun AnalyticsScreen(
                             val isEnrich = uiState.analyticsTierFilter == StudentTier.ENRICHMENT_NEEDED
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = if (isEnrich) Color(0xFF7E22CE) else Color(0xFFF3E8FF),
+                                color = if (isEnrich) MaterialTheme.colorScheme.statusEnrichment else MaterialTheme.colorScheme.statusEnrichmentContainer,
                                 modifier = Modifier.clickable { viewModel.setAnalyticsTierFilter(StudentTier.ENRICHMENT_NEEDED) }
                             ) {
                                 Text(
                                     text = "🌟 Enrichment (${analytics.enrichmentStudents.size})",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isEnrich) Color.White else Color(0xFF7E22CE),
+                                    color = if (isEnrich) MaterialTheme.colorScheme.onStatusEnrichment else MaterialTheme.colorScheme.statusEnrichment,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
                             }
@@ -598,14 +598,14 @@ fun AnalyticsScreen(
                             val isOnTrack = uiState.analyticsTierFilter == StudentTier.ON_TRACK
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
-                                color = if (isOnTrack) StatusSuccess else StatusSuccessBg,
+                                color = if (isOnTrack) MaterialTheme.colorScheme.statusSuccess else MaterialTheme.colorScheme.statusSuccessContainer,
                                 modifier = Modifier.clickable { viewModel.setAnalyticsTierFilter(StudentTier.ON_TRACK) }
                             ) {
                                 Text(
                                     text = "✓ On Track (${analytics.onTrackStudents.size})",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isOnTrack) Color.White else StatusSuccess,
+                                    color = if (isOnTrack) MaterialTheme.colorScheme.onStatusSuccess else MaterialTheme.colorScheme.statusSuccess,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
                             }

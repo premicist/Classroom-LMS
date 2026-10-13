@@ -81,9 +81,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.ClassScheduleEntity
-import com.aistudio.classroomlms.ui.theme.EduPrimary
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
+import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import java.util.Calendar
@@ -198,7 +196,7 @@ fun ClassroomScheduleScreen(
                                     showActionsMenu = false
                                     showClearWeekConfirmDialog = true
                                 },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = StatusError) }
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                             )
                         }
                     }
@@ -332,7 +330,7 @@ fun ClassroomScheduleScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(selectedDaySchedules, key = { it.id }) { entry ->
-                                    val subjectColor = classroomColorMap[entry.classroomName.lowercase(Locale.US)] ?: EduPrimary
+                                    val subjectColor = classroomColorMap[entry.classroomName.lowercase(Locale.US)] ?: MaterialTheme.colorScheme.primary
                                     val isToday = currentDayOfWeek.equals(todayDayOfWeekStr, ignoreCase = true)
                                     val isOngoing = isToday && (nowMinutes >= entry.startMinutes && (entry.endMinutes == 0 || nowMinutes < entry.endMinutes))
 
@@ -344,7 +342,7 @@ fun ClassroomScheduleScreen(
                                                 showAddDialog = true
                                             }
                                             .then(
-                                                if (isOngoing) Modifier.border(2.dp, StatusSuccess, RoundedCornerShape(12.dp))
+                                                if (isOngoing) Modifier.border(2.dp, MaterialTheme.colorScheme.statusSuccess, RoundedCornerShape(12.dp))
                                                 else Modifier
                                             ),
                                         shape = RoundedCornerShape(12.dp),
@@ -372,7 +370,7 @@ fun ClassroomScheduleScreen(
                                                     Icon(
                                                         imageVector = Icons.Default.Schedule,
                                                         contentDescription = null,
-                                                        tint = Color.White,
+                                                        tint = MaterialTheme.colorScheme.onPrimary,
                                                         modifier = Modifier.size(22.dp)
                                                     )
                                                 }
@@ -388,14 +386,14 @@ fun ClassroomScheduleScreen(
                                                         if (isOngoing) {
                                                             Spacer(modifier = Modifier.width(8.dp))
                                                             Surface(
-                                                                color = StatusSuccess,
+                                                                color = MaterialTheme.colorScheme.statusSuccess,
                                                                 shape = RoundedCornerShape(4.dp)
                                                             ) {
                                                                 Text(
                                                                     text = "NOW ONGOING",
                                                                     fontSize = 9.sp,
                                                                     fontWeight = FontWeight.Bold,
-                                                                    color = Color.White,
+                                                                    color = MaterialTheme.colorScheme.onPrimary,
                                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                                                 )
                                                             }
@@ -414,7 +412,7 @@ fun ClassroomScheduleScreen(
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
                                                     contentDescription = "Delete",
-                                                    tint = StatusError,
+                                                    tint = MaterialTheme.colorScheme.error,
                                                     modifier = Modifier.size(20.dp)
                                                 )
                                             }
@@ -502,7 +500,7 @@ fun ClassroomScheduleScreen(
                                                                 text = "${cls.classroomName} @ ${cls.startTime}",
                                                                 fontSize = 11.sp,
                                                                 fontWeight = FontWeight.Bold,
-                                                                color = Color.White
+                                                                color = MaterialTheme.colorScheme.onPrimary
                                                             )
                                                         }
                                                     }
@@ -573,7 +571,7 @@ fun ClassroomScheduleScreen(
                         showClearWeekConfirmDialog = false
                         viewModel.clearWeekSchedule(selectedWeek)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusError)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Clear Week $selectedWeek")
                 }
@@ -789,7 +787,7 @@ fun AddEditScheduleEntryDialog(
 
                 if (hasOverlap) {
                     Surface(
-                        color = StatusError.copy(alpha = 0.1f),
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -797,12 +795,12 @@ fun AddEditScheduleEntryDialog(
                             modifier = Modifier.padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = StatusError, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Warning: Time slot conflicts with an existing class on selected day(s)!",
                                 fontSize = 11.sp,
-                                color = StatusError,
+                                color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Bold
                             )
                         }

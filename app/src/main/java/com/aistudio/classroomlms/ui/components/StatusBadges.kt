@@ -42,16 +42,6 @@ import com.aistudio.classroomlms.data.entity.AssignmentType
 import com.aistudio.classroomlms.data.entity.AttendanceStatus
 import com.aistudio.classroomlms.data.entity.HomeworkStatus
 import com.aistudio.classroomlms.data.entity.SubmissionStatus
-import com.aistudio.classroomlms.ui.theme.StatusError
-import com.aistudio.classroomlms.ui.theme.StatusErrorBg
-import com.aistudio.classroomlms.ui.theme.StatusInfo
-import com.aistudio.classroomlms.ui.theme.StatusInfoBg
-import com.aistudio.classroomlms.ui.theme.StatusNeutral
-import com.aistudio.classroomlms.ui.theme.StatusNeutralBg
-import com.aistudio.classroomlms.ui.theme.StatusSuccess
-import com.aistudio.classroomlms.ui.theme.StatusSuccessBg
-import com.aistudio.classroomlms.ui.theme.StatusWarning
-import com.aistudio.classroomlms.ui.theme.StatusWarningBg
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
 import com.aistudio.classroomlms.ui.theme.statusInfo
@@ -277,11 +267,12 @@ fun AssignmentTypeBadge(
     type: AssignmentType,
     modifier: Modifier = Modifier
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val (bgColor, textColor) = when (type) {
-        AssignmentType.HOMEWORK -> Color(0xFFEFF6FF) to Color(0xFF2563EB)
-        AssignmentType.QUIZ -> Color(0xFFF5F3FF) to Color(0xFF7C3AED)
-        AssignmentType.PROJECT -> Color(0xFFECFDF5) to Color(0xFF059669)
-        AssignmentType.EXAM -> Color(0xFFFFF1F2) to Color(0xFFE11D48)
+        AssignmentType.HOMEWORK -> colorScheme.primaryContainer to colorScheme.onPrimaryContainer
+        AssignmentType.QUIZ -> colorScheme.secondaryContainer to colorScheme.onSecondaryContainer
+        AssignmentType.PROJECT -> colorScheme.tertiaryContainer to colorScheme.onTertiaryContainer
+        AssignmentType.EXAM -> colorScheme.errorContainer to colorScheme.error
     }
 
     Box(
@@ -334,7 +325,7 @@ fun StudentAvatar(
         } else {
             Text(
                 text = initials.ifEmpty { "S" },
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.Bold,
                 fontSize = (sizeDp * 0.38).sp
             )
