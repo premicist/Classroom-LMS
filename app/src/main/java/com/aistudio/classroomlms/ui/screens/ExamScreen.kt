@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,7 +38,6 @@ import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ExamUiState
 import com.aistudio.classroomlms.ui.viewmodel.ExamViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
-import com.aistudio.classroomlms.ui.viewmodel.SyncViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,8 +47,7 @@ fun ExamScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    examViewModel: ExamViewModel = hiltViewModel(),
-    syncViewModel: SyncViewModel = hiltViewModel()
+    examViewModel: ExamViewModel = hiltViewModel()
 ) {
     val examUiState by examViewModel.uiState.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf(ExamCategory.CLASS_TEST) }
@@ -157,20 +154,6 @@ fun ExamScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            if (!uiState.activeClassroom?.linkedSpreadsheetId.isNullOrBlank()) {
-                                Button(
-                                    onClick = { 
-                                        uiState.activeClassroom?.id?.let { id -> syncViewModel.syncGoogleSheet(id) } 
-                                    },
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 10.dp, vertical = 4.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                                ) {
-                                    Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(13.dp))
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text("Sync", fontSize = if (isCompact) 11.sp else 12.sp)
-                                }
-                            }
                             Button(
                                 onClick = { examViewModel.openAddEditExamDialog(selectedCategory) },
                                 shape = RoundedCornerShape(8.dp),

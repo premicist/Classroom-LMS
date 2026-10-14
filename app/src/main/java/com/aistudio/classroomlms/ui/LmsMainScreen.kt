@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.EventAvailable
@@ -68,7 +69,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.ClassroomHeader
 import com.aistudio.classroomlms.ui.dialogs.InterventionDialog
@@ -79,7 +79,7 @@ import com.aistudio.classroomlms.ui.screens.AddEditStudentDialog
 import com.aistudio.classroomlms.ui.screens.AnalyticsScreen
 import com.aistudio.classroomlms.ui.screens.AssignmentsScreen
 import com.aistudio.classroomlms.ui.screens.AttendanceScreen
-import com.aistudio.classroomlms.ui.screens.ClassroomManagementDialog
+import com.aistudio.classroomlms.ui.screens.ClassesScreen
 import com.aistudio.classroomlms.ui.screens.DashboardScreen
 import com.aistudio.classroomlms.ui.screens.GradeSubmissionDialog
 import com.aistudio.classroomlms.ui.screens.GradebookScreen
@@ -190,6 +190,7 @@ fun LmsMainScreen(
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
     val isSessionLocked by sessionLockViewModel.isLocked.collectAsStateWithLifecycle()
     val rosterUiState by rosterViewModel.uiState.collectAsStateWithLifecycle()
     val supportUiState by studentSupportViewModel.uiState.collectAsStateWithLifecycle()
@@ -208,7 +209,6 @@ fun LmsMainScreen(
         return
     }
 
-    val isClassroomModalOpen = rosterUiState.isClassroomModalOpen
     val isStudentRosterOpen = rosterUiState.isStudentRosterOpen
     val isAddEditClassroomOpen = rosterUiState.isAddEditClassroomOpen
     val isAddEditStudentOpen = rosterUiState.isAddEditStudentOpen
@@ -219,7 +219,6 @@ fun LmsMainScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var classroomToDelete by remember { mutableStateOf<ClassroomEntity?>(null) }
     var studentToDelete by remember { mutableStateOf<StudentEntity?>(null) }
 
     // Display messages via Snackbar
@@ -231,6 +230,16 @@ fun LmsMainScreen(
                 duration = SnackbarDuration.Short
             )
             viewModel.clearNotificationMessage()
+        }
+    }
+    LaunchedEffect(syncUiState.userNotificationMessage) {
+        syncUiState.userNotificationMessage?.let { msg ->
+            snackbarHostState.showSnackbar(
+                message = msg,
+                withDismissAction = true,
+                duration = SnackbarDuration.Short
+            )
+            syncViewModel.clearToast()
         }
     }
 
@@ -274,9 +283,6 @@ fun LmsMainScreen(
     BackHandler(enabled = uiState.selectedStudentProfile != null) {
         viewModel.closeStudentProfile()
     }
-    BackHandler(enabled = isClassroomModalOpen) {
-        rosterViewModel.closeDialogs()
-    }
     BackHandler(enabled = isAddEditClassroomOpen) {
         rosterViewModel.closeAddEditClassroom()
         rosterViewModel.closeDialogs()
@@ -318,6 +324,7 @@ fun LmsMainScreen(
             try {
                 task.getResult(ApiException::class.java)
                 googleAccount = authManager.getSignedInAccount()
+                syncViewModel.checkSignInStatus()
                 viewModel.showToast("Signed in successfully")
             } catch (e: Exception) {
                 viewModel.showToast("Sign in failed: ${e.message}")
@@ -333,52 +340,16 @@ fun LmsMainScreen(
             drawerContent = {
             ModalDrawerSheet {
                 Spacer(Modifier.height(24.dp))
-                // Profile Section
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    if (googleAccount != null) {
-                        Text(
-                            text = googleAccount?.displayName ?: "User",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = googleAccount?.email ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        OutlinedButton(onClick = { 
-                            authManager.signOut()
-                            googleAccount = null
-                            viewModel.showToast("Signed out")
-                        }) {
-                            Text("Sign Out")
-                        }
-                    } else {
-                        Text(
-                            text = "Not signed in",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(onClick = { signInLauncher.launch(authManager.getSignInIntent()) }) {
-                            Text("Sign in with Google")
-                        }
-                    }
-                }
-                
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
                 NavigationDrawerItem(
-                    label = { Text("Add Classroom") },
+                    label = { Text("Manage Classes") },
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
-                        rosterViewModel.openAddClassroom() 
+                        viewModel.selectTab(LmsTab.CLASSES)
                     },
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                    icon = { Icon(Icons.Default.School, contentDescription = "Classes") },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
@@ -509,17 +480,7 @@ fun LmsMainScreen(
                 classrooms = uiState.classrooms,
                 onSelectClassroom = { viewModel.selectClassroom(it.id) },
                 onMenuClick = { scope.launch { drawerState.open() } },
-                onManageClassrooms = { rosterViewModel.openClassroomManagement() },
-                onSyncClick = {
-                    val classroom = uiState.activeClassroom
-                    if (classroom != null) {
-                        if (classroom.linkedSpreadsheetId.isNullOrBlank()) {
-                            showLinkSheetDialog = true
-                        } else {
-                            syncViewModel.syncGoogleSheet(classroom.id)
-                        }
-                    }
-                }
+                onManageClassrooms = { viewModel.selectTab(LmsTab.CLASSES) }
             )
         },
         bottomBar = {
@@ -529,6 +490,7 @@ fun LmsMainScreen(
             ) {
                 val tabs = listOf(
                     Triple(LmsTab.DASHBOARD, Icons.Filled.Dashboard to Icons.Outlined.Dashboard, "Overview"),
+                    Triple(LmsTab.CLASSES, Icons.Filled.School to Icons.Filled.School, "Classes"),
                     Triple(LmsTab.ACADEMIC, Icons.AutoMirrored.Filled.Grading to Icons.AutoMirrored.Outlined.Grading, "Academic"),
                     Triple(LmsTab.STUDENTS, Icons.Filled.People to Icons.Outlined.People, "Students"),
                     Triple(LmsTab.ATTENDANCE, Icons.Filled.EventAvailable to Icons.Outlined.EventAvailable, "Attend")
@@ -585,6 +547,18 @@ fun LmsMainScreen(
                         rosterViewModel = rosterViewModel,
                         studentSupportViewModel = studentSupportViewModel
                     )
+                    LmsTab.CLASSES -> ClassesScreen(
+                        classrooms = uiState.classrooms,
+                        archivedClassrooms = rosterUiState.archivedClassrooms,
+                        activeClassroomId = uiState.activeClassroom?.id,
+                        onSelectClassroom = { viewModel.selectClassroom(it.id) },
+                        onAddClassroom = { rosterViewModel.openAddClassroom() },
+                        onEditClassroom = { rosterViewModel.openEditClassroom(it) },
+                        onArchiveClassroom = {
+                            rosterViewModel.archiveClassroom(it, uiState.activeClassroom?.id)
+                        },
+                        onRestoreClassroom = { rosterViewModel.restoreClassroom(it) }
+                    )
                     LmsTab.ANALYTICS -> AnalyticsScreen(
                         uiState = uiState,
                         viewModel = viewModel,
@@ -614,23 +588,6 @@ fun LmsMainScreen(
             uiState = uiState,
             viewModel = viewModel,
             onBack = { viewModel.closeScheduleScreen() }
-        )
-    }
-
-    // Link Google Sheet Dialog
-    if (showLinkSheetDialog && uiState.activeClassroom != null) {
-        val currentClassroom = uiState.activeClassroom!!
-        LinkGoogleSheetDialog(
-            classroom = currentClassroom,
-            onDismiss = { showLinkSheetDialog = false },
-            onLinkAndSync = { spreadsheetId ->
-                showLinkSheetDialog = false
-                syncViewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
-            },
-            onUnlink = {
-                showLinkSheetDialog = false
-                syncViewModel.linkSpreadsheet(currentClassroom.id, "")
-            }
         )
     }
 
@@ -763,33 +720,6 @@ fun LmsMainScreen(
         )
     }
 
-    // 7. Classroom Management Sheet
-    if (isClassroomModalOpen) {
-        ClassroomManagementDialog(
-            classrooms = uiState.classrooms,
-            activeClassroomId = uiState.activeClassroom?.id,
-            onSelectClassroom = { viewModel.selectClassroom(it.id) },
-            onAddClassroom = {
-                rosterViewModel.closeDialogs()
-                rosterViewModel.openAddClassroom()
-            },
-            onEditClassroom = { cls ->
-                rosterViewModel.closeDialogs()
-                rosterViewModel.openEditClassroom(cls)
-            },
-            onDeleteClassroom = { cls ->
-                classroomToDelete = cls
-                rosterViewModel.closeDialogs()
-            },
-            onOpenStudentRoster = {
-                rosterViewModel.closeDialogs()
-                rosterViewModel.openStudentRoster()
-            },
-            onResetSampleData = { viewModel.resetSampleData() },
-            onDismiss = { rosterViewModel.closeDialogs() }
-        )
-    }
-
     // 8. Report Export Sheet
     if (uiState.isExportReportOpen && uiState.exportReportContent.isNotEmpty()) {
         ReportExportDialog(
@@ -890,31 +820,6 @@ fun LmsMainScreen(
         )
     }
 
-    // Delete Classroom Confirmation Dialog
-    if (classroomToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { classroomToDelete = null },
-            title = { Text("Delete Classroom") },
-            text = { Text("Are you sure you want to delete '${classroomToDelete?.name}'? All students, assignments, submissions, attendance, and homework in this classroom will be permanently deleted.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        classroomToDelete?.let { rosterViewModel.deleteClassroom(it.id) }
-                        classroomToDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { classroomToDelete = null }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
     if (uiState.isPlannerOpen && uiState.activeClassroom != null) {
         PlannerScreen(
             classroomId = uiState.activeClassroom!!.id,
@@ -928,8 +833,50 @@ fun LmsMainScreen(
         SettingsScreen(
             uiState = settingsUiState,
             viewModel = settingsViewModel,
+            syncViewModel = syncViewModel,
+            googleAccountName = googleAccount?.displayName,
+            googleAccountEmail = googleAccount?.email,
+            onGoogleSignIn = { signInLauncher.launch(authManager.getSignInIntent()) },
+            onGoogleSignOut = {
+                scope.launch {
+                    try {
+                        authManager.signOutUser()
+                        googleAccount = null
+                        syncViewModel.checkSignInStatus()
+                        viewModel.showToast("Signed out of Google Sheets")
+                    } catch (_: Exception) {
+                        viewModel.showToast("Could not complete Google sign-out. Please try again.")
+                    }
+                }
+            },
+            onLinkGoogleSheet = {
+                if (uiState.activeClassroom == null) {
+                    viewModel.showToast("Create or select a class before linking a spreadsheet")
+                } else {
+                    showLinkSheetDialog = true
+                }
+            },
+            onUnlinkGoogleSheet = {
+                uiState.activeClassroom?.id?.let { syncViewModel.linkSpreadsheet(it, "") }
+            },
             onDismiss = {
                 viewModel.closeSettings()
+            }
+        )
+    }
+
+    if (showLinkSheetDialog && uiState.activeClassroom != null) {
+        val currentClassroom = uiState.activeClassroom!!
+        LinkGoogleSheetDialog(
+            classroom = currentClassroom,
+            onDismiss = { showLinkSheetDialog = false },
+            onLink = { spreadsheetId ->
+                showLinkSheetDialog = false
+                syncViewModel.linkSpreadsheet(currentClassroom.id, spreadsheetId)
+            },
+            onUnlink = {
+                showLinkSheetDialog = false
+                syncViewModel.linkSpreadsheet(currentClassroom.id, "")
             }
         )
     }

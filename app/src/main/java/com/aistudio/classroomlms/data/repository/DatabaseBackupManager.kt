@@ -58,7 +58,7 @@ class DatabaseBackupManager @Inject constructor(
     suspend fun exportDatabaseBackup(uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val backupData = DatabaseBackupData(
-                classrooms = db.classroomDao().getAllClassroomsOnce(),
+                classrooms = db.classroomDao().getAllClassroomsIncludingArchived(),
                 students = db.studentDao().getAllStudentsOnce(),
                 assignments = db.assignmentDao().getAllAssignmentsOnce(),
                 submissions = db.submissionDao().getAllSubmissionsOnce(),

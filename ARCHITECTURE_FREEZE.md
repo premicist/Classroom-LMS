@@ -1,32 +1,52 @@
-# Architecture freeze: ClassroomViewModel
+# Architecture boundaries
 
-**Status:** Frozen for new feature logic.
+## ClassroomViewModel
 
-## Rule
+`app/src/main/java/com/aistudio/classroomlms/ui/viewmodel/ClassroomViewModel.kt`
+coordinates the active classroom session and shared classroom UI state. Keep new
+domain behavior out of this ViewModel.
 
-`app/src/main/java/com/example/ui/viewmodel/ClassroomViewModel.kt` is a large god class (~1.8k lines; do not grow further).
+Allowed changes:
 
-**Do not add** new screens, CRUD flows, sync paths, or export formats into this file.
+- Bug fixes and changes to existing coordination behavior
+- Extracting existing logic into a focused ViewModel, repository, or use case
+- Wiring the coordinator to focused feature ViewModels
 
-Allowed only:
-- Bugfixes that cannot be isolated elsewhere
-- Refactors that extract code out of it
-- Wiring calls to new focused ViewModels / UseCases
+New CRUD, sync, export, and other feature logic belongs in a focused owner with
+tests for its behavior.
 
-**Status Note:** `ClassroomViewModel` is now fully migrated to `@HiltViewModel` using constructor injection. It operates as the session coordinator. The `SyncViewModel` placeholder has been fully removed, and all sync actions are strictly owned by `SyncViewModel`.
+## Current feature owners
 
-## Where work belongs / Status
+| Concern | Owner |
+|---------|-------|
+| Attendance and homework day operations | `AttendanceViewModel` |
+| Grading and submissions | `GradingViewModel` |
+| Exams and exam marks | `ExamViewModel` |
+| Planner, lesson plans, daily logs, and schedules | `PlannerViewModel` |
+| Discipline, interventions, and live assessment | `StudentSupportViewModel` |
+| Google Sheets linking and transfer actions | `SyncViewModel` and `SyncRepository` |
+| Analytics and custom reports | `AnalyticsViewModel` |
+| Roster and classroom management | `RosterViewModel` and `ClassroomRepository` |
+| Database backup and restore | `SettingsViewModel` and `DatabaseBackupManager` |
+| PDF and spreadsheet formatting | focused utility/export classes |
 
-| Concern | Target | Status |
-|---------|--------|--------|
-| Exams & Exam Marks | `ExamViewModel` (`@HiltViewModel`) | ✅ Extracted & wired (Exam ownership fully removed from ClassroomViewModel) |
-| Attendance, homework day ops | `AttendanceViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
-| Grading / submissions | `GradingViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
-| Planner / lesson plans / daily log / timetable | `PlannerViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
-| Discipline / interventions / live assessment | `StudentSupportViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
-| Sheets / cloud sync | `SyncViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
-| Analytics & custom reports | `AnalyticsViewModel` (`@HiltViewModel`) | ✅ Extracted & wired |
-| PDF / CSV export | existing util classes; called from domain ViewModels | ✅ Complete |
-| Shared roster / active classroom | reactive flow observation via `PreferencesManager` | ✅ Complete |
+All application ViewModels use Hilt constructor injection. The Room database
+uses explicit migrations; do not introduce destructive migrations for user data.
 
-Hilt dependency injection is now active (`LmsApplication`, `AppModule`, `@AndroidEntryPoint` on `MainActivity`). All future ViewModel extractions should be created with `@HiltViewModel`.
+## Product and data boundaries
+
+- The app remains usable without Google sign-in; Google authorization is only
+  needed for Google Sheets.
+- Google Sheets account, linking, upload, and download controls belong in
+  Settings. Upload and download are separate actions.
+- Classes navigation owns create, switch, edit, archive, and restore operations.
+- Archiving hides a class from active class lists without deleting its records.
+- Attendance, grades, planner data, and other day-to-day work remain local-first.
+- Do not send student records or other classroom PII to product analytics.
+
+## Known follow-up
+
+`AuthManager` still uses the deprecated Google Sign-In / `GoogleAuthUtil` token
+flow to request Sheets scope. Keep that flow optional and isolated from local
+classroom use. Replace it only after validating the current Google Authorization
+API path against the app's required Sheets scopes and consent behavior.

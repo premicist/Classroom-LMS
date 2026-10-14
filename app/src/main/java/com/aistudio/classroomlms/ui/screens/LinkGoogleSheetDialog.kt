@@ -28,7 +28,7 @@ import com.aistudio.classroomlms.util.SpreadsheetUtils
 fun LinkGoogleSheetDialog(
     classroom: ClassroomEntity,
     onDismiss: () -> Unit,
-    onLinkAndSync: (String) -> Unit,
+    onLink: (String) -> Unit,
     onUnlink: () -> Unit
 ) {
     var inputUrlOrId by remember { mutableStateOf(classroom.linkedSpreadsheetId ?: "") }
@@ -72,12 +72,12 @@ fun LinkGoogleSheetDialog(
                 onClick = {
                     val cleanId = SpreadsheetUtils.extractSpreadsheetId(inputUrlOrId)
                     if (cleanId.isNotBlank()) {
-                        onLinkAndSync(cleanId)
+                        onLink(cleanId)
                     }
                 },
                 enabled = inputUrlOrId.isNotBlank()
             ) {
-                Text("Link & Sync")
+                Text("Link Sheet")
             }
         },
         dismissButton = {

@@ -92,12 +92,16 @@ class ClassroomViewModel @Inject constructor(
                         if (_selectedClassroomId.value != savedId) {
                             _selectedClassroomId.value = savedId
                         }
-                    } else if (_selectedClassroomId.value == null) {
+                    } else if (
+                        _selectedClassroomId.value == null ||
+                        classrooms.none { it.id == _selectedClassroomId.value }
+                    ) {
                         val firstId = classrooms.first().id
                         _selectedClassroomId.value = firstId
                         preferencesManager.saveActiveClassroomId(firstId)
                     }
                 } else {
+                    _selectedClassroomId.value = null
                     _uiState.update { it.copy(isLoading = false, activeClassroom = null) }
                 }
             }.collect { }

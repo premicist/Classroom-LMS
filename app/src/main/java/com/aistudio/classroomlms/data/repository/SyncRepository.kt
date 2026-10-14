@@ -52,14 +52,10 @@ class SyncRepository(
     private val api = retrofit.create(GoogleSheetsApi::class.java)
 
     /**
-     * Performs a full 2-way sync:
-     * 1. Pulls & merges Roster from Sheets.
-     * 2. Pulls & merges Attendance from Sheets.
-     * 3. Pulls & merges Homework records from Sheets.
-     * 4. Pulls & merges Grades/Assignments from Sheets.
-     * 5. Pulls & merges Interventions from Sheets.
+     * Downloads and merges roster, attendance, homework, grades, interventions,
+     * discipline, and exam marks from the linked spreadsheet.
      */
-    suspend fun syncClassroomRoster(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
+    suspend fun downloadFromSheets(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
         val authHeader = "Bearer $accessToken"
         
         // Fetch metadata to find the main sheet tab
@@ -67,7 +63,7 @@ class SyncRepository(
             api.getSpreadsheet(spreadsheetId, authHeader)
         } catch (e: Exception) {
             SafeLogger.e(TAG, "Failed to connect to spreadsheet", e)
-            return@withContext "Failed to connect to Google Sheet. Check Sheet ID and permissions."
+            return@withContext "Download failed: Could not connect to Google Sheet. Check Sheet ID and permissions."
         }
 
         // --- NEW: Sync Exam Marks from Multi-Tab Layouts ---
@@ -80,11 +76,11 @@ class SyncRepository(
             api.getSheetValues(spreadsheetId, range, authHeader)
         } catch (e: Exception) {
             SafeLogger.e(TAG, "Failed to read sheet values", e)
-            return@withContext "Failed to read sheet '$rosterSheetTitle'."
+            return@withContext "Download failed: Could not read sheet '$rosterSheetTitle'."
         }
         
-        val rows = response.values ?: return@withContext "Sheet '$rosterSheetTitle' is empty."
-        if (rows.isEmpty()) return@withContext "Sheet '$rosterSheetTitle' is empty."
+        val rows = response.values ?: return@withContext "Download failed: Sheet '$rosterSheetTitle' is empty."
+        if (rows.isEmpty()) return@withContext "Download failed: Sheet '$rosterSheetTitle' is empty."
             
         // Assume Row 0 is headers
         val headers = rows[0]
@@ -93,7 +89,7 @@ class SyncRepository(
         val emailIndex = headers.indexOfFirst { it.equals("Email", ignoreCase = true) }
 
         if (nameIndex == -1) {
-            return@withContext "Sync failed: Could not find a 'Name' column in row 1 of '$rosterSheetTitle'."
+            return@withContext "Download failed: Could not find a 'Name' column in row 1 of '$rosterSheetTitle'."
         }
 
         val parsedStudents = mutableListOf<StudentEntity>()
@@ -170,9 +166,9 @@ class SyncRepository(
         syncDisciplineFromSheet(classroomId, spreadsheetId, authHeader, allStudents)
 
         if (addedCount == 0 && updatedCount == 0) {
-            return@withContext "Roster up to date."
+            return@withContext "Download complete. Roster is up to date."
         } else {
-            return@withContext "Roster synced: Added $addedCount, Updated $updatedCount."
+            return@withContext "Download complete. Roster: added $addedCount, updated $updatedCount."
         }
     }
 
@@ -691,7 +687,7 @@ class SyncRepository(
         }
     }
 
-    suspend fun exportToSheets(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
+    suspend fun uploadToSheets(classroomId: Long, spreadsheetId: String): String = withContext(Dispatchers.IO) {
         val authHeader = "Bearer $accessToken"
         val students = database.studentDao().getStudentsByClassroomOnce(classroomId).sortedBy { it.name }
         if (students.isEmpty()) return@withContext "No students to export."
@@ -701,7 +697,7 @@ class SyncRepository(
             api.getSpreadsheet(spreadsheetId, authHeader)
         } catch (e: Exception) {
             SafeLogger.e(TAG, "Failed to get spreadsheet metadata", e)
-            return@withContext "Export failed: Cannot access Google Sheet."
+            return@withContext "Upload failed: Cannot access Google Sheet."
         }
 
         val existingTitles = spreadsheet.sheets?.map { it.properties.title }?.toSet() ?: emptySet()
@@ -905,10 +901,10 @@ class SyncRepository(
                 }
             }
 
-            return@withContext "Sync & Export successful."
+            return@withContext "Upload complete."
         } catch (e: Exception) {
             SafeLogger.e(TAG, "Export error", e)
-            return@withContext "Export failed: ${e.message}"
+            return@withContext "Upload failed: Check connection, spreadsheet permissions, and try again."
         }
     }
 }

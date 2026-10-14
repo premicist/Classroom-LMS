@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Class
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MeetingRoom
@@ -55,7 +54,6 @@ fun ClassroomHeader(
     onSelectClassroom: (ClassroomEntity) -> Unit,
     onMenuClick: () -> Unit,
     onManageClassrooms: () -> Unit,
-    onSyncClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -127,19 +125,6 @@ fun ClassroomHeader(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                if (activeClassroom != null) {
-                    IconButton(
-                        onClick = onSyncClick,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudSync,
-                            contentDescription = "Sync with Google Sheets",
-                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

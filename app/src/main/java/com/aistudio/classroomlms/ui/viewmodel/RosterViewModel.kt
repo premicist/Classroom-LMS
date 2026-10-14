@@ -20,12 +20,12 @@ import javax.inject.Inject
 
 data class RosterUiState(
     val classrooms: List<ClassroomEntity> = emptyList(),
+    val archivedClassrooms: List<ClassroomEntity> = emptyList(),
     val students: List<StudentEntity> = emptyList(),
     val isAddEditClassroomOpen: Boolean = false,
     val editingClassroom: ClassroomEntity? = null,
     val isAddEditStudentOpen: Boolean = false,
     val editingStudent: StudentEntity? = null,
-    val isClassroomModalOpen: Boolean = false,
     val isStudentRosterOpen: Boolean = false,
     val userNotificationMessage: String? = null
 )
@@ -38,11 +38,20 @@ class RosterViewModel @Inject constructor(
 ) : AndroidViewModel(application) {
 
     private val repository = ClassroomRepository(database)
+    private val classroomDao = database.classroomDao()
     private val _uiState = MutableStateFlow(RosterUiState())
     val uiState: StateFlow<RosterUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            classroomDao.getArchivedClassrooms().collect { archived ->
+                _uiState.update { it.copy(archivedClassrooms = archived) }
+            }
+        }
+    }
+
     fun openAddClassroom() {
-        _uiState.update { it.copy(isAddEditClassroomOpen = true, editingClassroom = null, isClassroomModalOpen = true) }
+        _uiState.update { it.copy(isAddEditClassroomOpen = true, editingClassroom = null) }
     }
 
     fun openEditClassroom(classroom: ClassroomEntity) {
@@ -65,10 +74,6 @@ class RosterViewModel @Inject constructor(
         _uiState.update { it.copy(isAddEditStudentOpen = false, editingStudent = null) }
     }
 
-    fun openClassroomManagement() {
-        _uiState.update { it.copy(isClassroomModalOpen = true) }
-    }
-
     fun openStudentRoster() {
         _uiState.update { it.copy(isStudentRosterOpen = true) }
     }
@@ -81,8 +86,7 @@ class RosterViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isAddEditClassroomOpen = false, editingClassroom = null,
-                isAddEditStudentOpen = false, editingStudent = null,
-                isClassroomModalOpen = false
+                isAddEditStudentOpen = false, editingStudent = null
             )
         }
     }
@@ -111,6 +115,24 @@ class RosterViewModel @Inject constructor(
                 preferencesManager.saveActiveClassroomId(null)
             }
             showToast("Classroom deleted")
+        }
+    }
+
+    fun archiveClassroom(classroom: ClassroomEntity, activeClassroomId: Long?) {
+        viewModelScope.launch {
+            classroomDao.updateClassroom(classroom.copy(isArchived = true))
+            if (classroom.id == activeClassroomId) {
+                val nextClassroom = classroomDao.getAllClassroomsOnce().firstOrNull()
+                preferencesManager.saveActiveClassroomId(nextClassroom?.id)
+            }
+            showToast("Class archived. Its records are retained.")
+        }
+    }
+
+    fun restoreClassroom(classroom: ClassroomEntity) {
+        viewModelScope.launch {
+            classroomDao.updateClassroom(classroom.copy(isArchived = false))
+            showToast("Class restored")
         }
     }
 

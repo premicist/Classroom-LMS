@@ -89,6 +89,27 @@ class ClassroomLMSInstrumentedTest {
     }
 
     @Test
+    fun archivedClassroomIsHiddenAndCanBeRestored() = runBlocking {
+        val db = getDb()
+        val classroom = testClassroom("Archive Test ${System.currentTimeMillis()}")
+        val id = db.classroomDao().insertClassroom(classroom)
+
+        try {
+            val inserted = db.classroomDao().getClassroomByIdOnce(id)!!
+            db.classroomDao().updateClassroom(inserted.copy(isArchived = true))
+
+            assertFalse(db.classroomDao().getAllClassroomsOnce().any { it.id == id })
+            assertTrue(db.classroomDao().getArchivedClassrooms().first().any { it.id == id })
+            assertTrue(db.classroomDao().getAllClassroomsIncludingArchived().any { it.id == id })
+
+            db.classroomDao().updateClassroom(inserted.copy(isArchived = false))
+            assertTrue(db.classroomDao().getAllClassroomsOnce().any { it.id == id })
+        } finally {
+            db.classroomDao().deleteClassroomById(id)
+        }
+    }
+
+    @Test
     fun deleteClassroom() = runBlocking {
         val db = getDb()
         val id = db.classroomDao().insertClassroom(testClassroom("Delete Me"))

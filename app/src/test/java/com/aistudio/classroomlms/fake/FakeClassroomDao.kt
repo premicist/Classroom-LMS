@@ -12,10 +12,18 @@ class FakeClassroomDao : ClassroomDao {
     private var nextId = 1L
 
     override fun getAllClassrooms(): Flow<List<ClassroomEntity>> {
-        return classroomsFlow
+        return classroomsFlow.map { list -> list.filterNot { it.isArchived } }
     }
 
     override suspend fun getAllClassroomsOnce(): List<ClassroomEntity> {
+        return classroomsFlow.value.filterNot { it.isArchived }
+    }
+
+    override fun getArchivedClassrooms(): Flow<List<ClassroomEntity>> {
+        return classroomsFlow.map { list -> list.filter { it.isArchived } }
+    }
+
+    override suspend fun getAllClassroomsIncludingArchived(): List<ClassroomEntity> {
         return classroomsFlow.value
     }
 

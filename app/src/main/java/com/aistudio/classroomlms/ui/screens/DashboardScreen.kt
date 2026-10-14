@@ -26,7 +26,6 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BeachAccess
-import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.People
@@ -73,7 +72,6 @@ import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
 import com.aistudio.classroomlms.ui.viewmodel.AnalyticsViewModel
 import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
-import com.aistudio.classroomlms.ui.viewmodel.SyncViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsTab
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 
@@ -90,7 +88,6 @@ fun DashboardScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
-    syncViewModel: SyncViewModel = hiltViewModel(),
     gradingViewModel: GradingViewModel = hiltViewModel(),
     rosterViewModel: RosterViewModel = hiltViewModel(),
     analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
@@ -152,15 +149,6 @@ fun DashboardScreen(
             onClick = { viewModel.openGenerateReportDialog() }
         ),
         ServicePortalTile(
-            title = "Google Sync",
-            icon = Icons.Default.CloudSync,
-            color = MaterialTheme.colorScheme.tertiary,
-            onClick = {
-                uiState.activeClassroom?.id?.let { syncViewModel.syncGoogleSheet(it) }
-                    ?: viewModel.showToast("No active classroom")
-            }
-        ),
-        ServicePortalTile(
             title = "Assessment",
             icon = Icons.Default.Grade,
             color = MaterialTheme.colorScheme.error,
@@ -170,7 +158,7 @@ fun DashboardScreen(
             title = "Classrooms",
             icon = Icons.Default.School,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            onClick = { rosterViewModel.openClassroomManagement() }
+            onClick = { viewModel.selectTab(LmsTab.CLASSES) }
         ),
         ServicePortalTile(
             title = "AI Insights",

@@ -9,6 +9,7 @@ import com.aistudio.classroomlms.data.database.PreferencesManager
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.repository.SyncRepository
 import com.aistudio.classroomlms.util.SpreadsheetUtils
+import com.aistudio.classroomlms.util.SafeLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,15 +21,23 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class SyncUiState(
     val activeClassroomId: Long? = null,
     val activeClassroom: ClassroomEntity? = null,
-    val isSyncing: Boolean = false,
-    val syncProgressMessage: String? = null,
+    val isDownloading: Boolean = false,
+    val isUploading: Boolean = false,
+    val transferProgressMessage: String? = null,
     val isGoogleSignedIn: Boolean = false,
-    val userNotificationMessage: String? = null
-)
+    val userNotificationMessage: String? = null,
+    val lastDownloadResult: String? = null,
+    val lastUploadResult: String? = null
+) {
+    val isTransferRunning: Boolean get() = isDownloading || isUploading
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -44,6 +53,20 @@ class SyncViewModel @Inject constructor(
 
     init {
         checkSignInStatus()
+        viewModelScope.launch {
+            preferencesManager.activeClassroomIdFlow
+                .flatMapLatest { classroomId ->
+                    classroomId?.let(preferencesManager::sheetsLastDownloadFlow) ?: flowOf(null)
+                }
+                .collect { result -> _uiState.update { it.copy(lastDownloadResult = result) } }
+        }
+        viewModelScope.launch {
+            preferencesManager.activeClassroomIdFlow
+                .flatMapLatest { classroomId ->
+                    classroomId?.let(preferencesManager::sheetsLastUploadFlow) ?: flowOf(null)
+                }
+                .collect { result -> _uiState.update { it.copy(lastUploadResult = result) } }
+        }
         viewModelScope.launch {
             preferencesManager.activeClassroomIdFlow
                 .flatMapLatest { classroomId ->
@@ -74,50 +97,84 @@ class SyncViewModel @Inject constructor(
         }
     }
 
-    fun syncGoogleSheet(classroomId: Long) {
-        val classroom = _uiState.value.activeClassroom ?: return
+    fun downloadFromSheet(classroomId: Long) {
+        runSheetAction(classroomId, isUpload = false)
+    }
+
+    fun uploadToSheet(classroomId: Long) {
+        runSheetAction(classroomId, isUpload = true)
+    }
+
+    private fun runSheetAction(classroomId: Long, isUpload: Boolean) {
+        val classroom = _uiState.value.activeClassroom?.takeIf { it.id == classroomId }
+            ?: return
         if (classroom.linkedSpreadsheetId.isNullOrBlank()) {
-            showToast("No Google Sheet linked to this classroom")
+            showToast("No Google Sheet linked to this class")
             return
         }
 
         val cleanSpreadsheetId = SpreadsheetUtils.extractSpreadsheetId(classroom.linkedSpreadsheetId)
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSyncing = true, syncProgressMessage = "Connecting to Google Sheets...") }
+            _uiState.update {
+                it.copy(
+                    isDownloading = !isUpload,
+                    isUploading = isUpload,
+                    transferProgressMessage = if (isUpload) "Uploading to Google Sheets..." else "Downloading from Google Sheets..."
+                )
+            }
             try {
                 if (!authManager.isUserSignedIn()) {
-                    showToast("Please sign in with Google first (open navigation menu).")
-                    _uiState.update { it.copy(isSyncing = false, syncProgressMessage = null) }
+                    showToast("Sign in with Google in Settings to use Sheets.")
                     return@launch
                 }
 
                 val token = authManager.getAccessToken()
                 if (token == null) {
-                    showToast("Failed to get Google Token. Please sign out and sign in again.")
-                    _uiState.update { it.copy(isSyncing = false, syncProgressMessage = null) }
+                    showToast("Could not authorize Google Sheets. Sign out and sign in again in Settings.")
                     return@launch
                 }
 
-                _uiState.update { it.copy(syncProgressMessage = "Syncing roster with Google Sheets...") }
                 val syncRepo = SyncRepository(database, token)
-
-                // 1. Pull Students (Roster)
-                val pullResult = syncRepo.syncClassroomRoster(classroomId, cleanSpreadsheetId)
-
-                _uiState.update { it.copy(syncProgressMessage = "Pushing attendance, homework & grades...") }
-
-                // 2. Push Grades, Attendance, and Homework
-                val pushResult = syncRepo.exportToSheets(classroomId, cleanSpreadsheetId)
-
-                showToast("Sync Complete: $pullResult | $pushResult")
+                val result = if (isUpload) {
+                    syncRepo.uploadToSheets(classroomId, cleanSpreadsheetId)
+                } else {
+                    syncRepo.downloadFromSheets(classroomId, cleanSpreadsheetId)
+                }
+                val status = "${timestamp()}: $result"
+                if (isUpload) {
+                    preferencesManager.saveSheetsLastUpload(classroomId, status)
+                } else {
+                    preferencesManager.saveSheetsLastDownload(classroomId, status)
+                }
+                showToast(result)
             } catch (e: Exception) {
-                showToast("Sync Error: ${e.localizedMessage ?: "Unknown network error"}")
+                SafeLogger.e(
+                    "SyncViewModel",
+                    if (isUpload) "Google Sheets upload failed" else "Google Sheets download failed",
+                    e
+                )
+                val result = "${timestamp()}: Failed — check connection, authorization, and Sheet access."
+                if (isUpload) {
+                    preferencesManager.saveSheetsLastUpload(classroomId, result)
+                } else {
+                    preferencesManager.saveSheetsLastDownload(classroomId, result)
+                }
+                showToast(if (isUpload) "Upload failed. Check connection, authorization, and Sheet access." else "Download failed. Check connection, authorization, and Sheet access.")
             } finally {
-                _uiState.update { it.copy(isSyncing = false, syncProgressMessage = null) }
+                _uiState.update {
+                    it.copy(
+                        isDownloading = false,
+                        isUploading = false,
+                        transferProgressMessage = null
+                    )
+                }
             }
         }
     }
+
+    private fun timestamp(): String =
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
 
     fun showToast(message: String) {
         _uiState.update { it.copy(userNotificationMessage = message) }

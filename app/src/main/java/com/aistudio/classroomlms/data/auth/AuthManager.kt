@@ -8,12 +8,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
+import com.google.android.gms.tasks.Tasks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.credentials.CredentialManager
 import androidx.credentials.ClearCredentialStateRequest
+import com.aistudio.classroomlms.util.SafeLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,7 +40,7 @@ class AuthManager @Inject constructor(@ApplicationContext private val context: C
             val scope = "oauth2:https://www.googleapis.com/auth/spreadsheets"
             GoogleAuthUtil.getToken(context, androidAccount, scope)
         } catch (e: Exception) {
-            e.printStackTrace()
+            SafeLogger.e("AuthManager", "Failed to obtain Google Sheets access token", e)
             null
         }
     }
@@ -50,14 +52,10 @@ class AuthManager @Inject constructor(@ApplicationContext private val context: C
     fun getSignedInAccount() = GoogleSignIn.getLastSignedInAccount(context)
 
     suspend fun signOutUser() {
-        try {
-            credentialManager.clearCredentialState(ClearCredentialStateRequest())
-        } catch (_: Exception) {}
-        signInClient.signOut()
-    }
-
-    fun signOut() {
-        signInClient.signOut()
+        credentialManager.clearCredentialState(ClearCredentialStateRequest())
+        withContext(Dispatchers.IO) {
+            Tasks.await(signInClient.signOut())
+        }
     }
 
     fun getSignInIntent(): Intent {

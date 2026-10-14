@@ -1,6 +1,7 @@
 package com.aistudio.classroomlms.data.entity
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "classrooms")
@@ -16,5 +17,7 @@ data class ClassroomEntity(
     val iconName: String = "SCHOOL",
     val academicYear: String = "2025-2026",
     val linkedSpreadsheetId: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(defaultValue = "0")
+    val isArchived: Boolean = false
 )

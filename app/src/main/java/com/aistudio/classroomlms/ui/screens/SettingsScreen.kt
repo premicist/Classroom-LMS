@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.aistudio.classroomlms.data.database.LmsSettings
+import com.aistudio.classroomlms.ui.viewmodel.SyncViewModel
 import com.aistudio.classroomlms.ui.viewmodel.SettingsUiState
 import com.aistudio.classroomlms.ui.viewmodel.SettingsViewModel
 import java.io.File
@@ -37,8 +39,16 @@ import java.io.File
 fun SettingsScreen(
     uiState: SettingsUiState,
     viewModel: SettingsViewModel,
+    syncViewModel: SyncViewModel,
+    googleAccountName: String?,
+    googleAccountEmail: String?,
+    onGoogleSignIn: () -> Unit,
+    onGoogleSignOut: () -> Unit,
+    onLinkGoogleSheet: () -> Unit,
+    onUnlinkGoogleSheet: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
     var schoolName by remember { mutableStateOf(uiState.settings.schoolName) }
     var reportHeader by remember { mutableStateOf(uiState.settings.reportHeader) }
     var reportFooter by remember { mutableStateOf(uiState.settings.reportFooter) }
@@ -104,6 +114,114 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Google Sheets",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = if (googleAccountEmail != null) {
+                            "Signed in${googleAccountName?.let { " as $it" } ?: ""} ($googleAccountEmail)"
+                        } else {
+                            "Not signed in. Sign-in is optional and only used for Google Sheets."
+                        },
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (googleAccountEmail == null) {
+                        Button(onClick = onGoogleSignIn, modifier = Modifier.fillMaxWidth()) {
+                            Text("Sign in with Google")
+                        }
+                    } else {
+                        OutlinedButton(onClick = onGoogleSignOut, modifier = Modifier.fillMaxWidth()) {
+                            Text("Sign out of Google Sheets")
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    val classroom = syncUiState.activeClassroom
+                    Text(
+                        text = classroom?.let { "Class: ${it.name}" } ?: "No active class",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = if (classroom?.linkedSpreadsheetId.isNullOrBlank()) {
+                            "No spreadsheet linked."
+                        } else {
+                            "A Google Sheet is linked to this class."
+                        },
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Download imports Sheets data to this device. Upload exports local classroom records to the linked Sheet.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedButton(
+                        onClick = onLinkGoogleSheet,
+                        enabled = classroom != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (classroom?.linkedSpreadsheetId.isNullOrBlank()) "Link spreadsheet" else "Change spreadsheet")
+                    }
+                    if (!classroom?.linkedSpreadsheetId.isNullOrBlank()) {
+                        TextButton(
+                            onClick = onUnlinkGoogleSheet,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Unlink spreadsheet")
+                        }
+                    }
+
+                    Button(
+                        onClick = { classroom?.id?.let(syncViewModel::downloadFromSheet) },
+                        enabled = googleAccountEmail != null &&
+                            !classroom?.linkedSpreadsheetId.isNullOrBlank() &&
+                            !syncUiState.isTransferRunning,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (syncUiState.isDownloading) "Downloading…" else "Download from Sheet")
+                    }
+                    Text(
+                        text = syncUiState.lastDownloadResult?.let { "Last download: $it" }
+                            ?: "No download recorded yet.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = { classroom?.id?.let(syncViewModel::uploadToSheet) },
+                        enabled = googleAccountEmail != null &&
+                            !classroom?.linkedSpreadsheetId.isNullOrBlank() &&
+                            !syncUiState.isTransferRunning,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (syncUiState.isUploading) "Uploading…" else "Upload to Sheet")
+                    }
+                    Text(
+                        text = syncUiState.lastUploadResult?.let { "Last upload: $it" }
+                            ?: "No upload recorded yet.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    syncUiState.transferProgressMessage?.let { progress ->
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text(progress, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+
             // SECTION 1: EXAM, REPORT & PORTFOLIO TEMPLATE CUSTOMIZATION
             Card(
                 modifier = Modifier.fillMaxWidth(),

@@ -50,7 +50,7 @@ import net.sqlcipher.database.SupportFactory
         ExamEntity::class,
         ExamMarkEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 @TypeConverters(Converters::class, com.aistudio.classroomlms.data.entity.Converters::class)
@@ -92,7 +92,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(
                         com.aistudio.classroomlms.data.database.Migrations.MIGRATION_6_7,
                         Migrations.MIGRATION_7_8,
-                        Migrations.MIGRATION_8_9
+                        Migrations.MIGRATION_8_9,
+                        Migrations.MIGRATION_9_10
                     )
 
                     if (BuildConfig.DEBUG) {

@@ -80,7 +80,6 @@ import com.aistudio.classroomlms.ui.theme.SubjectHistory
 import com.aistudio.classroomlms.ui.theme.SubjectMath
 import com.aistudio.classroomlms.ui.theme.SubjectScience
 import com.aistudio.classroomlms.ui.theme.SubjectTech
-import com.aistudio.classroomlms.util.SpreadsheetUtils
 import com.aistudio.classroomlms.util.StudentPhotoStorage
 import kotlinx.coroutines.launch
 import java.io.File
@@ -101,7 +100,6 @@ fun AddEditClassroomDialog(
     var gradeLevel by remember { mutableStateOf(initialClassroom?.gradeLevel ?: "Grade 10") }
     var roomNumber by remember { mutableStateOf(initialClassroom?.roomNumber ?: "Room 204") }
     var scheduleInfo by remember { mutableStateOf(initialClassroom?.scheduleInfo ?: "Mon-Fri 09:00 AM") }
-    var linkedSpreadsheetId by remember { mutableStateOf(initialClassroom?.linkedSpreadsheetId ?: "") }
     var selectedColorHex by remember { mutableLongStateOf(initialClassroom?.colorHex ?: 0xFF1E40AF) }
 
     val colorOptions = listOf(
@@ -175,15 +173,6 @@ fun AddEditClassroomDialog(
                     )
                 }
 
-                OutlinedTextField(
-                    value = linkedSpreadsheetId,
-                    onValueChange = { linkedSpreadsheetId = it },
-                    label = { Text("Linked Google Sheet (URL or ID)") },
-                    placeholder = { Text("e.g. https://docs.google.com/spreadsheets/d/...") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
                 Text(
                     text = "Classroom Theme Color",
                     fontSize = 12.sp,
@@ -226,23 +215,20 @@ fun AddEditClassroomDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank() && subject.isNotBlank()) {
-                        val cleanSheetId = SpreadsheetUtils.extractSpreadsheetId(linkedSpreadsheetId).ifBlank { null }
                         val classroom = initialClassroom?.copy(
                             name = name.trim(),
                             subject = subject.trim(),
                             gradeLevel = gradeLevel.trim(),
                             roomNumber = roomNumber.trim(),
                             scheduleInfo = scheduleInfo.trim(),
-                            colorHex = selectedColorHex,
-                            linkedSpreadsheetId = cleanSheetId
+                            colorHex = selectedColorHex
                         ) ?: ClassroomEntity(
                             name = name.trim(),
                             subject = subject.trim(),
                             gradeLevel = gradeLevel.trim(),
                             roomNumber = roomNumber.trim(),
                             scheduleInfo = scheduleInfo.trim(),
-                            colorHex = selectedColorHex,
-                            linkedSpreadsheetId = cleanSheetId
+                            colorHex = selectedColorHex
                         )
                         onSave(classroom)
                     }

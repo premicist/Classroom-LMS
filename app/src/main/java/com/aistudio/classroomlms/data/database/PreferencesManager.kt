@@ -69,6 +69,12 @@ open class PreferencesManager @Inject constructor(@ApplicationContext private va
             )
         }
 
+    open fun sheetsLastDownloadFlow(classroomId: Long): Flow<String?> =
+        context.dataStore.data.map { it[stringPreferencesKey("sheets_last_download_$classroomId")] }
+
+    open fun sheetsLastUploadFlow(classroomId: Long): Flow<String?> =
+        context.dataStore.data.map { it[stringPreferencesKey("sheets_last_upload_$classroomId")] }
+
     open suspend fun saveActiveClassroomId(id: Long?) {
         context.dataStore.edit { preferences ->
             if (id != null) {
@@ -77,6 +83,16 @@ open class PreferencesManager @Inject constructor(@ApplicationContext private va
                 preferences.remove(ACTIVE_CLASSROOM_ID)
             }
         }
+    }
+
+    open suspend fun saveSheetsLastDownload(classroomId: Long, status: String) {
+        val key = stringPreferencesKey("sheets_last_download_$classroomId")
+        context.dataStore.edit { it[key] = status }
+    }
+
+    open suspend fun saveSheetsLastUpload(classroomId: Long, status: String) {
+        val key = stringPreferencesKey("sheets_last_upload_$classroomId")
+        context.dataStore.edit { it[key] = status }
     }
 
     open suspend fun saveSettings(settings: LmsSettings) {

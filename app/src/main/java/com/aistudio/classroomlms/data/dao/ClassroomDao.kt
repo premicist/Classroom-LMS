@@ -11,11 +11,17 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ClassroomDao {
-    @Query("SELECT * FROM classrooms ORDER BY createdAt ASC")
+    @Query("SELECT * FROM classrooms WHERE isArchived = 0 ORDER BY createdAt ASC")
     fun getAllClassrooms(): Flow<List<ClassroomEntity>>
 
-    @Query("SELECT * FROM classrooms ORDER BY createdAt DESC")
+    @Query("SELECT * FROM classrooms WHERE isArchived = 0 ORDER BY createdAt DESC")
     suspend fun getAllClassroomsOnce(): List<ClassroomEntity>
+
+    @Query("SELECT * FROM classrooms WHERE isArchived = 1 ORDER BY createdAt DESC")
+    fun getArchivedClassrooms(): Flow<List<ClassroomEntity>>
+
+    @Query("SELECT * FROM classrooms ORDER BY createdAt DESC")
+    suspend fun getAllClassroomsIncludingArchived(): List<ClassroomEntity>
 
     @Query("SELECT * FROM classrooms WHERE id = :id")
     fun getClassroomById(id: Long): Flow<ClassroomEntity?>
