@@ -3,6 +3,9 @@ package com.aistudio.classroomlms.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -11,23 +14,39 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.text
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
 import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -38,7 +57,7 @@ fun AddEditLessonPlanDialog(
     classrooms: List<ClassroomEntity>,
     activeClassroomId: Long?,
     onDismiss: () -> Unit,
-    onSave: (unitTitle: String, description: String, targetDate: Long, status: String, targetClassroomId: Long?) -> Unit
+    onSave: (unitTitle: String, description: String, targetDate: Long, status: String, targetClassroomId: Long?, reminderEnabled: Boolean, reminderTime: Long) -> Unit
 ) {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
@@ -57,8 +76,44 @@ fun AddEditLessonPlanDialog(
 
     var isStatusExpanded by remember { mutableStateOf(false) }
     var isClassroomExpanded by remember { mutableStateOf(false) }
+    var isReminderEnabled by remember { mutableStateOf(initialPlan?.reminderEnabled ?: false) }
+        var selectedHour by remember { 
+            mutableStateOf(
+                initialPlan?.reminderTime?.let { time ->
+                    val calendar = Calendar.getInstance().apply { timeInMillis = time }
+                    calendar.get(Calendar.HOUR_OF_DAY)
+                } ?: -1
+            )
+        }
+        var selectedMinute by remember { 
+            mutableStateOf(
+                initialPlan?.reminderTime?.let { time ->
+                    val calendar = Calendar.getInstance().apply { timeInMillis = time }
+                    calendar.get(Calendar.MINUTE)
+                } ?: -1
+            )
+        }
+        var reminderTimeString by remember { 
+            mutableStateOf( 
+                if (selectedHour != -1 && selectedMinute != -1) { 
+                    "${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}" 
+                } else { 
+                    "Not set" 
+                } 
+            ) 
+        }
 
     val statusOptions = listOf("PLANNED", "IN_PROGRESS", "COMPLETED")
+    val timePickerLauncher = remember {
+        ActivityResultLauncher(ActivityResultContracts.PickVisualMedia()) { uri ->
+            // This is not actually used for time picking, we'll use a different approach
+        }
+    }
+    
+    // For time picking, we'll use a simple approach with a custom dialog
+    var showTimePicker by remember { mutableStateOf(false) }
+    var selectedHour by remember { mutableStateOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) }
+    var selectedMinute by remember { mutableStateOf(Calendar.getInstance().get(Calendar.MINUTE)) }
 
     val selectedClassroomName = when (selectedClassroomId) {
         null -> "Select Classroom"
@@ -166,8 +221,130 @@ fun AddEditLessonPlanDialog(
                         }
                     }
                 }
-            }
-        },
+
+                // Reminder Toggle
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    Text(
+                        text = "Reminder",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alignVerticallyByCenter(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Switch(
+                            checked = isReminderEnabled,
+                            onCheckedChange = { isReminderEnabled = it },
+                            thumbContent = { SwitchDefaults.SwitchThumbContent(isChecked = it) },
+                            track = { SwitchDefaults.switchTrack(unselectedColor = Color.Gray, selectedColor = MaterialTheme.colorScheme.primary) }
+                        )
+                        Text(
+                            text = if (isReminderEnabled) "Enabled" else "Disabled",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        if (isReminderEnabled) {
+                            Text(
+                                text = reminderTimeString,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            IconButton(
+                                onClick = { /* Show time picker */ },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(Icons.Default.AccessTime, contentDescription = "Set reminder time")
+                            }
+                        }
+                    }
+                }
+
+                // Reminder Time Picker (shown when enabled)
+                if (isReminderEnabled) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    ) {
+                        Text(
+                            text = "Set Reminder Time",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .alignVerticallyByCenter()
+                        ) {
+                            Text(
+                                text = "${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { showTimePicker = true }
+                                    .padding(8.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                                    )
+                            )
+                            IconButton(
+                                onClick = { showTimePicker = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(Icons.Default.AccessTime, contentDescription = "Set reminder time")
+                            }
+                        }
+                    }
+                }
+                
+                // Time Picker Dialog
+                if (showTimePicker) {
+                    AlertDialog(
+                        onDismissRequest = { showTimePicker = false },
+                        title = { Text("Select Reminder Time") },
+                        text = {
+                            TimePicker(
+                                hour = selectedHour,
+                                minute = selectedMinute,
+                                onHourChange = { selectedHour = it },
+                                onMinuteChange = { selectedMinute = it }
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val calendar = Calendar.getInstance()
+                                    calendar.set(Calendar.HOUR_OF_DAY, selectedHour)
+                                    calendar.set(Calendar.MINUTE, selectedMinute)
+                                    calendar.set(Calendar.SECOND, 0)
+                                    reminderTimeMillis = calendar.timeInMillis
+                                    showTimePicker = false
+                                }
+                            ) {
+                                Text("OK")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showTimePicker = false }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+            } 
+        }, 
         confirmButton = {
             Button(
                 onClick = {
@@ -177,7 +354,7 @@ fun AddEditLessonPlanDialog(
                     } catch (_: Exception) {
                         System.currentTimeMillis()
                     }
-                    onSave(unitTitle.trim(), description.trim(), parsedDate, status, selectedClassroomId)
+                    onSave(unitTitle.trim(), description.trim(), parsedDate, status, selectedClassroomId, isReminderEnabled, if (isReminderEnabled) reminderTimeMillis else 0L)
                 },
                 enabled = unitTitle.isNotBlank() && description.isNotBlank()
             ) {

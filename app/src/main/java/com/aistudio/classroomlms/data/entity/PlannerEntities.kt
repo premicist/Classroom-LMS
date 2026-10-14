@@ -24,7 +24,11 @@ data class LessonPlanEntity(
     val unitTitle: String,
     val description: String,
     val targetDate: Long, // epoch millis
-    val status: String = "PLANNED" // PLANNED, IN_PROGRESS, COMPLETED
+    val status: String = "PLANNED", // PLANNED, IN_PROGRESS, COMPLETED
+    // Reminder fields
+    val reminderEnabled: Boolean = false,
+    val reminderTime: Long = 0, // epoch millis when reminder should trigger
+    val reminderId: String = "" // unique identifier for the reminder
 )
 
 @Entity(

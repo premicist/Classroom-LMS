@@ -62,7 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.AttendanceStatus
-import com.aistudio.classroomlms.ui.components.AttendanceStatusSelector
+import com.aistudio.classroomlms.ui.components.QuickAttendanceSelector
 import com.aistudio.classroomlms.ui.components.CircularProgressGauge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.theme.onStatusSuccess
@@ -412,7 +412,7 @@ private fun DailyAttendanceCheckInView(
                         }
                     }
 
-                    AttendanceStatusSelector(
+                    QuickAttendanceSelector(
                         status = currentStatus,
                         onStatusSelected = { status ->
                             attendanceViewModel.recordAttendanceStatus(
@@ -420,7 +420,8 @@ private fun DailyAttendanceCheckInView(
                                 date = selectedDate,
                                 status = status
                             )
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }

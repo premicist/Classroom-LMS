@@ -19,17 +19,18 @@ import com.aistudio.classroomlms.util.SafeLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Suppress("DEPRECATION")
 @Singleton
 class AuthManager @Inject constructor(@ApplicationContext private val context: Context) {
 
     val credentialManager: CredentialManager by lazy { CredentialManager.create(context) }
 
+    @Suppress("DEPRECATION")
     private val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestEmail()
         .requestScopes(Scope("https://www.googleapis.com/auth/spreadsheets"))
         .build()
 
+    @Suppress("DEPRECATION")
     val signInClient: GoogleSignInClient = GoogleSignIn.getClient(context, gso)
 
     suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
@@ -38,7 +39,9 @@ class AuthManager @Inject constructor(@ApplicationContext private val context: C
             val androidAccount = account.account ?: account.email?.let { Account(it, "com.google") }
             if (androidAccount == null) return@withContext null
             val scope = "oauth2:https://www.googleapis.com/auth/spreadsheets"
-            GoogleAuthUtil.getToken(context, androidAccount, scope)
+            @Suppress("DEPRECATION")
+            val token = GoogleAuthUtil.getToken(context, androidAccount, scope)
+            token
         } catch (e: Exception) {
             SafeLogger.e("AuthManager", "Failed to obtain Google Sheets access token", e)
             null

@@ -19,6 +19,9 @@ interface PlannerDao {
     @Query("SELECT * FROM lesson_plans WHERE classroomId = :classroomId ORDER BY targetDate ASC")
     fun getLessonPlansForClassroom(classroomId: Long): Flow<List<LessonPlanEntity>>
 
+    @Query("SELECT * FROM lesson_plans WHERE reminderEnabled = 1")
+    fun getLessonPlansWithReminders(): List<LessonPlanEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLessonPlan(plan: LessonPlanEntity): Long
 

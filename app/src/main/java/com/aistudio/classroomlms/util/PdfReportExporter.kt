@@ -667,7 +667,7 @@ object PdfReportExporter {
                         canvas.drawRect(x, headerY, x + colW, headerY + LINE_HEIGHT * 1.5f, headingPaint).also { _ -> }
                         // Draw short date (MM/dd)
                         val shortDate = try {
-                            SimpleDateFormat("MM/dd", Locale.US).format(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date))
+                            SimpleDateFormat("MM/dd", Locale.US).format(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date)!!)
                         } catch (e: Exception) {
                             date.take(5)
                         }

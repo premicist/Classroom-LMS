@@ -257,8 +257,8 @@ fun PlannerScreen(
             onDismiss = {
                 plannerViewModel.closeLessonPlanDialog()
             },
-            onSave = { unitTitle, description, targetDate, status, targetClassroomId ->
-                plannerViewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId)
+            onSave = { unitTitle, description, targetDate, status, targetClassroomId, reminderEnabled, reminderTime ->
+                plannerViewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId, reminderEnabled, reminderTime)
             }
         )
     }

@@ -1,8 +1,14 @@
 package com.aistudio.classroomlms.ui.viewmodel
 
+import android.app.AlarmManager
+import android.app.Application
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aistudio.classroomlms.MainActivity
+import com.aistudio.classroomlms.util.NotificationReceiver
 import com.aistudio.classroomlms.data.dao.ClassScheduleDao
 import com.aistudio.classroomlms.data.dao.ClassroomDao
 import com.aistudio.classroomlms.data.dao.PlannerDao
@@ -26,8 +32,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 data class PlannerUiState(
@@ -52,7 +60,8 @@ class PlannerViewModel @Inject constructor(
     private val plannerDao: PlannerDao,
     private val classScheduleDao: ClassScheduleDao,
     private val preferencesManager: PreferencesManager,
-    private val classroomDao: ClassroomDao
+    private val classroomDao: ClassroomDao,
+    private val application: Application
 ) : ViewModel() {
 
     private val scheduleRepository = ScheduleRepository(classScheduleDao)
@@ -138,7 +147,9 @@ class PlannerViewModel @Inject constructor(
         description: String,
         targetDate: Long,
         status: String,
-        targetClassroomId: Long? = null
+        targetClassroomId: Long?,
+        reminderEnabled: Boolean,
+        reminderTime: Long
     ) {
         val classId = targetClassroomId ?: _uiState.value.activeClassroom?.id ?: return
         viewModelScope.launch {
@@ -149,9 +160,24 @@ class PlannerViewModel @Inject constructor(
                     unitTitle = unitTitle,
                     description = description,
                     targetDate = targetDate,
-                    status = status
+                    status = status,
+                    reminderEnabled = reminderEnabled,
+                    reminderTime = reminderTime,
+                    reminderId = if (reminderEnabled && editing.reminderId.isBlank()) 
+                        java.util.UUID.randomUUID().toString() 
+                    else 
+                        editing.reminderId
                 )
                 plannerDao.updateLessonPlan(updated)
+                
+                // Handle notification scheduling for reminders
+                if (reminderEnabled && reminderTime > 0) {
+                    scheduleReminderNotification(updated.id ?: 0, unitTitle, reminderTime, classId)
+                } else {
+                    // Cancel reminder if disabled or time not set
+                    cancelReminderNotification(editing.id ?: 0)
+                }
+                
                 showToast("Lesson plan updated")
             } else {
                 val newPlan = LessonPlanEntity(
@@ -159,13 +185,80 @@ class PlannerViewModel @Inject constructor(
                     unitTitle = unitTitle,
                     description = description,
                     targetDate = targetDate,
-                    status = status
+                    status = status,
+                    reminderEnabled = reminderEnabled,
+                    reminderTime = reminderTime,
+                    reminderId = if (reminderEnabled) java.util.UUID.randomUUID().toString() else ""
                 )
-                plannerDao.insertLessonPlan(newPlan)
+                val insertedId = plannerDao.insertLessonPlan(newPlan)
+                
+                // Schedule notification for new lesson plan with reminder
+                if (reminderEnabled && reminderTime > 0) {
+                    scheduleReminderNotification(insertedId, unitTitle, reminderTime, classId)
+                }
+                
                 showToast("Lesson plan created")
             }
             closeLessonPlanDialog()
         }
+    }
+
+    private fun scheduleReminderNotification(lessonPlanId: Long, title: String, reminderTime: Long, classroomId: Long) {
+        // Use injected application context
+        val context = application
+        
+        // Calculate trigger time
+        val triggerTime = reminderTime
+        
+        // Only schedule if the reminder time is in the future
+        if (triggerTime > System.currentTimeMillis()) {
+            val intent = Intent(context, NotificationReceiver::class.java).apply {
+                action = "ACTION_SHOW_REMINDER"
+                putExtra("lesson_plan_id", lessonPlanId)
+                putExtra("title", "Lesson Plan Reminder: $title")
+                putExtra("message", "Your lesson plan '$title' is due now")
+                putExtra("classroom_id", classroomId)
+                putExtra("notification_type", "lesson_reminder")
+            }
+            
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                lessonPlanId.toInt(), // Use lessonPlanId as request code for uniqueness
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            }
+            
+            SafeLogger.d("PlannerViewModel", "Scheduled reminder for lesson plan $lessonPlanId at $triggerTime")
+        }
+    }
+
+    private fun cancelReminderNotification(lessonPlanId: Long) {
+        val context = application
+        val intent = Intent(context, NotificationReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            lessonPlanId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(pendingIntent)
+        SafeLogger.d("PlannerViewModel", "Cancelled reminder for lesson plan $lessonPlanId")
     }
 
     fun updateLessonPlanStatus(plan: LessonPlanEntity, newStatus: String) {

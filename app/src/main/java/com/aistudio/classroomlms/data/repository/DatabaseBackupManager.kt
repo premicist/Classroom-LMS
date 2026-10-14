@@ -82,6 +82,7 @@ class DatabaseBackupManager @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
+            @param:Suppress("DEPRECATION")
             e.printStackTrace()
             Result.failure(e)
         }
@@ -115,6 +116,7 @@ class DatabaseBackupManager @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
+            @param:Suppress("DEPRECATION")
             e.printStackTrace()
             Result.failure(e)
         }
