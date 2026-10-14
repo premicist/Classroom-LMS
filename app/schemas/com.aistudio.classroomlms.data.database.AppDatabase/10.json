@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 10,
-    "identityHash": "97a751900de9edd97fb2b4b8277e9f8c",
+    "identityHash": "f79027b7a4f048f51738dbbc7582bd13",
     "entities": [
       {
         "tableName": "classrooms",
@@ -752,7 +752,7 @@
       },
       {
         "tableName": "lesson_plans",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `classroomId` INTEGER NOT NULL, `unitTitle` TEXT NOT NULL, `description` TEXT NOT NULL, `targetDate` INTEGER NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`classroomId`) REFERENCES `classrooms`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `classroomId` INTEGER NOT NULL, `unitTitle` TEXT NOT NULL, `description` TEXT NOT NULL, `targetDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `reminderEnabled` INTEGER NOT NULL, `reminderTime` INTEGER NOT NULL, `reminderId` TEXT NOT NULL, FOREIGN KEY(`classroomId`) REFERENCES `classrooms`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -787,6 +787,24 @@
           {
             "fieldPath": "status",
             "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminderEnabled",
+            "columnName": "reminderEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminderTime",
+            "columnName": "reminderTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminderId",
+            "columnName": "reminderId",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -1449,7 +1467,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '97a751900de9edd97fb2b4b8277e9f8c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f79027b7a4f048f51738dbbc7582bd13')"
     ]
   }
 }

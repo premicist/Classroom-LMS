@@ -1,8 +1,15 @@
 package com.aistudio.classroomlms.data.repository
 
 import android.content.Context
-import androidx.work.*;
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.aistudio.classroomlms.util.NotificationWorker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +22,10 @@ class ReminderRepository @Inject constructor(
 ) {
 
     private val workManager = WorkManager.getInstance(context)
-    private const val UNIQUE_WORK_NAME_PREFIX = "lesson_plan_reminder_"
+
+    companion object {
+        private const val UNIQUE_WORK_NAME_PREFIX = "lesson_plan_reminder_"
+    }
 
     /**
      * Schedule a reminder for a lesson plan
@@ -45,7 +55,7 @@ class ReminderRepository @Inject constructor(
         )
 
         val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
-            .setWorkName(workName)
+            .addTag(UNIQUE_WORK_NAME_PREFIX)
             .setInputData(workData)
             .setInitialDelay(triggerAtMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
             .build()
@@ -70,8 +80,7 @@ class ReminderRepository @Inject constructor(
      * Cancel all reminders
      */
     fun cancelAllReminders() {
-        // Cancel all work with our prefix
-        workManager.cancelAllWorkByPrefix(UNIQUE_WORK_NAME_PREFIX)
+        workManager.cancelAllWorkByTag(UNIQUE_WORK_NAME_PREFIX)
     }
 
     /**
@@ -81,10 +90,11 @@ class ReminderRepository @Inject constructor(
      */
     suspend fun hasReminder(lessonPlanId: Long): Boolean {
         val workName = "$UNIQUE_WORK_NAME_PREFIX$lessonPlanId"
-        val workInfo = workManager.getWorkInfoByNameLiveData(workName)
-            .getOrAwait() // This is a suspend function that awaits the LiveData
-        
-        return workInfo != null && 
-               listOf(WorkInfo.State.ENQUEUED, WorkInfo.State.RUNNING).contains(workInfo.state)
+        return withContext(Dispatchers.IO) {
+            workManager.getWorkInfosForUniqueWork(workName).get().any { workInfo ->
+                workInfo.state == WorkInfo.State.ENQUEUED ||
+                    workInfo.state == WorkInfo.State.RUNNING
+            }
+        }
     }
 }

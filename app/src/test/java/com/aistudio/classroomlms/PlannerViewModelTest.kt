@@ -1,6 +1,7 @@
 package com.aistudio.classroomlms
 
 import android.content.Context
+import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
@@ -70,7 +71,8 @@ class PlannerViewModelTest {
             plannerDao = fakePlannerDao,
             classScheduleDao = fakeClassScheduleDao,
             preferencesManager = preferencesManager,
-            classroomDao = fakeClassroomDao
+            classroomDao = fakeClassroomDao,
+            application = ApplicationProvider.getApplicationContext<Application>()
         )
     }
 
@@ -94,7 +96,9 @@ class PlannerViewModelTest {
             description = "Intro to equations",
             targetDate = 1700000000000L,
             status = "DRAFT",
-            targetClassroomId = classroomId
+            targetClassroomId = classroomId,
+            reminderEnabled = false,
+            reminderTime = 0L
         )
         advanceUntilIdle()
 

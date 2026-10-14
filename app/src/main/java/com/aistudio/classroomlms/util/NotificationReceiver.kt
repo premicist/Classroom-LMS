@@ -1,8 +1,13 @@
 package com.aistudio.classroomlms.util
 
+import android.Manifest
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.aistudio.classroomlms.R
@@ -28,6 +33,16 @@ class NotificationReceiver : BroadcastReceiver() {
             val lessonPlanId = intent.getLongExtra("lesson_plan_id", -1)
 
             SafeLogger.d(TAG, "Received reminder: $title - $message")
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                SafeLogger.w(TAG, "Notification permission is not granted; reminder cannot be shown")
+                return
+            }
 
             // Create notification channel if needed (for Android O and above)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

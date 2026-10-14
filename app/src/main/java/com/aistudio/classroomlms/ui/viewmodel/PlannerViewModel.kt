@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aistudio.classroomlms.MainActivity
@@ -21,6 +22,7 @@ import com.aistudio.classroomlms.data.entity.LessonPlanEntity
 import com.aistudio.classroomlms.data.repository.ClassroomRepository
 import com.aistudio.classroomlms.data.repository.ScheduleRepository
 import com.aistudio.classroomlms.util.PdfReportExporter
+import com.aistudio.classroomlms.util.SafeLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

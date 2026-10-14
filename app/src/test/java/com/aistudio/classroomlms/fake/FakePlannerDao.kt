@@ -17,6 +17,9 @@ class FakePlannerDao : PlannerDao {
         return lessonPlans.map { list -> list.filter { it.classroomId == classroomId } }
     }
 
+    override fun getLessonPlansWithReminders(): List<LessonPlanEntity> =
+        lessonPlans.value.filter { it.reminderEnabled }
+
     override suspend fun insertLessonPlan(plan: LessonPlanEntity): Long {
         val newPlan = plan.copy(id = if (plan.id == 0L) nextPlanId++ else plan.id)
         lessonPlans.value = lessonPlans.value + newPlan
