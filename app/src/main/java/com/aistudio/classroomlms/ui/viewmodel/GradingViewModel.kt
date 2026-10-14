@@ -59,29 +59,35 @@ data class GradingUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class GradingViewModel @Inject constructor(
+class GradingViewModel(
     private val assignmentDao: AssignmentDao,
     private val submissionDao: SubmissionDao,
     private val studentDao: StudentDao,
     private val classroomDao: ClassroomDao,
     private val repository: ClassroomRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    internal val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    internal var defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
+    internal val defaultDispatcher: CoroutineDispatcher get() = dispatcher
 
-    // Secondary constructor for tests
+    @Inject
     constructor(
         assignmentDao: AssignmentDao,
         submissionDao: SubmissionDao,
         studentDao: StudentDao,
         classroomDao: ClassroomDao,
         repository: ClassroomRepository,
-        preferencesManager: PreferencesManager,
-        dispatcher: CoroutineDispatcher
-    ) : this(assignmentDao, submissionDao, studentDao, classroomDao, repository, preferencesManager) {
-        this.defaultDispatcher = dispatcher
-    }
+        preferencesManager: PreferencesManager
+    ) : this(
+        assignmentDao,
+        submissionDao,
+        studentDao,
+        classroomDao,
+        repository,
+        preferencesManager,
+        Dispatchers.Default
+    )
 
     private val _uiState = MutableStateFlow(GradingUiState())
     val uiState: StateFlow<GradingUiState> = _uiState.asStateFlow()

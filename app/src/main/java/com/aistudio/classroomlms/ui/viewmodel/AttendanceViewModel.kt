@@ -48,27 +48,25 @@ data class AttendanceUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class AttendanceViewModel @Inject constructor(
+class AttendanceViewModel(
     private val attendanceDao: AttendanceDao,
     private val homeworkRecordDao: HomeworkRecordDao,
     private val studentDao: StudentDao,
     private val preferencesManager: PreferencesManager,
-    private val classroomDao: ClassroomDao
+    private val classroomDao: ClassroomDao,
+    internal val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    internal var defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
+    internal val defaultDispatcher: CoroutineDispatcher get() = dispatcher
 
-    // Secondary constructor for tests
+    @Inject
     constructor(
         attendanceDao: AttendanceDao,
         homeworkRecordDao: HomeworkRecordDao,
         studentDao: StudentDao,
         preferencesManager: PreferencesManager,
-        classroomDao: ClassroomDao,
-        dispatcher: CoroutineDispatcher
-    ) : this(attendanceDao, homeworkRecordDao, studentDao, preferencesManager, classroomDao) {
-        this.defaultDispatcher = dispatcher
-    }
+        classroomDao: ClassroomDao
+    ) : this(attendanceDao, homeworkRecordDao, studentDao, preferencesManager, classroomDao, Dispatchers.Default)
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
@@ -89,11 +87,10 @@ class AttendanceViewModel @Inject constructor(
                             attendanceDao.getAttendanceForClassroom(classroomId),
                             homeworkRecordDao.getAllHomeworkRecordsForClassroom(classroomId)
                         ) { classroom, students, attendance, homework ->
-                            val report = ClassroomAnalyticsEngine.computeAttendanceReport(classroom, students, attendance)
-                            AttendanceData(classroom, students, attendance, homework, report)
+                            AttendanceData(classroom, students, attendance, homework)
                         }
                     } else {
-                        flowOf(AttendanceData(null, emptyList(), emptyList(), emptyList(), null))
+                        flowOf(AttendanceData(null, emptyList(), emptyList(), emptyList()))
                     }
                 }
                 .collect { data ->
@@ -117,8 +114,7 @@ class AttendanceViewModel @Inject constructor(
         val classroom: ClassroomEntity?,
         val students: List<StudentEntity>,
         val attendance: List<AttendanceRecordEntity>,
-        val homework: List<HomeworkRecordEntity>,
-        val report: AttendanceReport?
+        val homework: List<HomeworkRecordEntity>
     )
 
     fun selectDate(date: String) {

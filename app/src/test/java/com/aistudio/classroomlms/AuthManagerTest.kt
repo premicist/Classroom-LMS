@@ -1,4 +1,4 @@
-﻿package com.aistudio.classroomlms
+package com.aistudio.classroomlms
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -57,3 +57,4 @@ class AuthManagerTest {
         assertNotNull(intent)
     }
 }
+
