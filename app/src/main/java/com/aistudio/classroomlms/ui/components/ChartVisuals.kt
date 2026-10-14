@@ -84,6 +84,13 @@ fun GradeDistributionBarChart(
         Triple("C+/C (40-59)", distribution.cCount, MaterialTheme.colorScheme.statusWarning),
         Triple("D/E (<40)", distribution.dCount + distribution.fCount, MaterialTheme.colorScheme.error)
     )
+    val computedTotal = grades.sumOf { it.second }
+    // If totalStudents was provided but doesn't match the sum of grade bins, prefer the computed total
+    // so the chart always reflects actual graded data rather than a stale class roster count.
+    val effectiveTotal = if (totalStudents > 0 && totalStudents == computedTotal) totalStudents else computedTotal
+    // No students graded → show nothing instead of misleading empty bars.
+    if (effectiveTotal == 0) return
+
     val maxCount = grades.maxOf { it.second }.coerceAtLeast(1)
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -96,7 +103,8 @@ fun GradeDistributionBarChart(
             verticalAlignment = Alignment.Bottom
         ) {
             grades.forEach { (label, count, color) ->
-                val heightFraction = (count.toFloat() / maxCount).coerceIn(0.10f, 1f)
+                // No minimum fraction here: a grade bin with 0 students should render as a flat line.
+                val heightFraction = (count.toFloat() / maxCount).coerceIn(0f, 1f)
                 val animatedHeight by animateFloatAsState(
                     targetValue = heightFraction,
                     animationSpec = tween(durationMillis = 600),
@@ -133,6 +141,15 @@ fun GradeDistributionBarChart(
                     )
                 }
             }
+        }
+        // Show the validated student count below the chart for transparency.
+        if (totalStudents > 0 && totalStudents != computedTotal) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Graded: $computedTotal / $totalStudents students",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

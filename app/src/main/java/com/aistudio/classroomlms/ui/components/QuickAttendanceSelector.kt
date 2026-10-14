@@ -122,10 +122,7 @@ private fun AttendanceStatusActions(
                     DropdownMenuItem(
                         text = { Text(option.displayName) },
                         leadingIcon = {
-                            Icon(
-                                imageVector = option.icon(),
-                                contentDescription = null
-                            )
+                            Icon(imageVector = option.icon(), contentDescription = null)
                         },
                         onClick = {
                             menuExpanded = false
@@ -162,10 +159,7 @@ private fun AttendanceStatusButton(
         contentColor = contentColor
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = status.icon(),
-                contentDescription = status.displayName
-            )
+            Icon(imageVector = status.icon(), contentDescription = status.displayName)
         }
     }
 }

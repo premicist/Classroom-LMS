@@ -46,7 +46,8 @@ uses explicit migrations; do not introduce destructive migrations for user data.
 
 ## Known follow-up
 
-`AuthManager` still uses the deprecated Google Sign-In / `GoogleAuthUtil` token
-flow to request Sheets scope. Keep that flow optional and isolated from local
-classroom use. Replace it only after validating the current Google Authorization
-API path against the app's required Sheets scopes and consent behavior.
+`AuthManager` keeps Google sign-in optional and obtains a Sheets-scoped token through
+`GoogleSignInClient.silentSignIn()` followed by `GoogleAuthUtil.getToken()`. The account access-token
+property is not available in the current Play Services Auth dependency; revisit the token flow only
+after validating a supported replacement against the app's required Sheets scope and consent behavior.
+Local classroom use remains fully functional without Google sign-in.

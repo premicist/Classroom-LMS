@@ -1,15 +1,14 @@
 package com.aistudio.classroomlms.util
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.os.Build
 import com.aistudio.classroomlms.LmsApplication
-import com.aistudio.classroomlms.data.entity.LessonPlanEntity
 import com.aistudio.classroomlms.data.database.AppDatabase
-import com.aistudio.classroomlms.util.SafeLogger
+import com.aistudio.classroomlms.data.entity.LessonPlanEntity
 import java.util.concurrent.Executors
 
 /**

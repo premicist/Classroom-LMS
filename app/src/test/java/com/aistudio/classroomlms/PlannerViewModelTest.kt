@@ -46,6 +46,7 @@ class PlannerViewModelTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
+        val application = ApplicationProvider.getApplicationContext<Application>()
 
         fakePlannerDao = FakePlannerDao()
         fakeClassScheduleDao = FakeClassScheduleDao()
@@ -72,7 +73,7 @@ class PlannerViewModelTest {
             classScheduleDao = fakeClassScheduleDao,
             preferencesManager = preferencesManager,
             classroomDao = fakeClassroomDao,
-            application = ApplicationProvider.getApplicationContext<Application>()
+            application = application
         )
     }
 

@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- USE_EXACT_ALARM is required for setExactAndAllowWhileIdle on API 31+.
+         Exact alarms are justified here because lesson-plan reminders fire at a
+         user-specified time; inexact scheduling would miss the trigger. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:name=".LmsApplication"

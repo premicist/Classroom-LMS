@@ -270,10 +270,7 @@ fun GenerateReportDialog(
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
         }

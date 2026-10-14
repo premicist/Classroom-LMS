@@ -54,7 +54,9 @@ fun AddEditLessonPlanDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
-    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false } }
+    val dateFormat = remember {
+        SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
+    }
     val initialReminderCalendar = remember(initialPlan?.reminderTime) {
         Calendar.getInstance().apply {
             if (initialPlan != null && initialPlan.reminderTime > 0) {
@@ -73,13 +75,18 @@ fun AddEditLessonPlanDialog(
         mutableStateOf(initialPlan?.classroomId ?: activeClassroomId)
     }
     var reminderEnabled by remember { mutableStateOf(initialPlan?.reminderEnabled ?: false) }
-    var selectedHour by remember { mutableStateOf(initialReminderCalendar.get(Calendar.HOUR_OF_DAY)) }
-    var selectedMinute by remember { mutableStateOf(initialReminderCalendar.get(Calendar.MINUTE)) }
+    var selectedHour by remember {
+        mutableStateOf(initialReminderCalendar.get(Calendar.HOUR_OF_DAY))
+    }
+    var selectedMinute by remember {
+        mutableStateOf(initialReminderCalendar.get(Calendar.MINUTE))
+    }
     var isClassroomExpanded by remember { mutableStateOf(false) }
     var isStatusExpanded by remember { mutableStateOf(false) }
 
     val parsedTargetDate = remember(dateString) {
-        runCatching { dateFormat.parse(dateString)?.time }.getOrNull()
+        runCatching { dateFormat.parse(dateString)?.time }
+            .getOrNull()
             ?.takeIf { dateFormat.format(Date(it)) == dateString }
     }
     val selectedClassroomName = classrooms
