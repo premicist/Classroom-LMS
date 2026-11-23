@@ -48,6 +48,9 @@ import androidx.compose.ui.window.Dialog
 import com.aistudio.classroomlms.data.entity.InterventionEntity
 import com.aistudio.classroomlms.data.entity.InterventionType
 import com.aistudio.classroomlms.data.entity.StudentEntity
+import com.aistudio.classroomlms.ui.components.StudentSortControl
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -62,8 +65,10 @@ fun InterventionDialog(
     onDelete: ((Long) -> Unit)? = null
 ) {
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US) }
+    var studentSortOrder by remember { mutableStateOf(StudentSortOrder.NAME) }
+    val sortedStudents = students.sortedByStudent(studentSortOrder) { it }
     var selectedStudentId by remember {
-        mutableStateOf(intervention?.studentId ?: initialStudent?.id ?: students.firstOrNull()?.id ?: 0L)
+        mutableStateOf(intervention?.studentId ?: initialStudent?.id ?: sortedStudents.firstOrNull()?.id ?: 0L)
     }
     var selectedType by remember {
         mutableStateOf(intervention?.type ?: InterventionType.TUTORING)
@@ -124,18 +129,28 @@ fun InterventionDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Student Selection
-                Text(
-                    text = "Select Student",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select Student",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    StudentSortControl(
+                        order = studentSortOrder,
+                        onOrderSelected = { studentSortOrder = it }
+                    )
+                }
                 Spacer(modifier = Modifier.height(6.dp))
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(students) { s ->
+                    items(sortedStudents) { s ->
                         val isSelected = s.id == selectedStudentId
                         Surface(
                             shape = RoundedCornerShape(12.dp),

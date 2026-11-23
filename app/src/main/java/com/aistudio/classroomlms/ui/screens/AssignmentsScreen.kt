@@ -52,6 +52,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +71,9 @@ import com.aistudio.classroomlms.data.entity.SubmissionEntity
 import com.aistudio.classroomlms.data.entity.SubmissionStatus
 import com.aistudio.classroomlms.ui.components.AssignmentTypeBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
+import com.aistudio.classroomlms.ui.components.StudentSortControl
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.components.SubmissionStatusBadge
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
@@ -449,6 +453,8 @@ private fun SubmissionsChecklistMatrixView(
     val currentAssign = selectedAssignment ?: assignments.first()
     val assignSubs = submissions.filter { it.assignmentId == currentAssign.id }
     val subMap = assignSubs.associateBy { it.studentId }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
+    val sortedStudents = students.sortedByStudent(studentSortOrder) { it }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Assignment Picker Dropdown / Pill row
@@ -526,7 +532,17 @@ private fun SubmissionsChecklistMatrixView(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            StudentSortControl(
+                order = studentSortOrder,
+                onOrderSelected = { studentSortOrder = it }
+            )
+        }
 
         // Student Submissions Checklist List
         LazyColumn(
@@ -536,7 +552,7 @@ private fun SubmissionsChecklistMatrixView(
             contentPadding = PaddingValues(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(students, key = { it.id }) { student ->
+            items(sortedStudents, key = { it.id }) { student ->
                 val sub = subMap[student.id] ?: SubmissionEntity(
                     assignmentId = currentAssign.id,
                     studentId = student.id,

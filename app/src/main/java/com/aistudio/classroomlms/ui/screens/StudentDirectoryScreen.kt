@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +56,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.StudentEntity
+import com.aistudio.classroomlms.ui.components.StudentSortControl
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.theme.statusSuccess
@@ -79,6 +83,7 @@ fun StudentDirectoryScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
     var studentToDelete by remember { mutableStateOf<StudentEntity?>(null) }
     var studentToReassign by remember { mutableStateOf<StudentEntity?>(null) }
 
@@ -98,7 +103,7 @@ fun StudentDirectoryScreen(
         }
 
         matchesSearch && matchesFilter
-    }
+    }.sortedByStudent(studentSortOrder) { it.student }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -128,6 +133,16 @@ fun StudentDirectoryScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                StudentSortControl(
+                    order = studentSortOrder,
+                    onOrderSelected = { studentSortOrder = it }
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 

@@ -59,6 +59,8 @@ import com.aistudio.classroomlms.ui.components.AssignmentTypeBadge
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.GradeDistributionBarChart
 import com.aistudio.classroomlms.ui.components.QuickStatCard
+import com.aistudio.classroomlms.ui.components.DashboardSkeleton
+import com.aistudio.classroomlms.ui.components.EmptyState
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.ui.theme.statusInfo
 import com.aistudio.classroomlms.ui.theme.statusSuccess
@@ -175,6 +177,26 @@ fun DashboardScreen(
     val isCompact = windowSize.isCompact
     val portalColumns = windowSize.adaptiveGridColumns(compact = 2, medium = 3, expanded = 4)
     val horizontalPadding = windowSize.adaptiveHorizontalPadding()
+
+    if (uiState.isLoading) {
+        DashboardSkeleton(
+            modifier = modifier.padding(horizontal = horizontalPadding)
+        )
+        return
+    }
+
+    if (uiState.classrooms.isNotEmpty() && uiState.activeClassroom == null) {
+        val firstClassroom = uiState.classrooms.first()
+        EmptyState(
+            icon = Icons.Default.School,
+            title = "Select a classroom",
+            message = "Choose a classroom to view its attendance, assignments, and progress.",
+            actionLabel = "Open ${firstClassroom.name}",
+            onAction = { viewModel.selectClassroom(firstClassroom.id) },
+            modifier = modifier.fillMaxSize()
+        )
+        return
+    }
 
     LazyColumn(
         modifier = modifier

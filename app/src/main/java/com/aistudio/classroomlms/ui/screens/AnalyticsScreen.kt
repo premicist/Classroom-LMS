@@ -47,6 +47,10 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,6 +75,7 @@ import com.aistudio.classroomlms.ui.components.GradeDistributionBarChart
 import com.aistudio.classroomlms.ui.components.PerformanceTimelineChart
 import com.aistudio.classroomlms.ui.components.QuickStatCard
 import com.aistudio.classroomlms.ui.components.StudentAvatar
+import com.aistudio.classroomlms.ui.components.StudentSortControl
 import com.aistudio.classroomlms.ui.components.StudentTierDistributionBar
 import com.aistudio.classroomlms.ui.components.StudentTrajectoryCard
 import com.aistudio.classroomlms.ui.theme.onStatusSuccess
@@ -82,6 +87,8 @@ import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import com.aistudio.classroomlms.ui.viewmodel.StudentTier
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -96,11 +103,13 @@ fun AnalyticsScreen(
     analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
     studentSupportViewModel: StudentSupportViewModel = hiltViewModel()
 ) {
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
     val analyticsUiState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val analytics = if (analyticsUiState.analytics.totalStudents > 0) analyticsUiState.analytics else uiState.analytics
     val activeClassroom = analyticsUiState.activeClassroom ?: uiState.activeClassroom
     val currentSection = uiState.analyticsViewSection
     val currentStudents = if (analyticsUiState.students.isNotEmpty()) analyticsUiState.students else uiState.students
+    val sortedStudents = currentStudents.sortedByStudent(studentSortOrder) { it }
 
     val selectedStudent = currentStudents.find { it.id == uiState.analyticsSelectedStudentId }
 
@@ -308,6 +317,15 @@ fun AnalyticsScreen(
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        StudentSortControl(
+                            order = studentSortOrder,
+                            onOrderSelected = { studentSortOrder = it }
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
 
                     LazyRow(
@@ -330,7 +348,7 @@ fun AnalyticsScreen(
                                 )
                             }
                         }
-                        items(uiState.students, key = { it.id }) { student ->
+                        items(sortedStudents, key = { it.id }) { student ->
                             val isSelected = student.id == uiState.analyticsSelectedStudentId
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
@@ -617,7 +635,7 @@ fun AnalyticsScreen(
             // Student Trajectory Cards
             val filteredTrajectories = analytics.studentTrajectories.filter { traj ->
                 uiState.analyticsTierFilter == null || traj.tier == uiState.analyticsTierFilter
-            }
+            }.sortedByStudent(studentSortOrder) { it.student }
 
             items(filteredTrajectories, key = { it.student.id }) { trajectory ->
                 StudentTrajectoryCard(

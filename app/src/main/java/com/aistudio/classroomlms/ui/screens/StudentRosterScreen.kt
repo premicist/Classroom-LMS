@@ -59,6 +59,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +71,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
+import com.aistudio.classroomlms.ui.components.StudentSortControl
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 
 /**
  * Full student roster: view, search, add, edit, delete, and re-assign classroom.
@@ -98,6 +102,7 @@ fun StudentRosterScreen(
     }
 
     var searchQuery by remember { mutableStateOf("") }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
     var filterClassroomId by remember { mutableStateOf<Long?>(activeClassroomId) }
     var studentToDelete by remember { mutableStateOf<StudentEntity?>(null) }
     var studentToReassign by remember { mutableStateOf<StudentEntity?>(null) }
@@ -106,7 +111,7 @@ fun StudentRosterScreen(
     val activeClassroom = classroomMap[filterClassroomId]
     val isClassroomLinked = activeClassroom?.linkedSpreadsheetId != null
 
-    val filtered = remember(students, searchQuery, filterClassroomId) {
+    val filtered = remember(students, searchQuery, filterClassroomId, studentSortOrder) {
         students.filter { s ->
             val matchesClass = filterClassroomId == null || s.classroomId == filterClassroomId
             val q = searchQuery.trim().lowercase()
@@ -115,7 +120,7 @@ fun StudentRosterScreen(
                 s.studentNumber.lowercase().contains(q) ||
                 s.email.lowercase().contains(q)
             matchesClass && matchesSearch
-        }.sortedBy { it.name.lowercase() }
+        }.sortedByStudent(studentSortOrder) { it }
     }
 
     Scaffold(
@@ -213,6 +218,16 @@ fun StudentRosterScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                StudentSortControl(
+                    order = studentSortOrder,
+                    onOrderSelected = { studentSortOrder = it }
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 

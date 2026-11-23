@@ -53,7 +53,7 @@ fun VoiceDictationButton(
                 Toast.makeText(context, "Voice typing not available on this device", Toast.LENGTH_SHORT).show()
             }
         },
-        modifier = modifier.size(36.dp)
+        modifier = modifier.size(48.dp)
     ) {
         Icon(
             imageVector = Icons.Default.Mic,

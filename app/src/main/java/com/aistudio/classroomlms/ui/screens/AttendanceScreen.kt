@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -50,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,12 +66,16 @@ import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.AttendanceStatus
 import com.aistudio.classroomlms.ui.components.QuickAttendanceSelector
 import com.aistudio.classroomlms.ui.components.CircularProgressGauge
+import com.aistudio.classroomlms.ui.components.EmptyState
 import com.aistudio.classroomlms.ui.components.StudentAvatar
+import com.aistudio.classroomlms.ui.components.StudentSortControl
 import com.aistudio.classroomlms.ui.theme.onStatusSuccess
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.viewmodel.AttendanceUiState
 import com.aistudio.classroomlms.ui.viewmodel.AttendanceViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
@@ -187,6 +193,8 @@ private fun DailyAttendanceCheckInView(
     val allStudents = if (attendanceUiState.students.isNotEmpty()) attendanceUiState.students else uiState.students
     val allAttendance = if (attendanceUiState.attendanceRecords.isNotEmpty()) attendanceUiState.attendanceRecords else uiState.attendanceRecords
     val dateRecords = allAttendance.filter { it.date == selectedDate }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
+    val sortedStudents = allStudents.sortedByStudent(studentSortOrder) { it }
     val isCompact = LocalWindowSizeCategory.current.isCompact
     val horizontalPadding = LocalWindowSizeCategory.current.adaptiveHorizontalPadding()
     val recordMap = dateRecords.associateBy { it.studentId }
@@ -342,33 +350,41 @@ private fun DailyAttendanceCheckInView(
             }
         }
 
-        if (allStudents.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "No students enrolled in this classroom yet.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                StudentSortControl(
+                    order = studentSortOrder,
+                    onOrderSelected = { studentSortOrder = it }
+                )
             }
         }
 
-        items(allStudents, key = { it.id }) { student ->
+        if (allStudents.isNotEmpty() && dateRecords.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Default.EventAvailable,
+                    title = "No attendance recorded",
+                    message = "Review the roster below and mark attendance for $selectedDate.",
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        if (allStudents.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Default.School,
+                    title = "No students enrolled",
+                    message = "Add students to this classroom before taking attendance.",
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        items(sortedStudents, key = { it.id }) { student ->
             val record = recordMap[student.id]
             val currentStatus = record?.status ?: AttendanceStatus.PRESENT
 
@@ -438,6 +454,7 @@ private fun AutomatedAttendanceReportsView(
 ) {
     val context = LocalContext.current
     val report = attendanceUiState.attendanceReport ?: uiState.attendanceReport
+    var reportSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
 
     if (report == null) {
         Box(
@@ -649,7 +666,19 @@ private fun AutomatedAttendanceReportsView(
             )
         }
 
-        items(report.studentSummaries, key = { it.student.id }) { s ->
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                StudentSortControl(
+                    order = reportSortOrder,
+                    onOrderSelected = { reportSortOrder = it }
+                )
+            }
+        }
+
+        items(report.studentSummaries.sortedByStudent(reportSortOrder) { it.student }, key = { it.student.id }) { s ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),

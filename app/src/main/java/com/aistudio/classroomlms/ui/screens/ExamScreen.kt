@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,7 +34,10 @@ import com.aistudio.classroomlms.data.entity.ExamMarkEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
+import com.aistudio.classroomlms.ui.components.StudentSortControl
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ExamUiState
 import com.aistudio.classroomlms.ui.viewmodel.ExamViewModel
@@ -192,9 +196,11 @@ fun ExamRecordCard(
     examUiState: ExamUiState
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val marks = examUiState.examMarks.filter { it.examId == exam.id }
     val students = if (examUiState.students.isNotEmpty()) examUiState.students else uiState.students
+    val sortedStudents = students.sortedByStudent(studentSortOrder) { it }
 
     if (showDeleteConfirmation) {
         AlertDialog(
@@ -348,8 +354,17 @@ fun ExamRecordCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(12.dp))
-                
-                students.forEach { student ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    StudentSortControl(
+                        order = studentSortOrder,
+                        onOrderSelected = { studentSortOrder = it }
+                    )
+                }
+
+                sortedStudents.forEach { student ->
                     val markEntry = marks.find { it.studentId == student.id }
                     ExamStudentMarkRow(
                         student = student,

@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,14 +57,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.SubmissionStatus
+import com.aistudio.classroomlms.ui.components.EmptyState
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.GradeDistributionBarChart
 import com.aistudio.classroomlms.ui.components.InlineGradeEntry
 import com.aistudio.classroomlms.ui.components.StudentAvatar
+import com.aistudio.classroomlms.ui.components.StudentSortControl
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.adaptiveHorizontalPadding
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import com.aistudio.classroomlms.ui.viewmodel.StudentGradeSummary
@@ -94,6 +99,7 @@ fun GradebookScreen(
     val isCompact = windowSize.isCompact
     val horizontalPadding = windowSize.adaptiveHorizontalPadding()
     var searchQuery by remember { mutableStateOf("") }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
     var expandedStudentId by remember { mutableStateOf<Long?>(null) }
     var isInlineGradeMode by remember { mutableStateOf(false) }
 
@@ -109,6 +115,7 @@ fun GradebookScreen(
             it.student.studentNumber.contains(searchQuery, ignoreCase = true)
         }
     } else rawSummaries
+    val sortedSummaries = filteredSummaries.sortedByStudent(studentSortOrder) { it.student }
 
     val analytics = if (gradingUiState.studentGradeSummaries.isNotEmpty()) gradingUiState.analytics else uiState.analytics
 
@@ -245,6 +252,18 @@ fun GradebookScreen(
 
         item {
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                StudentSortControl(
+                    order = studentSortOrder,
+                    onOrderSelected = { studentSortOrder = it }
+                )
+            }
+        }
+
+        item {
+            Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -255,29 +274,27 @@ fun GradebookScreen(
         }
 
         // Student Grade Cards List
-        if (filteredSummaries.isEmpty()) {
+        if (sortedSummaries.isEmpty()) {
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = if (rawSummaries.isEmpty()) "No students to grade yet."
-                        else "No students match your search.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (rawSummaries.isEmpty()) {
-                        Button(onClick = { rosterViewModel.openAddStudent() }) {
-                            Text("Add Student")
-                        }
-                    }
-                }
+                EmptyState(
+                    icon = Icons.Default.Grade,
+                    title = if (rawSummaries.isEmpty()) "No students yet" else "No matching students",
+                    message = if (rawSummaries.isEmpty()) {
+                        "Add students to this classroom to start tracking grades."
+                    } else {
+                        "Try a different name or student number."
+                    },
+                    actionLabel = if (rawSummaries.isEmpty()) "Add student" else null,
+                    onAction = if (rawSummaries.isEmpty()) {
+                        { rosterViewModel.openAddStudent() }
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
-        itemsIndexed(filteredSummaries, key = { _, summary -> summary.student.id }) { index, summary ->
+        itemsIndexed(sortedSummaries, key = { _, summary -> summary.student.id }) { index, summary ->
             val isExpanded = expandedStudentId == summary.student.id
             val assignMap = uiState.assignments.associateBy { it.id }
 

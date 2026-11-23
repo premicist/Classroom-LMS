@@ -74,7 +74,10 @@ import com.aistudio.classroomlms.data.entity.LiveAssessmentTaskType
 import com.aistudio.classroomlms.data.entity.MasteryLevel
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.StudentAvatar
+import com.aistudio.classroomlms.ui.components.StudentSortControl
 import com.aistudio.classroomlms.ui.components.VoiceDictationButton
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.theme.statusSuccessContainer
 import com.aistudio.classroomlms.ui.theme.statusWarning
@@ -101,8 +104,10 @@ fun LiveAssessmentDialog(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    var studentSortOrder by remember { mutableStateOf(StudentSortOrder.NAME) }
+    val sortedStudents = students.sortedByStudent(studentSortOrder) { it }
     var selectedStudent by remember {
-        mutableStateOf(initialStudent ?: students.firstOrNull())
+        mutableStateOf(initialStudent ?: sortedStudents.firstOrNull())
     }
     var taskType by remember {
         mutableStateOf(initialAssessment?.taskType ?: LiveAssessmentTaskType.DIAGRAM)
@@ -217,7 +222,7 @@ fun LiveAssessmentDialog(
                             expanded = isStudentDropdownExpanded,
                             onDismissRequest = { isStudentDropdownExpanded = false }
                         ) {
-                            students.forEach { s ->
+                            sortedStudents.forEach { s ->
                                 DropdownMenuItem(
                                     text = { Text("${s.name} (${s.studentNumber})") },
                                     onClick = {
@@ -232,8 +237,8 @@ fun LiveAssessmentDialog(
                     // Cold-Call Randomizer
                     Button(
                         onClick = {
-                            if (students.isNotEmpty()) {
-                                selectedStudent = students.random()
+                            if (sortedStudents.isNotEmpty()) {
+                                selectedStudent = sortedStudents.random()
                             }
                         },
                         shape = RoundedCornerShape(10.dp),
@@ -247,6 +252,15 @@ fun LiveAssessmentDialog(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Random", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    StudentSortControl(
+                        order = studentSortOrder,
+                        onOrderSelected = { studentSortOrder = it }
+                    )
                 }
 
                 // 2. Task Type Selector

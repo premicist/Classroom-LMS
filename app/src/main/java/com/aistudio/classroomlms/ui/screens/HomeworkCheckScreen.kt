@@ -42,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +56,10 @@ import com.aistudio.classroomlms.data.entity.HomeworkRecordEntity
 import com.aistudio.classroomlms.data.entity.HomeworkStatus
 import com.aistudio.classroomlms.ui.components.HomeworkStatusBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
+import com.aistudio.classroomlms.ui.components.StudentSortControl
 import com.aistudio.classroomlms.ui.components.TieredHorizontalProgressBar
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
 import java.text.SimpleDateFormat
@@ -103,6 +107,7 @@ fun HomeworkCheckScreen(
     }
 
     var selectedDate by remember { mutableStateOf(todayStr) }
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
     var topicText by remember { mutableStateOf(attendanceUiState.activeHomeworkTopic.ifEmpty { "Daily Homework Check" }) }
     var isEditingTopic by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -135,6 +140,7 @@ fun HomeworkCheckScreen(
     }
 
     val allStudents = if (attendanceUiState.students.isNotEmpty()) attendanceUiState.students else uiState.students
+    val sortedStudents = allStudents.sortedByStudent(studentSortOrder) { it }
     val allHomework = if (attendanceUiState.homeworkRecords.isNotEmpty()) attendanceUiState.homeworkRecords else uiState.homeworkRecords
     val recordsForDate = allHomework.filter { it.date == selectedDate && it.topic == topicText }
     val recordMap = recordsForDate.associateBy { it.studentId }
@@ -342,7 +348,19 @@ fun HomeworkCheckScreen(
             }
         }
 
-        items(allStudents, key = { it.id }) { student ->
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                StudentSortControl(
+                    order = studentSortOrder,
+                    onOrderSelected = { studentSortOrder = it }
+                )
+            }
+        }
+
+        items(sortedStudents, key = { it.id }) { student ->
             val record = recordMap[student.id]
 
             Card(
