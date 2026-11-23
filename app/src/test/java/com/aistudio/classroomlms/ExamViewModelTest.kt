@@ -223,4 +223,44 @@ class ExamViewModelTest {
         assertFalse(viewModel.uiState.value.isAddEditExamOpen)
         assertNull(viewModel.uiState.value.editingExam)
     }
+
+    @Test
+    fun selectHubTabUpdatesSelectedHubTab() = runTest {
+        assertEquals(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.MARKS, viewModel.uiState.value.selectedHubTab)
+        viewModel.selectHubTab(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.LEADERBOARD)
+        assertEquals(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.LEADERBOARD, viewModel.uiState.value.selectedHubTab)
+        viewModel.selectHubTab(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.DATESHEET)
+        assertEquals(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.DATESHEET, viewModel.uiState.value.selectedHubTab)
+        viewModel.selectHubTab(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.REPORTS)
+        assertEquals(com.aistudio.classroomlms.ui.viewmodel.ExamHubTab.REPORTS, viewModel.uiState.value.selectedHubTab)
+    }
+
+    @Test
+    fun selectCategoryUpdatesLeaderboardForCategory() = runTest {
+        val terminalExam = ExamEntity(
+            id = 10L,
+            classroomId = classroomId,
+            category = ExamCategory.TERMINAL,
+            title = "Final Math",
+            fullMarks = 100.0,
+            passMarks = 40.0,
+            date = "2026-11-20"
+        )
+        fakeExamDao.insertExam(terminalExam)
+        fakeExamDao.insertMark(ExamMarkEntity(id = 1L, examId = 10L, studentId = 101L, marksObtained = 92.0))
+        fakeExamDao.insertMark(ExamMarkEntity(id = 2L, examId = 10L, studentId = 102L, marksObtained = 78.0))
+        advanceUntilIdle()
+
+        viewModel.selectCategory(ExamCategory.TERMINAL)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(ExamCategory.TERMINAL, state.selectedExamCategory)
+        assertEquals(2, state.leaderboardSummary.rankedStudents.size)
+        assertEquals("Alice Smith", state.leaderboardSummary.rankedStudents.first().studentName)
+        assertEquals(1, state.leaderboardSummary.rankedStudents.first().rank)
+        assertEquals(92.0, state.leaderboardSummary.rankedStudents.first().percentage, 0.001)
+        assertEquals(1, state.leaderboardSummary.subjectToppers.size)
+        assertEquals("Alice Smith", state.leaderboardSummary.subjectToppers.first().studentName)
+    }
 }

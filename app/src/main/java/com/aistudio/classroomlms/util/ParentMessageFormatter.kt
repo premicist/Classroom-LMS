@@ -49,17 +49,33 @@ object ParentMessageFormatter {
         record: DisciplineRecordEntity,
         classroomName: String
     ): String {
-        return """
-        📋 *School Behavior & Discipline Notice*
-        Dear Parent/Guardian,
-        
-        This is to notify you regarding *${student.name}* in *${classroomName}*:
-        • Category: *${record.category.displayName}*
-        • Date: *${record.date}*
-        • Note: ${record.description.ifEmpty { record.title }}
-        • Action Taken: ${record.actionTaken.ifEmpty { "Verbal Counseling" }}
-        
-        Please contact the school if you have any questions.
-        """.trimIndent()
+        return if (record.category.isPositive) {
+            """
+            🌟 *Student Merit & Praise Recognition*
+            Dear Parent/Guardian,
+            
+            We are pleased to recognize *${student.name}* in *${classroomName}*:
+            • Category: *${record.category.displayName}*
+            • Date: *${record.date}*
+            • Recognition: ${record.title}
+            ${if (record.description.isNotBlank()) "• Note: ${record.description}\n" else ""}${if (record.actionTaken.isNotBlank()) "• Recognition Awarded: ${record.actionTaken}\n" else ""}
+            Keep up the fantastic effort!
+            Best regards,
+            Class Teacher
+            """.trimIndent()
+        } else {
+            """
+            📋 *School Behavior & Discipline Notice*
+            Dear Parent/Guardian,
+            
+            This is to notify you regarding *${student.name}* in *${classroomName}*:
+            • Category: *${record.category.displayName}*
+            • Date: *${record.date}*
+            • Note: ${record.description.ifEmpty { record.title }}
+            • Action Taken: ${record.actionTaken.ifEmpty { "Verbal Counseling" }}
+            
+            Please contact the school if you have any questions.
+            """.trimIndent()
+        }
     }
 }

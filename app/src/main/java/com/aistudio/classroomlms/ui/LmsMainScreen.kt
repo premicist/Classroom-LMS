@@ -110,6 +110,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.aistudio.classroomlms.BuildConfig
 import com.aistudio.classroomlms.ui.screens.AddEditExamDialog
 import com.aistudio.classroomlms.ui.screens.ClassroomScheduleScreen
@@ -266,6 +268,7 @@ fun LmsMainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val authManager = syncViewModel.authManager
+    var academicInitialSubTab by rememberSaveable { mutableIntStateOf(0) }
 
     // Handle system back gesture / button on all overlays
     BackHandler(enabled = drawerState.isOpen) {
@@ -364,6 +367,18 @@ fun LmsMainScreen(
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
                 
+                NavigationDrawerItem(
+                    label = { Text("Examinations Hub") },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { drawerState.close() }
+                        academicInitialSubTab = 1
+                        viewModel.selectTab(LmsTab.ACADEMIC)
+                    },
+                    icon = { Icon(Icons.Default.Assessment, contentDescription = "Examinations Hub") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
                 NavigationDrawerItem(
                     label = { Text("Teacher Planner & Diary") },
                     selected = false,
@@ -573,6 +588,7 @@ fun LmsMainScreen(
                     LmsTab.ACADEMIC -> AcademicWorkScreen(
                         uiState = uiState,
                         viewModel = viewModel,
+                        initialSubTab = academicInitialSubTab,
                         rosterViewModel = rosterViewModel
                     )
                     LmsTab.ATTENDANCE -> AttendanceScreen(uiState = uiState, viewModel = viewModel)
@@ -695,6 +711,12 @@ fun LmsMainScreen(
             onExportDisciplineIncidentSlip = { record ->
                 studentSupportViewModel.exportDisciplineIncidentSlip(context, student, record)
             },
+            onSendWhatsAppRemark = { record ->
+                studentSupportViewModel.sendWhatsAppRemark(context, student, record)
+            },
+            onSendSmsRemark = { record ->
+                studentSupportViewModel.sendSmsRemark(context, student, record)
+            },
             onExportReport = {
                 val report = viewModel.generateStudentPortfolioReportText(student.id)
                 viewModel.openExportReport(report, "Student Progress Portfolio - ${student.name}")
@@ -771,6 +793,14 @@ fun LmsMainScreen(
             },
             onDelete = { record ->
                 studentSupportViewModel.deleteDisciplineRecord(record)
+            },
+            onSaveAndSendWhatsApp = { record ->
+                studentSupportViewModel.saveDisciplineRecord(record)
+                studentSupportViewModel.sendWhatsAppRemark(context, student, record)
+            },
+            onSaveAndSendSms = { record ->
+                studentSupportViewModel.saveDisciplineRecord(record)
+                studentSupportViewModel.sendSmsRemark(context, student, record)
             }
         )
     }

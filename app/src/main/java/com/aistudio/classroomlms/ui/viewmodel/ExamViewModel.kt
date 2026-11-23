@@ -10,6 +10,10 @@ import com.aistudio.classroomlms.data.entity.ExamCategory
 import com.aistudio.classroomlms.data.entity.ExamEntity
 import com.aistudio.classroomlms.data.entity.ExamMarkEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
+import com.aistudio.classroomlms.domain.merit.LeaderboardSummary
+import com.aistudio.classroomlms.domain.merit.MeritLeaderboardEngine
+import com.aistudio.classroomlms.domain.merit.StudentExamAggregate
+import com.aistudio.classroomlms.util.ParentCommunicationHelper
 import com.aistudio.classroomlms.util.PdfReportExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,6 +27,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class ExamHubTab(val title: String) {
+    MARKS("Marks Entry"),
+    LEADERBOARD("Toppers Podium"),
+    DATESHEET("Exam Routine"),
+    REPORTS("Marksheets")
+}
+
 data class ExamUiState(
     val activeClassroomId: Long? = null,
     val exams: List<ExamEntity> = emptyList(),
@@ -30,6 +41,8 @@ data class ExamUiState(
     val students: List<StudentEntity> = emptyList(),
     val isAddEditExamOpen: Boolean = false,
     val selectedExamCategory: ExamCategory = ExamCategory.CLASS_TEST,
+    val selectedHubTab: ExamHubTab = ExamHubTab.MARKS,
+    val leaderboardSummary: LeaderboardSummary = LeaderboardSummary(),
     val editingExam: ExamEntity? = null,
     val userNotificationMessage: String? = null
 )
@@ -64,13 +77,39 @@ class ExamViewModel @Inject constructor(
                 }
                 .collect { (exams, marks, students) ->
                     _uiState.update { current ->
+                        val categoryExams = exams.filter { it.category == current.selectedExamCategory }
+                        val leaderboard = MeritLeaderboardEngine.computeLeaderboard(
+                            students = students,
+                            exams = categoryExams,
+                            marks = marks
+                        )
                         current.copy(
                             exams = exams,
                             examMarks = marks,
-                            students = students
+                            students = students,
+                            leaderboardSummary = leaderboard
                         )
                     }
                 }
+        }
+    }
+
+    fun selectHubTab(tab: ExamHubTab) {
+        _uiState.update { it.copy(selectedHubTab = tab) }
+    }
+
+    fun selectCategory(category: ExamCategory) {
+        _uiState.update { current ->
+            val categoryExams = current.exams.filter { it.category == category }
+            val leaderboard = MeritLeaderboardEngine.computeLeaderboard(
+                students = current.students,
+                exams = categoryExams,
+                marks = current.examMarks
+            )
+            current.copy(
+                selectedExamCategory = category,
+                leaderboardSummary = leaderboard
+            )
         }
     }
 
@@ -129,6 +168,46 @@ class ExamViewModel @Inject constructor(
             } catch (e: Exception) {
                 showToast("Failed to delete exam")
             }
+        }
+    }
+
+    fun sendWhatsAppReport(context: Context, aggregate: StudentExamAggregate, classroomName: String = "") {
+        val categoryName = _uiState.value.selectedExamCategory.displayName
+        val message = ParentCommunicationHelper.formatExamReportMessage(
+            studentName = aggregate.studentName,
+            studentRoll = aggregate.studentNumber,
+            examCategory = categoryName,
+            totalMarks = aggregate.totalMarksObtained,
+            fullMarks = aggregate.totalFullMarks,
+            percentage = aggregate.percentage,
+            gpa = aggregate.gpa,
+            letterGrade = aggregate.letterGrade,
+            rank = aggregate.rank,
+            classroomName = classroomName
+        )
+        val success = ParentCommunicationHelper.launchWhatsApp(context, aggregate.guardianContact, message)
+        if (!success) {
+            showToast("Could not open WhatsApp. Ensure WhatsApp is installed.")
+        }
+    }
+
+    fun sendSmsReport(context: Context, aggregate: StudentExamAggregate, classroomName: String = "") {
+        val categoryName = _uiState.value.selectedExamCategory.displayName
+        val message = ParentCommunicationHelper.formatExamReportMessage(
+            studentName = aggregate.studentName,
+            studentRoll = aggregate.studentNumber,
+            examCategory = categoryName,
+            totalMarks = aggregate.totalMarksObtained,
+            fullMarks = aggregate.totalFullMarks,
+            percentage = aggregate.percentage,
+            gpa = aggregate.gpa,
+            letterGrade = aggregate.letterGrade,
+            rank = aggregate.rank,
+            classroomName = classroomName
+        )
+        val success = ParentCommunicationHelper.launchSms(context, aggregate.guardianContact, message)
+        if (!success) {
+            showToast("Could not open SMS application.")
         }
     }
 

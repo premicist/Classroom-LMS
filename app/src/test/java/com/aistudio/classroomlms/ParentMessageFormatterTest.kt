@@ -108,4 +108,40 @@ class ParentMessageFormatterTest {
         assertTrue(message.contains("Repeatedly talking after verbal warning"))
         assertTrue(message.contains("Moved to front row"))
     }
+
+    @Test
+    fun testPraiseMeritRemarkFormatting() {
+        val student = StudentEntity(
+            id = 4L,
+            classroomId = 10L,
+            name = "Rohan Shrestha",
+            studentNumber = "STU-104",
+            guardianContact = "+9779811223344"
+        )
+
+        val praiseRecord = DisciplineRecordEntity(
+            id = 51L,
+            studentId = 4L,
+            classroomId = 10L,
+            date = "2026-11-23",
+            category = BehaviorCategory.PRAISE_MERIT,
+            severity = BehaviorSeverity.LOW_WARNING,
+            title = "Exemplary Leadership in Project",
+            description = "Helped peers understand difficult concepts",
+            actionTaken = "Honor Badge Awarded"
+        )
+
+        val message = ParentMessageFormatter.formatDisciplineNotificationMessage(
+            student = student,
+            record = praiseRecord,
+            classroomName = "Grade 10 Science"
+        )
+
+        assertTrue(message.contains("Rohan Shrestha"))
+        assertTrue(message.contains("Grade 10 Science"))
+        assertTrue(message.contains("Praise / Merit"))
+        assertTrue(message.contains("Exemplary Leadership in Project"))
+        assertTrue(message.contains("Honor Badge Awarded"))
+        assertTrue(message.contains("Student Merit & Praise Recognition"))
+    }
 }

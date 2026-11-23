@@ -111,6 +111,8 @@ fun StudentDetailDialog(
     onLogDiscipline: () -> Unit = {},
     onLogLiveAssessment: () -> Unit = {},
     onExportDisciplineIncidentSlip: (DisciplineRecordEntity) -> Unit = {},
+    onSendWhatsAppRemark: ((DisciplineRecordEntity) -> Unit)? = null,
+    onSendSmsRemark: ((DisciplineRecordEntity) -> Unit)? = null,
     onExportReport: () -> Unit,
     isClassroomLinked: Boolean = false,
     modifier: Modifier = Modifier
@@ -841,14 +843,42 @@ fun StudentDetailDialog(
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.primary
                                         )
-                                        OutlinedButton(
-                                            onClick = { onExportDisciplineIncidentSlip(disc) },
-                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                            shape = RoundedCornerShape(6.dp)
-                                        ) {
-                                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(12.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Incident Slip", fontSize = 10.sp)
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            OutlinedButton(
+                                                onClick = { onExportDisciplineIncidentSlip(disc) },
+                                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                                shape = RoundedCornerShape(6.dp)
+                                            ) {
+                                                Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(11.dp))
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text("Slip", fontSize = 10.sp)
+                                            }
+
+                                            if (student.guardianContact.isNotBlank()) {
+                                                if (onSendSmsRemark != null) {
+                                                    OutlinedButton(
+                                                        onClick = { onSendSmsRemark(disc) },
+                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                                        shape = RoundedCornerShape(6.dp)
+                                                    ) {
+                                                        Icon(Icons.AutoMirrored.Filled.Message, contentDescription = null, modifier = Modifier.size(11.dp))
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text("SMS", fontSize = 10.sp)
+                                                    }
+                                                }
+                                                if (onSendWhatsAppRemark != null) {
+                                                    Button(
+                                                        onClick = { onSendWhatsAppRemark(disc) },
+                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFF25D366))
+                                                    ) {
+                                                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(11.dp), tint = androidx.compose.ui.graphics.Color.White)
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text("WA", fontSize = 10.sp, color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

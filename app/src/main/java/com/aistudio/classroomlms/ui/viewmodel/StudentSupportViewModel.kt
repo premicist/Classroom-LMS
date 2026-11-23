@@ -162,6 +162,48 @@ class StudentSupportViewModel @Inject constructor(
         showToast("Generating Discipline Incident Slip PDF...")
     }
 
+    fun sendWhatsAppRemark(context: Context, student: StudentEntity, record: DisciplineRecordEntity) {
+        val classroomName = _uiState.value.activeClassroom?.name ?: "Classroom"
+        val message = com.aistudio.classroomlms.util.ParentMessageFormatter.formatDisciplineNotificationMessage(
+            student = student,
+            record = record,
+            classroomName = classroomName
+        )
+        val success = com.aistudio.classroomlms.util.ParentCommunicationHelper.launchWhatsApp(
+            context = context,
+            phone = student.guardianContact,
+            message = message
+        )
+        if (!success) {
+            showToast("Could not open WhatsApp. Ensure WhatsApp is installed.")
+        } else {
+            if (!record.parentNotified) {
+                saveDisciplineRecord(record.copy(parentNotified = true))
+            }
+        }
+    }
+
+    fun sendSmsRemark(context: Context, student: StudentEntity, record: DisciplineRecordEntity) {
+        val classroomName = _uiState.value.activeClassroom?.name ?: "Classroom"
+        val message = com.aistudio.classroomlms.util.ParentMessageFormatter.formatDisciplineNotificationMessage(
+            student = student,
+            record = record,
+            classroomName = classroomName
+        )
+        val success = com.aistudio.classroomlms.util.ParentCommunicationHelper.launchSms(
+            context = context,
+            phone = student.guardianContact,
+            message = message
+        )
+        if (!success) {
+            showToast("Could not open SMS application.")
+        } else {
+            if (!record.parentNotified) {
+                saveDisciplineRecord(record.copy(parentNotified = true))
+            }
+        }
+    }
+
     // --- TEACHER INTERVENTIONS ---
 
     fun openAddIntervention(student: StudentEntity? = null) {

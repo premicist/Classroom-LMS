@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -17,15 +19,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.aistudio.classroomlms.ui.theme.statusSuccess
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -37,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +51,7 @@ import com.aistudio.classroomlms.data.entity.BehaviorSeverity
 import com.aistudio.classroomlms.data.entity.DisciplineRecordEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.VoiceDictationButton
+import com.aistudio.classroomlms.ui.theme.statusSuccess
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -64,28 +71,55 @@ fun DisciplineLogDialog(
     classroomId: Long,
     onDismiss: () -> Unit,
     onSave: (DisciplineRecordEntity) -> Unit,
-    onDelete: ((DisciplineRecordEntity) -> Unit)? = null
+    onDelete: ((DisciplineRecordEntity) -> Unit)? = null,
+    onSaveAndSendWhatsApp: ((DisciplineRecordEntity) -> Unit)? = null,
+    onSaveAndSendSms: ((DisciplineRecordEntity) -> Unit)? = null
 ) {
     val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) }
 
     var title by remember { mutableStateOf(initialRecord?.title ?: "") }
     var description by remember { mutableStateOf(initialRecord?.description ?: "") }
     var actionTaken by remember { mutableStateOf(initialRecord?.actionTaken ?: "") }
-    var category by remember { mutableStateOf(initialRecord?.category ?: BehaviorCategory.CLASSROOM_DISRUPTION) }
+    var category by remember { mutableStateOf(initialRecord?.category ?: BehaviorCategory.PRAISE_MERIT) }
     var severity by remember { mutableStateOf(initialRecord?.severity ?: BehaviorSeverity.LOW_WARNING) }
     var parentNotified by remember { mutableStateOf(initialRecord?.parentNotified ?: false) }
     var resolved by remember { mutableStateOf(initialRecord?.resolved ?: false) }
 
     val presets = listOf(
-        BehaviorPreset("Great Participation & Effort", BehaviorCategory.PRAISE_MERIT, BehaviorSeverity.LOW_WARNING, "Praise & Merit Recorded"),
-        BehaviorPreset("Helping Classmates & Leadership", BehaviorCategory.PRAISE_MERIT, BehaviorSeverity.LOW_WARNING, "Merit Points Awarded"),
+        BehaviorPreset("Great Classroom Participation", BehaviorCategory.PRAISE_MERIT, BehaviorSeverity.LOW_WARNING, "Praise & Merit Recorded"),
+        BehaviorPreset("Helping Classmates & Teamwork", BehaviorCategory.PRAISE_MERIT, BehaviorSeverity.LOW_WARNING, "Merit Points Awarded"),
+        BehaviorPreset("Neat & Complete Classwork", BehaviorCategory.PRAISE_MERIT, BehaviorSeverity.LOW_WARNING, "Classroom Commendation"),
+        BehaviorPreset("Exemplary Manners & Discipline", BehaviorCategory.PRAISE_MERIT, BehaviorSeverity.LOW_WARNING, "Honor Badge Given"),
         BehaviorPreset("Talking During Instruction", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.LOW_WARNING, "Verbal Warning Given"),
-        BehaviorPreset("Off-Task / Distracting Classmates", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.LOW_WARNING, "Seating Moved"),
-        BehaviorPreset("Unprepared / Missing Book/Laptop", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Borrowed Classroom Supplies"),
-        BehaviorPreset("Late Entry to Class", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Late Logged"),
-        BehaviorPreset("Phone / Device Distraction", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.MEDIUM_DETENTION, "Phone Stored on Teacher Desk"),
+        BehaviorPreset("Incomplete / Missing Homework", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Recorded in Diary / Complete Tomorrow"),
+        BehaviorPreset("Off-Task / Device Distraction", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.LOW_WARNING, "Device Stored / Seating Moved"),
+        BehaviorPreset("Late Arrival to Class", BehaviorCategory.UNPREPARED, BehaviorSeverity.LOW_WARNING, "Late Logged"),
+        BehaviorPreset("Disrespectful / Rowdy Behavior", BehaviorCategory.CLASSROOM_DISRUPTION, BehaviorSeverity.MEDIUM_DETENTION, "Counseling Session Scheduled"),
         BehaviorPreset("Academic Dishonesty / Copying", BehaviorCategory.ACADEMIC_DISHONESTY, BehaviorSeverity.HIGH_ADMIN_REFERRAL, "Zero on Task & Parent Contact")
     )
+
+    fun buildRecord(markParentNotified: Boolean = parentNotified): DisciplineRecordEntity {
+        return initialRecord?.copy(
+            category = category,
+            severity = severity,
+            title = title.trim(),
+            description = description.trim(),
+            actionTaken = actionTaken.trim(),
+            parentNotified = markParentNotified,
+            resolved = resolved
+        ) ?: DisciplineRecordEntity(
+            studentId = student.id,
+            classroomId = classroomId,
+            date = todayStr,
+            category = category,
+            severity = severity,
+            title = title.trim(),
+            description = description.trim(),
+            actionTaken = actionTaken.trim(),
+            parentNotified = markParentNotified,
+            resolved = resolved
+        )
+    }
 
     AlertDialog(
         modifier = Modifier.imePadding(),
@@ -98,9 +132,9 @@ fun DisciplineLogDialog(
             ) {
                 Column {
                     Text(
-                        text = if (initialRecord == null) "Log Behavior / Discipline" else "Edit Behavior Record",
+                        text = if (initialRecord == null) "Student Behavioral Remark & Diary" else "Edit Remark Log",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        fontSize = 17.sp
                     )
                     Text(
                         text = "Student: ${student.name} (${student.studentNumber})",
@@ -124,7 +158,7 @@ fun DisciplineLogDialog(
             ) {
                 // Quick Preset Chips
                 Text(
-                    text = "⚡ Quick 1-Tap Behaviors",
+                    text = "⚡ 1-Tap Quick Remarks",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -158,7 +192,7 @@ fun DisciplineLogDialog(
 
                 // Category Selection Chips
                 Text(
-                    text = "Category *",
+                    text = "Remark Type *",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -178,7 +212,7 @@ fun DisciplineLogDialog(
                     }
                 }
 
-                // Severity Selection
+                // Severity Selection (only for non-positive)
                 if (!category.isPositive) {
                     Text(
                         text = "Severity Level",
@@ -205,8 +239,8 @@ fun DisciplineLogDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Behavior Title *") },
-                    placeholder = { Text("e.g. Disrupted class during instruction") },
+                    label = { Text("Remark Title *") },
+                    placeholder = { Text("e.g. Great effort in group project") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -215,14 +249,14 @@ fun DisciplineLogDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Incident Details / Context") },
-                    placeholder = { Text("Optional additional notes...") },
+                    label = { Text("Teacher Observation / Context") },
+                    placeholder = { Text("Optional context notes...") },
                     trailingIcon = {
                         VoiceDictationButton(
                             onTextSpoken = { spoken ->
                                 description = if (description.isBlank()) spoken else "$description $spoken"
                             },
-                            prompt = "Speak incident details..."
+                            prompt = "Speak observation details..."
                         )
                     },
                     maxLines = 3,
@@ -233,8 +267,8 @@ fun DisciplineLogDialog(
                 OutlinedTextField(
                     value = actionTaken,
                     onValueChange = { actionTaken = it },
-                    label = { Text("Action Taken / Teacher Response") },
-                    placeholder = { Text("e.g. Moved seat, verbal warning, parent phone call") },
+                    label = { Text("Action / Follow-up") },
+                    placeholder = { Text("e.g. Merit awarded, verbal counseling") },
                     trailingIcon = {
                         VoiceDictationButton(
                             onTextSpoken = { spoken ->
@@ -247,7 +281,7 @@ fun DisciplineLogDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Parent Notified Switch
+                // Switches
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -256,11 +290,10 @@ fun DisciplineLogDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Parent / Guardian Notified", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Parent Notified", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Switch(checked = parentNotified, onCheckedChange = { parentNotified = it })
                 }
 
-                // Resolved Switch
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -269,47 +302,84 @@ fun DisciplineLogDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Issue Resolved", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Issue Resolved / Acknowledged", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Switch(checked = resolved, onCheckedChange = { resolved = it })
                 }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (title.isNotBlank()) {
-                        val record = initialRecord?.copy(
-                            category = category,
-                            severity = severity,
-                            title = title.trim(),
-                            description = description.trim(),
-                            actionTaken = actionTaken.trim(),
-                            parentNotified = parentNotified,
-                            resolved = resolved
-                        ) ?: DisciplineRecordEntity(
-                            studentId = student.id,
-                            classroomId = classroomId,
-                            date = todayStr,
-                            category = category,
-                            severity = severity,
-                            title = title.trim(),
-                            description = description.trim(),
-                            actionTaken = actionTaken.trim(),
-                            parentNotified = parentNotified,
-                            resolved = resolved
-                        )
-                        onSave(record)
-                    }
-                },
-                enabled = title.isNotBlank()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Save Log")
+                // Primary Action: Save
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Button(
+                        onClick = {
+                            if (title.isNotBlank()) {
+                                onSave(buildRecord())
+                            }
+                        },
+                        enabled = title.isNotBlank()
+                    ) {
+                        Text("Save Remark")
+                    }
+                }
+
+                // 1-Tap Parent Dispatch Actions
+                if (student.guardianContact.isNotBlank() && (onSaveAndSendWhatsApp != null || onSaveAndSendSms != null)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (onSaveAndSendSms != null) {
+                            OutlinedButton(
+                                onClick = {
+                                    if (title.isNotBlank()) {
+                                        onSaveAndSendSms(buildRecord(markParentNotified = true))
+                                    }
+                                },
+                                enabled = title.isNotBlank(),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Message, null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Save & SMS", fontSize = 11.sp)
+                            }
+                        }
+
+                        if (onSaveAndSendWhatsApp != null) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Button(
+                                onClick = {
+                                    if (title.isNotBlank()) {
+                                        onSaveAndSendWhatsApp(buildRecord(markParentNotified = true))
+                                    }
+                                },
+                                enabled = title.isNotBlank(),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Send, null, modifier = Modifier.size(13.dp), tint = Color.White)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Save & WhatsApp", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
+        dismissButton = {}
     )
 }
