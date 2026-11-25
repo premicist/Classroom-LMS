@@ -263,4 +263,25 @@ class ExamViewModelTest {
         assertEquals(1, state.leaderboardSummary.subjectToppers.size)
         assertEquals("Alice Smith", state.leaderboardSummary.subjectToppers.first().studentName)
     }
+
+    @Test
+    fun openAndCloseGradingWorkspaceUpdatesState() = runTest {
+        val testExam = ExamEntity(
+            id = 55L,
+            classroomId = classroomId,
+            category = ExamCategory.TERMINAL,
+            title = "Science Terminal",
+            fullMarks = 100.0,
+            passMarks = 40.0,
+            date = "2026-11-24"
+        )
+
+        assertNull(viewModel.uiState.value.gradingExam)
+
+        viewModel.openGradingWorkspace(testExam)
+        assertEquals(testExam, viewModel.uiState.value.gradingExam)
+
+        viewModel.closeGradingWorkspace()
+        assertNull(viewModel.uiState.value.gradingExam)
+    }
 }

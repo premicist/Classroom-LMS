@@ -1,6 +1,7 @@
 package com.aistudio.classroomlms.ui.screens
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,10 +14,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -82,6 +86,19 @@ fun ExamScreen(
         ExamCategory.PRE_BOARD to "Pre-Board"
     )
 
+    // Full Marks Entry Workspace if active
+    if (examUiState.gradingExam != null) {
+        FullMarksEntryWorkspace(
+            exam = examUiState.gradingExam!!,
+            uiState = uiState,
+            examViewModel = examViewModel,
+            examUiState = examUiState,
+            onBack = { examViewModel.closeGradingWorkspace() },
+            modifier = modifier
+        )
+        return
+    }
+
     // Add / Edit Exam Dialog wired to ExamViewModel
     if (examUiState.isAddEditExamOpen) {
         val activeClassId = examUiState.activeClassroomId ?: uiState.activeClassroom?.id ?: 1L
@@ -98,27 +115,6 @@ fun ExamScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Top Category Segmented Tabs
-        TabRow(
-            selectedTabIndex = categoryTabs.indexOfFirst { it.first == examUiState.selectedExamCategory }.coerceAtLeast(0),
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.primary
-        ) {
-            categoryTabs.forEach { (category, label) ->
-                Tab(
-                    selected = examUiState.selectedExamCategory == category,
-                    onClick = { examViewModel.selectCategory(category) },
-                    text = {
-                        Text(
-                            text = label,
-                            fontSize = 12.sp,
-                            fontWeight = if (examUiState.selectedExamCategory == category) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
-                )
-            }
-        }
-
         // Examination Hub Feature Tabs: Marks, Toppers, DateSheet, Marksheets
         val hubTabs = listOf(
             ExamHubTab.MARKS to "Marks & Papers",
@@ -129,9 +125,9 @@ fun ExamScreen(
 
         ScrollableTabRow(
             selectedTabIndex = hubTabs.indexOfFirst { it.first == examUiState.selectedHubTab }.coerceAtLeast(0),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.primary,
-            edgePadding = 12.dp
+            edgePadding = 8.dp
         ) {
             hubTabs.forEach { (tab, label) ->
                 Tab(
@@ -155,6 +151,30 @@ fun ExamScreen(
                             )
                         }
                     }
+                )
+            }
+        }
+
+        // Sleek Category Filter Chips Row (replaces bulky TabRow to reclaim viewport space)
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(categoryTabs) { (category, label) ->
+                val isSelected = examUiState.selectedExamCategory == category
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { examViewModel.selectCategory(category) },
+                    label = {
+                        Text(
+                            text = label,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.height(30.dp)
                 )
             }
         }
@@ -244,7 +264,7 @@ fun ExamMarksListView(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 12.dp),
+            contentPadding = PaddingValues(start = horizontalPadding, top = 12.dp, end = horizontalPadding, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp)
         ) {
             item {
@@ -319,7 +339,7 @@ fun ToppersPodiumView(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Podium Header
@@ -602,7 +622,7 @@ fun ExamDateSheetView(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
@@ -714,7 +734,7 @@ fun TerminalMarksheetsView(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
@@ -961,7 +981,7 @@ fun ExamRecordCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Expand / Collapse Action
+            // Actions: Export, Quick Preview, Enter / Grade Marks
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -978,12 +998,25 @@ fun ExamRecordCard(
                     Text("Export PDF", fontSize = 11.sp)
                 }
 
-                Button(
-                    onClick = { expanded = !expanded },
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(if (expanded) "Hide Marks" else "Enter / View Marks", fontSize = 12.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = { expanded = !expanded },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(if (expanded) "Hide Preview" else "Quick Preview", fontSize = 11.sp)
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Button(
+                        onClick = { examViewModel.openGradingWorkspace(exam) },
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Enter / Grade Marks", fontSize = 12.sp)
+                    }
                 }
             }
 
@@ -1068,18 +1101,27 @@ fun MarksEntryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .background(
+                if (isAbsent) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = student.name,
-            fontWeight = FontWeight.Medium,
-            fontSize = 12.sp,
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = student.name,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Roll: ${student.studentNumber.ifBlank { student.id.toString() }}",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(
@@ -1097,9 +1139,19 @@ fun MarksEntryRow(
                                 isAbsent = true
                             )
                         )
+                    } else {
+                        onSaveMark(
+                            ExamMarkEntity(
+                                id = markRecord?.id ?: 0L,
+                                examId = exam.id,
+                                studentId = student.id,
+                                marksObtained = null,
+                                isAbsent = false
+                            )
+                        )
                     }
                 },
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = if (isAbsent) "ABSENT" else "Absent?",
@@ -1128,26 +1180,37 @@ fun MarksEntryRow(
                                     isAbsent = false
                                 )
                             )
+                        } else if (input.isEmpty()) {
+                            onSaveMark(
+                                ExamMarkEntity(
+                                    id = markRecord?.id ?: 0L,
+                                    examId = exam.id,
+                                    studentId = student.id,
+                                    marksObtained = null,
+                                    isAbsent = false
+                                )
+                            )
                         }
                     }
                 },
-                placeholder = { Text("-", fontSize = 11.sp) },
+                placeholder = { Text("-", fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
-                    .width(65.dp)
-                    .height(44.dp),
-                textStyle = LocalTextStyle.current.copy(fontSize = 11.sp, textAlign = TextAlign.Center),
+                    .width(78.dp)
+                    .height(48.dp),
+                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
+                shape = RoundedCornerShape(8.dp),
                 enabled = !isAbsent
             )
 
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             val currentScore = markRecord?.marksObtained
             val isPassed = currentScore != null && currentScore >= exam.passMarks
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(26.dp)
                     .clip(CircleShape)
                     .background(
                         when {
@@ -1175,6 +1238,431 @@ fun MarksEntryRow(
                         else -> MaterialTheme.colorScheme.error
                     }
                 )
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// 5. FULL-SCREEN DEDICATED MARKS ENTRY WORKSPACE
+// -------------------------------------------------------------
+@Composable
+fun FullMarksEntryWorkspace(
+    exam: ExamEntity,
+    uiState: LmsUiState,
+    examViewModel: ExamViewModel,
+    examUiState: ExamUiState,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    BackHandler(onBack = onBack)
+
+    var studentSortOrder by rememberSaveable { mutableStateOf(StudentSortOrder.NAME) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var isSearchVisible by rememberSaveable { mutableStateOf(false) }
+
+    val allStudents = if (examUiState.students.isNotEmpty()) examUiState.students else uiState.students
+    val marks = examUiState.examMarks.filter { it.examId == exam.id }
+
+    val sortedStudents = allStudents.sortedByStudent(studentSortOrder) { it }
+    val filteredStudents = remember(sortedStudents, searchQuery) {
+        if (searchQuery.isBlank()) {
+            sortedStudents
+        } else {
+            val q = searchQuery.trim().lowercase(Locale.getDefault())
+            sortedStudents.filter {
+                it.name.lowercase(Locale.getDefault()).contains(q) ||
+                it.studentNumber.lowercase(Locale.getDefault()).contains(q)
+            }
+        }
+    }
+
+    val totalStudents = allStudents.size.coerceAtLeast(1)
+    val gradedCount = marks.count { it.marksObtained != null || it.isAbsent }
+    val absentCount = marks.count { it.isAbsent }
+    val passedCount = marks.count { it.marksObtained != null && !it.isAbsent && it.marksObtained >= exam.passMarks }
+    val failedCount = marks.count { it.marksObtained != null && !it.isAbsent && it.marksObtained < exam.passMarks }
+    val progressFraction = (gradedCount.toFloat() / totalStudents.toFloat()).coerceIn(0f, 1f)
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars)
+        ) {
+            // 1. Sleek Top Bar
+            Surface(
+                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = exam.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "${exam.category.displayName} • Full: ${exam.fullMarks.toInt()} • Pass: ${exam.passMarks.toInt()}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+
+                        IconButton(onClick = { isSearchVisible = !isSearchVisible }) {
+                            Icon(
+                                if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Search Student",
+                                tint = if (isSearchVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        StudentSortControl(
+                            order = studentSortOrder,
+                            onOrderSelected = { studentSortOrder = it }
+                        )
+
+                        IconButton(onClick = { examViewModel.exportExamReport(context, exam) }) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Export PDF",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    if (isSearchVisible) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search by student name or roll number...", fontSize = 12.sp) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+                }
+            }
+
+            // 2. Grading Progress & Statistics Strip
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Grading Progress: $gradedCount / $totalStudents (${(progressFraction * 100).toInt()}%)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.statusSuccess.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "$passedCount Pass",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.statusSuccess,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                            if (failedCount > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "$failedCount Fail",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            if (absentCount > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = Color(0xFFF97316).copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "$absentCount Absent",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEA580C),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { progressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
+            }
+
+            // 3. Virtualized Students LazyColumn with imePadding and bottom spacing
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
+                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(filteredStudents, key = { it.id }) { student ->
+                    val markRecord = marks.find { it.studentId == student.id }
+                    FullMarksEntryStudentCard(
+                        student = student,
+                        exam = exam,
+                        markRecord = markRecord,
+                        onSaveMark = { mark -> examViewModel.saveExamMark(mark) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FullMarksEntryStudentCard(
+    student: StudentEntity,
+    exam: ExamEntity,
+    markRecord: ExamMarkEntity?,
+    onSaveMark: (ExamMarkEntity) -> Unit
+) {
+    var textValue by remember(markRecord?.marksObtained) {
+        mutableStateOf(markRecord?.marksObtained?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "")
+    }
+    var isAbsent by remember(markRecord?.isAbsent) {
+        mutableStateOf(markRecord?.isAbsent ?: false)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAbsent) {
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Student Initials / Avatar
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isAbsent) MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                        else MaterialTheme.colorScheme.primaryContainer
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = student.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").ifEmpty { "S" },
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = if (isAbsent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Student Name & Roll Number
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = student.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Roll #${student.studentNumber.ifBlank { student.id.toString() }}",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                // Absent Toggle Chip
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isAbsent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.clickable {
+                        val newAbsent = !isAbsent
+                        isAbsent = newAbsent
+                        if (newAbsent) {
+                            textValue = ""
+                            onSaveMark(
+                                ExamMarkEntity(
+                                    id = markRecord?.id ?: 0L,
+                                    examId = exam.id,
+                                    studentId = student.id,
+                                    marksObtained = null,
+                                    isAbsent = true
+                                )
+                            )
+                        } else {
+                            onSaveMark(
+                                ExamMarkEntity(
+                                    id = markRecord?.id ?: 0L,
+                                    examId = exam.id,
+                                    studentId = student.id,
+                                    marksObtained = null,
+                                    isAbsent = false
+                                )
+                            )
+                        }
+                    }
+                ) {
+                    Text(
+                        text = if (isAbsent) "ABSENT" else "Mark Absent",
+                        fontSize = 10.sp,
+                        fontWeight = if (isAbsent) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isAbsent) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Right side: Spacious Marks Box + Max Suffix + Pass/Fail Pill
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = textValue,
+                        onValueChange = { input ->
+                            if (input.isEmpty() || input.toDoubleOrNull() != null) {
+                                textValue = input
+                                val markDouble = input.toDoubleOrNull()
+                                if (markDouble != null) {
+                                    isAbsent = false
+                                    onSaveMark(
+                                        ExamMarkEntity(
+                                            id = markRecord?.id ?: 0L,
+                                            examId = exam.id,
+                                            studentId = student.id,
+                                            marksObtained = markDouble.coerceIn(0.0, exam.fullMarks),
+                                            isAbsent = false
+                                        )
+                                    )
+                                } else if (input.isEmpty()) {
+                                    onSaveMark(
+                                        ExamMarkEntity(
+                                            id = markRecord?.id ?: 0L,
+                                            examId = exam.id,
+                                            studentId = student.id,
+                                            marksObtained = null,
+                                            isAbsent = false
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                        placeholder = { Text("-", fontSize = 16.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .width(86.dp)
+                            .height(50.dp),
+                        textStyle = LocalTextStyle.current.copy(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !isAbsent
+                    )
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Text(
+                        text = "/ ${exam.fullMarks.toInt()}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Pass / Fail / Absent status badge
+                val currentScore = markRecord?.marksObtained
+                val isPassed = currentScore != null && currentScore >= exam.passMarks
+                val percentage = if (currentScore != null && exam.fullMarks > 0) (currentScore / exam.fullMarks * 100).toInt() else null
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = when {
+                        isAbsent -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                        currentScore == null -> MaterialTheme.colorScheme.surfaceVariant
+                        isPassed -> MaterialTheme.colorScheme.statusSuccess.copy(alpha = 0.15f)
+                        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                    }
+                ) {
+                    Text(
+                        text = when {
+                            isAbsent -> "ABSENT"
+                            currentScore == null -> "PENDING"
+                            isPassed -> "PASS • $percentage%"
+                            else -> "FAIL • $percentage%"
+                        },
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            isAbsent -> MaterialTheme.colorScheme.error
+                            currentScore == null -> MaterialTheme.colorScheme.onSurfaceVariant
+                            isPassed -> MaterialTheme.colorScheme.statusSuccess
+                            else -> MaterialTheme.colorScheme.error
+                        },
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }

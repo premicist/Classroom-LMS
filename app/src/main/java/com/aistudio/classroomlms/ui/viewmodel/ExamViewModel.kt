@@ -44,6 +44,7 @@ data class ExamUiState(
     val selectedHubTab: ExamHubTab = ExamHubTab.MARKS,
     val leaderboardSummary: LeaderboardSummary = LeaderboardSummary(),
     val editingExam: ExamEntity? = null,
+    val gradingExam: ExamEntity? = null,
     val userNotificationMessage: String? = null
 )
 
@@ -111,6 +112,14 @@ class ExamViewModel @Inject constructor(
                 leaderboardSummary = leaderboard
             )
         }
+    }
+
+    fun openGradingWorkspace(exam: ExamEntity) {
+        _uiState.update { it.copy(gradingExam = exam) }
+    }
+
+    fun closeGradingWorkspace() {
+        _uiState.update { it.copy(gradingExam = null) }
     }
 
     fun openAddEditExamDialog(category: ExamCategory, exam: ExamEntity? = null) {

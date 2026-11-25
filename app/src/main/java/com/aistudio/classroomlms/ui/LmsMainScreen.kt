@@ -128,6 +128,7 @@ import com.aistudio.classroomlms.ui.util.LocalWindowSizeCategory
 import com.aistudio.classroomlms.ui.util.rememberWindowSizeCategory
 import com.aistudio.classroomlms.ui.viewmodel.AnalyticsViewModel
 import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
+import com.aistudio.classroomlms.ui.viewmodel.ExamViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsTab
 import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
@@ -150,10 +151,12 @@ fun LmsMainScreen(
     analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     rosterViewModel: RosterViewModel = hiltViewModel(),
-    gradingViewModel: GradingViewModel = hiltViewModel()
+    gradingViewModel: GradingViewModel = hiltViewModel(),
+    examViewModel: ExamViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val upgradeState by upgradeViewModel.upgradeState.collectAsStateWithLifecycle()
+    val examUiState by examViewModel.uiState.collectAsStateWithLifecycle()
 
     // 1. Guard against unmigrated or failed database upgrades
     when (val state = upgradeState) {
@@ -314,6 +317,9 @@ fun LmsMainScreen(
     }
     BackHandler(enabled = isAddEditDisciplineOpen) {
         studentSupportViewModel.closeDisciplineDialog()
+    }
+    BackHandler(enabled = examUiState.gradingExam != null) {
+        examViewModel.closeGradingWorkspace()
     }
     
     // We observe a simple state variable for the Google Account to trigger recomposition when signed in/out
@@ -598,6 +604,16 @@ fun LmsMainScreen(
     }
 
     // --- MODAL DIALOGS & BOTTOM SHEETS ---
+
+    if (examUiState.gradingExam != null) {
+        com.aistudio.classroomlms.ui.screens.FullMarksEntryWorkspace(
+            exam = examUiState.gradingExam!!,
+            uiState = uiState,
+            examViewModel = examViewModel,
+            examUiState = examUiState,
+            onBack = { examViewModel.closeGradingWorkspace() }
+        )
+    }
 
     if (uiState.isScheduleScreenOpen) {
         ClassroomScheduleScreen(

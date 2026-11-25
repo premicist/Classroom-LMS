@@ -69,7 +69,7 @@ fun ClassroomHeader(
                 // status bar for the edge-to-edge look; only this inner content
                 // gets padded down so nothing sits underneath the system icons.
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
             // Top Row: Active Class & Switcher Trigger
             Row(
@@ -80,17 +80,17 @@ fun ClassroomHeader(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .heightIn(min = 40.dp)
+                        .clip(RoundedCornerShape(10.dp))
                         .clickable(onClickLabel = "Manage classrooms") { onManageClassrooms() }
-                        .padding(4.dp),
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val classColor = activeClassroom?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(classColor),
                         contentAlignment = Alignment.Center
                     ) {
@@ -98,15 +98,15 @@ fun ClassroomHeader(
                             imageVector = Icons.Default.School,
                             contentDescription = "Classroom",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = activeClassroom?.name ?: "Select Classroom",
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
@@ -116,12 +116,12 @@ fun ClassroomHeader(
                                 imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Switch class",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                         Text(
                             text = "${activeClassroom?.subject ?: ""} • ${activeClassroom?.gradeLevel ?: ""}",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -129,22 +129,22 @@ fun ClassroomHeader(
                     }
                 }
 
-                // Menu Quick Button (48dp Touch Target)
+                // Menu Quick Button
                 IconButton(
                     onClick = onMenuClick,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(34.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
                                 contentDescription = "Open navigation menu",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -153,9 +153,9 @@ fun ClassroomHeader(
 
             // Quick classroom pill selector row
             if (classrooms.size > 1) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(classrooms) { cls ->
@@ -164,18 +164,18 @@ fun ClassroomHeader(
                         
                         Box(
                             modifier = Modifier
-                                .heightIn(min = 48.dp)
-                                .clip(RoundedCornerShape(20.dp))
+                                .heightIn(min = 30.dp)
+                                .clip(RoundedCornerShape(15.dp))
                                 .background(
                                     if (isSelected) color else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                                 )
                                 .clickable(onClickLabel = "Switch to ${cls.name}") { onSelectClassroom(cls) }
-                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = cls.name,
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -186,13 +186,13 @@ fun ClassroomHeader(
 
             // Schedule & Room Banner
             if (activeClassroom != null && (activeClassroom.roomNumber.isNotEmpty() || activeClassroom.scheduleInfo.isNotEmpty())) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (activeClassroom.roomNumber.isNotEmpty()) {
@@ -200,28 +200,28 @@ fun ClassroomHeader(
                             imageVector = Icons.Default.MeetingRoom,
                             contentDescription = "Room",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(12.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = activeClassroom.roomNumber,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                     }
                     if (activeClassroom.scheduleInfo.isNotEmpty()) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = "Schedule",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(12.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = activeClassroom.scheduleInfo,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
