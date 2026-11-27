@@ -288,15 +288,25 @@ class ClassroomViewModel @Inject constructor(
 
     fun saveScheduleBatch(baseEntry: ClassScheduleEntity, selectedDays: List<String>, applyAllWeeks: Boolean, updateSubjectAllWeeks: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            val entriesToInsert = mutableListOf<ClassScheduleEntity>()
-            val weeksToApply = if (applyAllWeeks) listOf(1, 2, 3, 4, 5) else listOf(baseEntry.weekNumber)
-            weeksToApply.forEach { week ->
-                selectedDays.forEach { day ->
-                    entriesToInsert.add(baseEntry.copy(id = 0L, weekNumber = week, dayOfWeek = day))
+            try {
+                val entriesToInsert = mutableListOf<ClassScheduleEntity>()
+                val weeksToApply = if (applyAllWeeks) listOf(1, 2, 3, 4, 5) else listOf(baseEntry.weekNumber)
+                val targetDays = selectedDays.ifEmpty { listOf(baseEntry.dayOfWeek) }
+                weeksToApply.forEach { week ->
+                    targetDays.forEach { day ->
+                        val preserveId = if (week == baseEntry.weekNumber && day.equals(baseEntry.dayOfWeek, ignoreCase = true)) {
+                            baseEntry.id
+                        } else {
+                            0L
+                        }
+                        entriesToInsert.add(baseEntry.copy(id = preserveId, weekNumber = week, dayOfWeek = day))
+                    }
                 }
+                scheduleRepository.saveBatchScheduleEntries(entriesToInsert)
+                showToast("Schedule saved")
+            } catch (e: Exception) {
+                showToast("Failed to save schedule: ${e.message ?: "Unknown error"}")
             }
-            scheduleRepository.saveBatchScheduleEntries(entriesToInsert)
-            showToast("Schedule saved")
         }
     }
 

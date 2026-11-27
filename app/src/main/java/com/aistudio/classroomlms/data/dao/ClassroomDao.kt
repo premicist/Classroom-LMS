@@ -43,4 +43,10 @@ interface ClassroomDao {
 
     @Query("DELETE FROM classrooms WHERE id = :id")
     suspend fun deleteClassroomById(id: Long)
+
+    @Query("UPDATE classrooms SET schoolId = :schoolId WHERE id = :classroomId")
+    suspend fun assignClassroomToSchool(classroomId: Long, schoolId: Long?)
+
+    @Query("UPDATE classrooms SET schoolId = NULL WHERE schoolId = :schoolId")
+    suspend fun clearSchoolAssignmentForSchool(schoolId: Long)
 }

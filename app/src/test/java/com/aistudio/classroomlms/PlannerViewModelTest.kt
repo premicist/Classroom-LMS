@@ -150,4 +150,59 @@ class PlannerViewModelTest {
         assertTrue(state.lessonPlans.isEmpty())
         assertTrue(state.dailyLogs.isEmpty())
     }
+
+    @Test
+    fun `saveLessonPlan persists structured LO sessions and formats report`() = runTest {
+        val sessions = listOf(
+            com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity(
+                lessonPlanId = 0L,
+                sessionOrder = 1,
+                learningOutcome = "LO1: Define CPU components",
+                content = "ALU, CU, Registers",
+                lecturerActivity = "Explain block diagram",
+                studentActivity = "Label components",
+                teachingAids = "Smartboard",
+                evaluationType = "LIVE_ASSESSMENT",
+                evaluationNote = "CPU block diagram check",
+                hours = 2.0
+            ),
+            com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity(
+                lessonPlanId = 0L,
+                sessionOrder = 2,
+                learningOutcome = "Closing of Unit",
+                content = "Unit summary and Q&A",
+                evaluationType = "NOTE",
+                evaluationNote = "Oral summary",
+                hours = 1.0,
+                isClosingSession = true
+            )
+        )
+
+        viewModel.saveLessonPlan(
+            unitTitle = "Computer Hardware",
+            description = "Overview",
+            targetDate = 1700000000000L,
+            status = "PLANNED",
+            targetClassroomId = classroomId,
+            reminderEnabled = false,
+            reminderTime = 0L,
+            unitNumber = "Unit 2",
+            allocatedHours = 3.0,
+            unitLearningOutcomes = "Identify CPU sub-components",
+            sessions = sessions
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.lessonPlans.size)
+        assertEquals("Unit 2", state.lessonPlans.first().unitNumber)
+        assertEquals(2, state.lessonPlanSessions.size)
+        assertEquals("LO1: Define CPU components", state.lessonPlanSessions.first().learningOutcome)
+        assertTrue(state.lessonPlanSessions.last().isClosingSession)
+
+        val report = viewModel.generateLessonPlansReportText()
+        assertTrue(report.contains("Unit 2: Computer Hardware (3.0 Hrs)"))
+        assertTrue(report.contains("LO1: Define CPU components"))
+        assertTrue(report.contains("Closing of Unit"))
+    }
 }

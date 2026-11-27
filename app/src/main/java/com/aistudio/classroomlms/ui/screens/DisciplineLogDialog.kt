@@ -26,10 +26,15 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -52,6 +57,8 @@ import com.aistudio.classroomlms.data.entity.DisciplineRecordEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.components.VoiceDictationButton
 import com.aistudio.classroomlms.ui.theme.statusSuccess
+import com.aistudio.classroomlms.ui.util.StudentSortOrder
+import com.aistudio.classroomlms.ui.util.sortedByStudent
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,19 +70,24 @@ data class BehaviorPreset(
     val defaultAction: String
 )
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DisciplineLogDialog(
     student: StudentEntity,
+    students: List<StudentEntity> = emptyList(),
     initialRecord: DisciplineRecordEntity?,
     classroomId: Long,
     onDismiss: () -> Unit,
     onSave: (DisciplineRecordEntity) -> Unit,
     onDelete: ((DisciplineRecordEntity) -> Unit)? = null,
-    onSaveAndSendWhatsApp: ((DisciplineRecordEntity) -> Unit)? = null,
-    onSaveAndSendSms: ((DisciplineRecordEntity) -> Unit)? = null
+    onSaveAndSendWhatsApp: ((StudentEntity, DisciplineRecordEntity) -> Unit)? = null,
+    onSaveAndSendSms: ((StudentEntity, DisciplineRecordEntity) -> Unit)? = null
 ) {
     val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) }
+
+    val sortedStudents = remember(students) { students.sortedByStudent(StudentSortOrder.NAME) { it } }
+    var selectedStudent by remember(student) { mutableStateOf(student) }
+    var isStudentDropdownExpanded by remember { mutableStateOf(false) }
 
     var title by remember { mutableStateOf(initialRecord?.title ?: "") }
     var description by remember { mutableStateOf(initialRecord?.description ?: "") }
@@ -108,7 +120,7 @@ fun DisciplineLogDialog(
             parentNotified = markParentNotified,
             resolved = resolved
         ) ?: DisciplineRecordEntity(
-            studentId = student.id,
+            studentId = selectedStudent.id,
             classroomId = classroomId,
             date = todayStr,
             category = category,
@@ -137,7 +149,7 @@ fun DisciplineLogDialog(
                         fontSize = 17.sp
                     )
                     Text(
-                        text = "Student: ${student.name} (${student.studentNumber})",
+                        text = "Student: ${selectedStudent.name} (${selectedStudent.studentNumber})",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -156,6 +168,41 @@ fun DisciplineLogDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                if (initialRecord == null && sortedStudents.size > 1) {
+                    ExposedDropdownMenuBox(
+                        expanded = isStudentDropdownExpanded,
+                        onExpandedChange = { isStudentDropdownExpanded = it },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = "${selectedStudent.name} (${selectedStudent.studentNumber})",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Select Student *") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = isStudentDropdownExpanded)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = isStudentDropdownExpanded,
+                            onDismissRequest = { isStudentDropdownExpanded = false }
+                        ) {
+                            sortedStudents.forEach { s ->
+                                DropdownMenuItem(
+                                    text = { Text("${s.name} (Roll: ${s.studentNumber})") },
+                                    onClick = {
+                                        selectedStudent = s
+                                        isStudentDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Quick Preset Chips
                 Text(
                     text = "⚡ 1-Tap Quick Remarks",
@@ -335,7 +382,7 @@ fun DisciplineLogDialog(
                 }
 
                 // 1-Tap Parent Dispatch Actions
-                if (student.guardianContact.isNotBlank() && (onSaveAndSendWhatsApp != null || onSaveAndSendSms != null)) {
+                if (selectedStudent.guardianContact.isNotBlank() && (onSaveAndSendWhatsApp != null || onSaveAndSendSms != null)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
@@ -345,7 +392,7 @@ fun DisciplineLogDialog(
                             OutlinedButton(
                                 onClick = {
                                     if (title.isNotBlank()) {
-                                        onSaveAndSendSms(buildRecord(markParentNotified = true))
+                                        onSaveAndSendSms(selectedStudent, buildRecord(markParentNotified = true))
                                     }
                                 },
                                 enabled = title.isNotBlank(),
@@ -363,7 +410,7 @@ fun DisciplineLogDialog(
                             Button(
                                 onClick = {
                                     if (title.isNotBlank()) {
-                                        onSaveAndSendWhatsApp(buildRecord(markParentNotified = true))
+                                        onSaveAndSendWhatsApp(selectedStudent, buildRecord(markParentNotified = true))
                                     }
                                 },
                                 enabled = title.isNotBlank(),

@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Class
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Schedule
@@ -54,7 +55,8 @@ fun ClassroomHeader(
     onSelectClassroom: (ClassroomEntity) -> Unit,
     onMenuClick: () -> Unit,
     onManageClassrooms: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onHomeClick: (() -> Unit)? = null
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -127,6 +129,21 @@ fun ClassroomHeader(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
+                }
+
+                if (onHomeClick != null) {
+                    IconButton(
+                        onClick = onHomeClick,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Back to Home",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(2.dp))
                 }
 
                 // Menu Quick Button

@@ -6,7 +6,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.aistudio.classroomlms.BuildConfig
+import com.aistudio.classroomlms.data.dao.AcademicEventDao
 import com.aistudio.classroomlms.data.dao.AssignmentDao
+import com.aistudio.classroomlms.data.dao.ClassroomActivityDao
+import com.aistudio.classroomlms.data.dao.SchoolDao
 import com.aistudio.classroomlms.data.dao.AttendanceDao
 import com.aistudio.classroomlms.data.dao.ClassScheduleDao
 import com.aistudio.classroomlms.data.dao.ClassroomDao
@@ -17,7 +20,10 @@ import com.aistudio.classroomlms.data.dao.LiveAssessmentDao
 import com.aistudio.classroomlms.data.dao.PlannerDao
 import com.aistudio.classroomlms.data.dao.StudentDao
 import com.aistudio.classroomlms.data.dao.SubmissionDao
+import com.aistudio.classroomlms.data.entity.AcademicEventEntity
 import com.aistudio.classroomlms.data.entity.AssignmentEntity
+import com.aistudio.classroomlms.data.entity.ClassroomActivityEntity
+import com.aistudio.classroomlms.data.entity.SchoolEntity
 import com.aistudio.classroomlms.data.entity.AttendanceRecordEntity
 import com.aistudio.classroomlms.data.entity.ClassScheduleEntity
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
@@ -28,6 +34,7 @@ import com.aistudio.classroomlms.data.entity.ExamMarkEntity
 import com.aistudio.classroomlms.data.entity.HomeworkRecordEntity
 import com.aistudio.classroomlms.data.entity.InterventionEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
+import com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity
 import com.aistudio.classroomlms.data.entity.LiveAssessmentEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.data.entity.SubmissionEntity
@@ -43,14 +50,18 @@ import net.sqlcipher.database.SupportFactory
         AttendanceRecordEntity::class,
         InterventionEntity::class,
         LessonPlanEntity::class,
+        LessonPlanSessionEntity::class,
         DailyLogEntity::class,
         ClassScheduleEntity::class,
         DisciplineRecordEntity::class,
         LiveAssessmentEntity::class,
         ExamEntity::class,
-        ExamMarkEntity::class
+        ExamMarkEntity::class,
+        AcademicEventEntity::class,
+        SchoolEntity::class,
+        ClassroomActivityEntity::class
     ],
-    version = 10,
+    version = 13,
     exportSchema = true,
 )
 @TypeConverters(Converters::class, com.aistudio.classroomlms.data.entity.Converters::class)
@@ -67,6 +78,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun disciplineDao(): DisciplineDao
     abstract fun liveAssessmentDao(): LiveAssessmentDao
     abstract fun examDao(): com.aistudio.classroomlms.data.dao.ExamDao
+    abstract fun academicEventDao(): AcademicEventDao
+    abstract fun schoolDao(): SchoolDao
+    abstract fun classroomActivityDao(): ClassroomActivityDao
 
     companion object {
         @Volatile
@@ -93,7 +107,10 @@ abstract class AppDatabase : RoomDatabase() {
                         com.aistudio.classroomlms.data.database.Migrations.MIGRATION_6_7,
                         Migrations.MIGRATION_7_8,
                         Migrations.MIGRATION_8_9,
-                        Migrations.MIGRATION_9_10
+                        Migrations.MIGRATION_9_10,
+                        Migrations.MIGRATION_10_11,
+                        Migrations.MIGRATION_11_12,
+                        Migrations.MIGRATION_12_13
                     )
 
                     if (BuildConfig.DEBUG) {

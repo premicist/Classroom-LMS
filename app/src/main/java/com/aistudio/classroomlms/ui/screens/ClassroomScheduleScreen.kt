@@ -81,6 +81,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aistudio.classroomlms.data.entity.ClassScheduleEntity
+import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsUiState
@@ -521,7 +522,8 @@ fun ClassroomScheduleScreen(
     if (showAddDialog) {
         AddEditScheduleEntryDialog(
             initialEntry = editingEntry,
-            existingClassrooms = uiState.classrooms.map { it.name },
+            classrooms = uiState.classrooms,
+            activeClassroomId = uiState.activeClassroom?.id,
             allSchedules = masterSchedules,
             defaultWeekNumber = selectedWeek,
             defaultDayOfWeek = currentDayOfWeek,
@@ -589,7 +591,8 @@ fun ClassroomScheduleScreen(
 @Composable
 fun AddEditScheduleEntryDialog(
     initialEntry: ClassScheduleEntity?,
-    existingClassrooms: List<String>,
+    classrooms: List<ClassroomEntity>,
+    activeClassroomId: Long?,
     allSchedules: List<ClassScheduleEntity>,
     defaultWeekNumber: Int,
     defaultDayOfWeek: String,
@@ -601,6 +604,7 @@ fun AddEditScheduleEntryDialog(
         updateSubjectAllWeeks: Boolean
     ) -> Unit
 ) {
+    val existingClassrooms = classrooms.map { it.name }
     val allDays = listOf("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")
     val dayLabelsShort = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
@@ -809,13 +813,16 @@ fun AddEditScheduleEntryDialog(
             }
         },
         confirmButton = {
+            val resolvedClassId = classrooms.find {
+                it.name.equals(selectedClassName.trim(), ignoreCase = true)
+            }?.id ?: initialEntry?.classroomId ?: activeClassroomId ?: classrooms.firstOrNull()?.id
+
             Button(
                 onClick = {
-                    if (selectedClassName.isNotBlank()) {
-                        val activeClassId = 1L
+                    if (selectedClassName.isNotBlank() && resolvedClassId != null) {
                         val baseEntry = ClassScheduleEntity(
                             id = initialEntry?.id ?: 0L,
-                            classroomId = activeClassId,
+                            classroomId = resolvedClassId,
                             weekNumber = defaultWeekNumber,
                             dayOfWeek = selectedDays.firstOrNull() ?: defaultDayOfWeek,
                             classroomName = selectedClassName.trim(),
@@ -827,7 +834,7 @@ fun AddEditScheduleEntryDialog(
                         onSaveBatch(baseEntry, selectedDays.toList(), applyAllWeeks, updateSubjectAllWeeks)
                     }
                 },
-                enabled = selectedClassName.isNotBlank()
+                enabled = selectedClassName.isNotBlank() && resolvedClassId != null
             ) {
                 Text("Save Routine")
             }

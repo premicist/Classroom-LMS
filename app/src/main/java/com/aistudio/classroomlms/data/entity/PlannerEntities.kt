@@ -28,7 +28,43 @@ data class LessonPlanEntity(
     // Reminder fields
     val reminderEnabled: Boolean = false,
     val reminderTime: Long = 0, // epoch millis when reminder should trigger
-    val reminderId: String = "" // unique identifier for the reminder
+    val reminderId: String = "", // unique identifier for the reminder
+    // Optional structured unit fields
+    val unitNumber: String = "",
+    val allocatedHours: Double = 0.0,
+    val unitLearningOutcomes: String = ""
+)
+
+@Entity(
+    tableName = "lesson_plan_sessions",
+    foreignKeys = [
+        ForeignKey(
+            entity = LessonPlanEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["lessonPlanId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["lessonPlanId"]),
+        Index(value = ["linkedAssignmentId"])
+    ]
+)
+data class LessonPlanSessionEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val lessonPlanId: Long,
+    val sessionOrder: Int = 1,
+    val learningOutcome: String = "",
+    val content: String = "",
+    val lecturerActivity: String = "",
+    val studentActivity: String = "",
+    val teachingAids: String = "",
+    val evaluationType: String = "NOTE", // NOTE, ASSIGNMENT, LIVE_ASSESSMENT
+    val evaluationNote: String = "",
+    val linkedAssignmentId: Long? = null,
+    val hours: Double = 1.0,
+    val isClosingSession: Boolean = false
 )
 
 @Entity(

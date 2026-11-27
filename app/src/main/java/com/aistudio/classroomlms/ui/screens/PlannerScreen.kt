@@ -59,11 +59,14 @@ import androidx.compose.ui.unit.dp
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.DailyLogEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
+import com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity
 import com.aistudio.classroomlms.ui.theme.statusInfo
 import com.aistudio.classroomlms.ui.theme.statusSuccess
 import com.aistudio.classroomlms.ui.theme.statusWarning
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
+import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
 import com.aistudio.classroomlms.ui.viewmodel.PlannerViewModel
+import com.aistudio.classroomlms.ui.viewmodel.StudentSupportViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.text.SimpleDateFormat
@@ -76,13 +79,16 @@ fun PlannerScreen(
     classroomId: Long,
     viewModel: ClassroomViewModel,
     onBack: () -> Unit,
-    plannerViewModel: PlannerViewModel = hiltViewModel()
+    plannerViewModel: PlannerViewModel = hiltViewModel(),
+    gradingViewModel: GradingViewModel = hiltViewModel(),
+    studentSupportViewModel: StudentSupportViewModel = hiltViewModel()
 ) {
     BackHandler { onBack() }
 
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val plannerUiState by plannerViewModel.uiState.collectAsStateWithLifecycle()
+    val gradingUiState by gradingViewModel.uiState.collectAsStateWithLifecycle()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     val currentPlans = if (plannerUiState.lessonPlans.isNotEmpty()) plannerUiState.lessonPlans else uiState.lessonPlans
@@ -220,6 +226,7 @@ fun PlannerScreen(
             when (selectedTabIndex) {
                 0 -> LessonPlansTab(
                     plans = filteredPlans,
+                    sessions = plannerUiState.lessonPlanSessions,
                     classrooms = currentClassrooms,
                     onEdit = {
                         plannerViewModel.openEditLessonPlan(it)
@@ -250,15 +257,42 @@ fun PlannerScreen(
     val showPlanDialog = plannerUiState.isAddEditLessonPlanOpen || uiState.isAddEditLessonPlanOpen
     if (showPlanDialog) {
         val plan = if (plannerUiState.isAddEditLessonPlanOpen) plannerUiState.editingLessonPlan else uiState.editingLessonPlan
+        val planSessions = remember(plan?.id, plannerUiState.lessonPlanSessions) {
+            if (plan == null) emptyList()
+            else plannerUiState.lessonPlanSessions.filter { it.lessonPlanId == plan.id }
+        }
         AddEditLessonPlanDialog(
             initialPlan = plan,
+            initialSessions = planSessions,
             classrooms = currentClassrooms,
             activeClassroomId = plannerUiState.activeClassroomId ?: uiState.activeClassroom?.id,
+            assignments = gradingUiState.assignments,
             onDismiss = {
                 plannerViewModel.closeLessonPlanDialog()
             },
-            onSave = { unitTitle, description, targetDate, status, targetClassroomId, reminderEnabled, reminderTime ->
-                plannerViewModel.saveLessonPlan(unitTitle, description, targetDate, status, targetClassroomId, reminderEnabled, reminderTime)
+            onCreateAssignmentFromSession = { suggestedTitle, suggestedDesc ->
+                gradingViewModel.openAddAssignment(
+                    prefillTitle = suggestedTitle,
+                    prefillDescription = suggestedDesc
+                )
+            },
+            onLaunchLiveAssessmentFromSession = { prompt ->
+                studentSupportViewModel.openLiveAssessment(prefillTopic = prompt)
+            },
+            onSave = { unitTitle, description, targetDate, status, targetClassroomId, reminderEnabled, reminderTime, unitNumber, allocatedHours, unitLearningOutcomes, sessions ->
+                plannerViewModel.saveLessonPlan(
+                    unitTitle = unitTitle,
+                    description = description,
+                    targetDate = targetDate,
+                    status = status,
+                    targetClassroomId = targetClassroomId,
+                    reminderEnabled = reminderEnabled,
+                    reminderTime = reminderTime,
+                    unitNumber = unitNumber,
+                    allocatedHours = allocatedHours,
+                    unitLearningOutcomes = unitLearningOutcomes,
+                    sessions = sessions
+                )
             }
         )
     }
@@ -332,6 +366,7 @@ fun PlannerScreen(
 @Composable
 fun LessonPlansTab(
     plans: List<LessonPlanEntity>,
+    sessions: List<LessonPlanSessionEntity> = emptyList(),
     classrooms: List<ClassroomEntity>,
     onEdit: (LessonPlanEntity) -> Unit,
     onDelete: (LessonPlanEntity) -> Unit,
@@ -380,6 +415,9 @@ fun LessonPlansTab(
                 }
 
                 val classroomName = classrooms.find { it.id == plan.classroomId }?.name ?: "Classroom #${plan.classroomId}"
+                val planSessions = sessions.filter { it.lessonPlanId == plan.id }
+                val totalSessionHrs = planSessions.sumOf { it.hours }
+                val displayTitle = if (plan.unitNumber.isNotBlank()) "${plan.unitNumber}: ${plan.unitTitle}" else plan.unitTitle
 
                 Card(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -392,7 +430,7 @@ fun LessonPlansTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = plan.unitTitle,
+                                text = displayTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.weight(1f)
@@ -426,6 +464,17 @@ fun LessonPlansTab(
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        if (planSessions.isNotEmpty()) {
+                            val hrsStr = if (totalSessionHrs % 1.0 == 0.0) totalSessionHrs.toInt().toString() else String.format(Locale.US, "%.1f", totalSessionHrs)
+                            Text(
+                                text = "${planSessions.size} LO Sessions • $hrsStr Hrs",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
 
                         Text(
                             text = plan.description,

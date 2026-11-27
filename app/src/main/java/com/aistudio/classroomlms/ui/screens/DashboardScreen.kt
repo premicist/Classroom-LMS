@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BeachAccess
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.People
@@ -90,6 +91,8 @@ fun DashboardScreen(
     uiState: LmsUiState,
     viewModel: ClassroomViewModel,
     modifier: Modifier = Modifier,
+    onOpenHomework: () -> Unit = { viewModel.selectTab(LmsTab.ACADEMIC) },
+    onOpenGamesHub: () -> Unit = {},
     gradingViewModel: GradingViewModel = hiltViewModel(),
     rosterViewModel: RosterViewModel = hiltViewModel(),
     analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
@@ -108,7 +111,7 @@ fun DashboardScreen(
             title = "Homework",
             icon = Icons.AutoMirrored.Filled.MenuBook,
             color = MaterialTheme.colorScheme.primary,
-            onClick = { viewModel.selectTab(LmsTab.ACADEMIC) }
+            onClick = onOpenHomework
         ),
         ServicePortalTile(
             title = "New Task",
@@ -155,6 +158,12 @@ fun DashboardScreen(
             icon = Icons.Default.Grade,
             color = MaterialTheme.colorScheme.error,
             onClick = { studentSupportViewModel.openLiveAssessment() }
+        ),
+        ServicePortalTile(
+            title = "Class Games",
+            icon = Icons.Default.EmojiEvents,
+            color = Color(0xFFD97706),
+            onClick = onOpenGamesHub
         ),
         ServicePortalTile(
             title = "Classrooms",

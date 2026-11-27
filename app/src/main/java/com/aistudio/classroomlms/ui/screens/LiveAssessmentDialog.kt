@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -98,7 +99,10 @@ fun LiveAssessmentDialog(
     classroomId: Long,
     onDismiss: () -> Unit,
     onSave: (LiveAssessmentEntity) -> Unit,
-    onDelete: ((LiveAssessmentEntity) -> Unit)? = null
+    onDelete: ((LiveAssessmentEntity) -> Unit)? = null,
+    prefillTopic: String = "",
+    prefillTaskType: LiveAssessmentTaskType? = null,
+    suggestedTopics: List<String> = emptyList()
 ) {
     val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) }
     val context = LocalContext.current
@@ -110,10 +114,10 @@ fun LiveAssessmentDialog(
         mutableStateOf(initialStudent ?: sortedStudents.firstOrNull())
     }
     var taskType by remember {
-        mutableStateOf(initialAssessment?.taskType ?: LiveAssessmentTaskType.DIAGRAM)
+        mutableStateOf(initialAssessment?.taskType ?: prefillTaskType ?: LiveAssessmentTaskType.DIAGRAM)
     }
     var topic by remember {
-        mutableStateOf(initialAssessment?.topic ?: "")
+        mutableStateOf(initialAssessment?.topic ?: prefillTopic)
     }
     var masteryLevel by remember {
         mutableStateOf(initialAssessment?.masteryLevel ?: MasteryLevel.MASTERED)
@@ -296,6 +300,31 @@ fun LiveAssessmentDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (suggestedTopics.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Quick Pick from Lesson Plan:",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            suggestedTopics.forEach { suggested ->
+                                FilterChip(
+                                    selected = topic == suggested,
+                                    onClick = { topic = suggested },
+                                    label = { Text(suggested, fontSize = 11.sp, maxLines = 1) }
+                                )
+                            }
+                        }
+                    }
+                }
 
                 // 4. Mastery Level (3-Tier Formative Grading)
                 Column {

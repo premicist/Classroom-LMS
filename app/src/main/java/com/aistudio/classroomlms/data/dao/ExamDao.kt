@@ -23,6 +23,9 @@ interface ExamDao {
     @Query("SELECT * FROM exams ORDER BY date DESC, createdAt DESC")
     fun getAllExamsOnce(): List<ExamEntity>
 
+    @Query("SELECT * FROM exams ORDER BY date ASC")
+    fun getAllExams(): Flow<List<ExamEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExam(exam: ExamEntity): Long
 

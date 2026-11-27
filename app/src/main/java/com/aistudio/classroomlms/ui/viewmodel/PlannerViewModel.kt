@@ -19,6 +19,7 @@ import com.aistudio.classroomlms.data.entity.ClassScheduleEntity
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
 import com.aistudio.classroomlms.data.entity.DailyLogEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
+import com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity
 import com.aistudio.classroomlms.data.repository.ClassroomRepository
 import com.aistudio.classroomlms.data.repository.ScheduleRepository
 import com.aistudio.classroomlms.util.PdfReportExporter
@@ -46,6 +47,7 @@ data class PlannerUiState(
     val classrooms: List<ClassroomEntity> = emptyList(),
     val plannerClassroomFilterId: Long? = null,
     val lessonPlans: List<LessonPlanEntity> = emptyList(),
+    val lessonPlanSessions: List<LessonPlanSessionEntity> = emptyList(),
     val dailyLogs: List<DailyLogEntity> = emptyList(),
     val schedules: List<ClassScheduleEntity> = emptyList(),
     val isAddEditLessonPlanOpen: Boolean = false,
@@ -80,13 +82,15 @@ class PlannerViewModel @Inject constructor(
                         combine(
                             classroomDao.getAllClassrooms(),
                             plannerDao.getLessonPlansForClassroom(classroomId),
+                            plannerDao.getSessionsForClassroom(classroomId),
                             plannerDao.getDailyLogsForClassroom(classroomId),
                             classScheduleDao.getSchedulesByClassroom(classroomId)
-                        ) { classrooms, plans, logs, schedules ->
+                        ) { classrooms, plans, sessions, logs, schedules ->
                             PlannerData(
                                 classrooms = classrooms,
                                 activeClassroom = classrooms.find { it.id == classroomId },
                                 plans = plans,
+                                sessions = sessions,
                                 logs = logs,
                                 schedules = schedules
                             )
@@ -100,6 +104,7 @@ class PlannerViewModel @Inject constructor(
                                 classrooms = classrooms,
                                 activeClassroom = null,
                                 plans = emptyList(),
+                                sessions = emptyList(),
                                 logs = emptyList(),
                                 schedules = schedules
                             )
@@ -112,6 +117,7 @@ class PlannerViewModel @Inject constructor(
                             classrooms = data.classrooms,
                             activeClassroom = data.activeClassroom,
                             lessonPlans = data.plans,
+                            lessonPlanSessions = data.sessions,
                             dailyLogs = data.logs,
                             schedules = data.schedules
                         )
@@ -124,6 +130,7 @@ class PlannerViewModel @Inject constructor(
         val classrooms: List<ClassroomEntity>,
         val activeClassroom: ClassroomEntity?,
         val plans: List<LessonPlanEntity>,
+        val sessions: List<LessonPlanSessionEntity>,
         val logs: List<DailyLogEntity>,
         val schedules: List<ClassScheduleEntity>
     )
@@ -151,7 +158,11 @@ class PlannerViewModel @Inject constructor(
         status: String,
         targetClassroomId: Long?,
         reminderEnabled: Boolean,
-        reminderTime: Long
+        reminderTime: Long,
+        unitNumber: String = "",
+        allocatedHours: Double = 0.0,
+        unitLearningOutcomes: String = "",
+        sessions: List<LessonPlanSessionEntity> = emptyList()
     ) {
         val classId = targetClassroomId ?: _uiState.value.activeClassroom?.id ?: return
         viewModelScope.launch {
@@ -165,21 +176,25 @@ class PlannerViewModel @Inject constructor(
                     status = status,
                     reminderEnabled = reminderEnabled,
                     reminderTime = reminderTime,
-                    reminderId = if (reminderEnabled && editing.reminderId.isBlank()) 
-                        java.util.UUID.randomUUID().toString() 
-                    else 
-                        editing.reminderId
+                    reminderId = if (reminderEnabled && editing.reminderId.isBlank())
+                        java.util.UUID.randomUUID().toString()
+                    else
+                        editing.reminderId,
+                    unitNumber = unitNumber,
+                    allocatedHours = allocatedHours,
+                    unitLearningOutcomes = unitLearningOutcomes
                 )
                 plannerDao.updateLessonPlan(updated)
-                
+                plannerDao.replaceSessionsForPlan(updated.id, sessions)
+
                 // Handle notification scheduling for reminders
                 if (reminderEnabled && reminderTime > 0) {
-                    scheduleReminderNotification(updated.id ?: 0, unitTitle, reminderTime, classId)
+                    scheduleReminderNotification(updated.id, unitTitle, reminderTime, classId)
                 } else {
                     // Cancel reminder if disabled or time not set
-                    cancelReminderNotification(editing.id ?: 0)
+                    cancelReminderNotification(editing.id)
                 }
-                
+
                 showToast("Lesson plan updated")
             } else {
                 val newPlan = LessonPlanEntity(
@@ -190,15 +205,19 @@ class PlannerViewModel @Inject constructor(
                     status = status,
                     reminderEnabled = reminderEnabled,
                     reminderTime = reminderTime,
-                    reminderId = if (reminderEnabled) java.util.UUID.randomUUID().toString() else ""
+                    reminderId = if (reminderEnabled) java.util.UUID.randomUUID().toString() else "",
+                    unitNumber = unitNumber,
+                    allocatedHours = allocatedHours,
+                    unitLearningOutcomes = unitLearningOutcomes
                 )
                 val insertedId = plannerDao.insertLessonPlan(newPlan)
-                
+                plannerDao.replaceSessionsForPlan(insertedId, sessions)
+
                 // Schedule notification for new lesson plan with reminder
                 if (reminderEnabled && reminderTime > 0) {
                     scheduleReminderNotification(insertedId, unitTitle, reminderTime, classId)
                 }
-                
+
                 showToast("Lesson plan created")
             }
             closeLessonPlanDialog()
@@ -343,29 +362,33 @@ class PlannerViewModel @Inject constructor(
         updateAllWeeksForSubject: Boolean = false
     ) {
         viewModelScope.launch {
-            val targetWeeks = if (applyToAllWeeks || updateAllWeeksForSubject) (1..5).toList() else listOf(baseEntry.weekNumber)
-            val targetDays = selectedDays.ifEmpty { listOf(baseEntry.dayOfWeek) }
+            try {
+                val targetWeeks = if (applyToAllWeeks || updateAllWeeksForSubject) (1..5).toList() else listOf(baseEntry.weekNumber)
+                val targetDays = selectedDays.ifEmpty { listOf(baseEntry.dayOfWeek) }
 
-            val batchEntries = mutableListOf<ClassScheduleEntity>()
-            for (week in targetWeeks) {
-                for (day in targetDays) {
-                    batchEntries.add(
-                        baseEntry.copy(
-                            id = if (week == baseEntry.weekNumber && day.equals(baseEntry.dayOfWeek, ignoreCase = true)) baseEntry.id else 0,
-                            weekNumber = week,
-                            dayOfWeek = day
+                val batchEntries = mutableListOf<ClassScheduleEntity>()
+                for (week in targetWeeks) {
+                    for (day in targetDays) {
+                        batchEntries.add(
+                            baseEntry.copy(
+                                id = if (week == baseEntry.weekNumber && day.equals(baseEntry.dayOfWeek, ignoreCase = true)) baseEntry.id else 0,
+                                weekNumber = week,
+                                dayOfWeek = day
+                            )
                         )
-                    )
+                    }
                 }
-            }
 
-            if (updateAllWeeksForSubject) {
-                scheduleRepository.updateSubjectScheduleAcrossWeeks(baseEntry.classroomName, targetWeeks, batchEntries)
-                showToast("Updated routine for '${baseEntry.classroomName}' across all weeks")
-            } else {
-                scheduleRepository.saveBatchScheduleEntries(batchEntries)
-                val msg = if (batchEntries.size > 1) "Saved ${batchEntries.size} class periods across selected days/weeks" else "Class schedule entry saved"
-                showToast(msg)
+                if (updateAllWeeksForSubject) {
+                    scheduleRepository.updateSubjectScheduleAcrossWeeks(baseEntry.classroomName, targetWeeks, batchEntries)
+                    showToast("Updated routine for '${baseEntry.classroomName}' across all weeks")
+                } else {
+                    scheduleRepository.saveBatchScheduleEntries(batchEntries)
+                    val msg = if (batchEntries.size > 1) "Saved ${batchEntries.size} class periods across selected days/weeks" else "Class schedule entry saved"
+                    showToast(msg)
+                }
+            } catch (e: Exception) {
+                showToast("Failed to save schedule: ${e.message ?: "Unknown error"}")
             }
         }
     }
@@ -388,12 +411,13 @@ class PlannerViewModel @Inject constructor(
     fun generateLessonPlansReportText(): String {
         val activeClass = _uiState.value.activeClassroom
         val plans = _uiState.value.lessonPlans
+        val sessions = _uiState.value.lessonPlanSessions
         val df = SimpleDateFormat("MMM dd, yyyy", Locale.US)
 
         val sb = StringBuilder()
         sb.appendLine("TEACHER LESSON PLANNER REPORT")
         sb.appendLine("Classroom: ${activeClass?.name ?: "All Classes"} (${activeClass?.subject ?: ""})")
-        sb.appendLine("Total Plans: ${plans.size}")
+        sb.appendLine("Total Units: ${plans.size}")
         sb.appendLine("==========================================")
         sb.appendLine()
 
@@ -401,10 +425,29 @@ class PlannerViewModel @Inject constructor(
             sb.appendLine("No lesson plans recorded.")
         } else {
             plans.forEachIndexed { idx, plan ->
-                sb.appendLine("${idx + 1}. [${plan.status}] ${plan.unitTitle}")
+                val unitTag = if (plan.unitNumber.isNotBlank()) "${plan.unitNumber}: " else ""
+                val hrsTag = if (plan.allocatedHours > 0) " (${plan.allocatedHours} Hrs)" else ""
+                sb.appendLine("${idx + 1}. [${plan.status}] $unitTag${plan.unitTitle}$hrsTag")
                 sb.appendLine("   Target Date: ${df.format(Date(plan.targetDate))}")
-                sb.appendLine("   Objectives & Notes:")
-                sb.appendLine("   ${plan.description}")
+                if (plan.unitLearningOutcomes.isNotBlank()) {
+                    sb.appendLine("   Learning Outcomes (LO): ${plan.unitLearningOutcomes}")
+                }
+                if (plan.description.isNotBlank()) {
+                    sb.appendLine("   Notes: ${plan.description}")
+                }
+                val unitSessions = sessions.filter { it.lessonPlanId == plan.id }
+                if (unitSessions.isNotEmpty()) {
+                    sb.appendLine("   --- LO Session Matrix (${unitSessions.size} sessions) ---")
+                    unitSessions.forEach { s ->
+                        val label = if (s.isClosingSession) "Closing of Unit" else s.learningOutcome.ifBlank { "Session ${s.sessionOrder}" }
+                        sb.appendLine("   [${s.sessionOrder}] $label (${s.hours} Hrs)")
+                        if (s.content.isNotBlank()) sb.appendLine("       Content: ${s.content}")
+                        if (s.lecturerActivity.isNotBlank()) sb.appendLine("       Lecturer: ${s.lecturerActivity}")
+                        if (s.studentActivity.isNotBlank()) sb.appendLine("       Student: ${s.studentActivity}")
+                        if (s.teachingAids.isNotBlank()) sb.appendLine("       Teaching Aids: ${s.teachingAids}")
+                        if (s.evaluationNote.isNotBlank()) sb.appendLine("       Evaluation: ${s.evaluationNote}")
+                    }
+                }
                 sb.appendLine("------------------------------------------")
             }
         }
@@ -439,9 +482,21 @@ class PlannerViewModel @Inject constructor(
 
     fun exportLessonPlansPdf(context: Context) {
         val activeClass = _uiState.value.activeClassroom
-        val reportText = generateLessonPlansReportText()
-        val title = "Lesson Plans - ${activeClass?.name ?: "Classroom"}"
-        PdfReportExporter.exportAndShare(context, title, reportText, "LessonPlans_${activeClass?.name ?: "Class"}")
+        val plans = _uiState.value.lessonPlans
+        val sessions = _uiState.value.lessonPlanSessions
+        if (sessions.isNotEmpty()) {
+            PdfReportExporter.exportLessonPlanMatrixPdf(
+                context = context,
+                classTitle = activeClass?.name ?: "Classroom",
+                subject = activeClass?.subject ?: "",
+                plans = plans,
+                sessions = sessions
+            )
+        } else {
+            val reportText = generateLessonPlansReportText()
+            val title = "Lesson Plans - ${activeClass?.name ?: "Classroom"}"
+            PdfReportExporter.exportAndShare(context, title, reportText, "LessonPlans_${activeClass?.name ?: "Class"}")
+        }
     }
 
     fun exportDailyDiaryPdf(context: Context) {

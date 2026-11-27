@@ -92,7 +92,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -113,13 +117,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.aistudio.classroomlms.BuildConfig
+import com.aistudio.classroomlms.ui.screens.AcademicCalendarScreen
 import com.aistudio.classroomlms.ui.screens.AddEditExamDialog
+import com.aistudio.classroomlms.ui.screens.ClassroomActivityHubScreen
 import com.aistudio.classroomlms.ui.screens.ClassroomScheduleScreen
 import com.aistudio.classroomlms.ui.screens.DisciplineLogDialog
 import com.aistudio.classroomlms.ui.screens.LinkGoogleSheetDialog
 import com.aistudio.classroomlms.ui.screens.PlannerScreen
+import com.aistudio.classroomlms.ui.screens.SchoolManagementScreen
+import com.aistudio.classroomlms.ui.screens.SchoolSelectionScreen
 import com.aistudio.classroomlms.ui.screens.SettingsScreen
 import com.aistudio.classroomlms.ui.screens.StudentRosterScreen
+import com.aistudio.classroomlms.ui.screens.TeacherLandingScreen
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.launch
@@ -129,6 +138,9 @@ import com.aistudio.classroomlms.ui.util.rememberWindowSizeCategory
 import com.aistudio.classroomlms.ui.viewmodel.AnalyticsViewModel
 import com.aistudio.classroomlms.ui.viewmodel.GradingViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ExamViewModel
+import com.aistudio.classroomlms.ui.viewmodel.PlannerViewModel
+import com.aistudio.classroomlms.ui.viewmodel.SchoolViewModel
+import com.aistudio.classroomlms.ui.viewmodel.ClassroomActivityViewModel
 import com.aistudio.classroomlms.ui.viewmodel.ClassroomViewModel
 import com.aistudio.classroomlms.ui.viewmodel.LmsTab
 import com.aistudio.classroomlms.ui.viewmodel.RosterViewModel
@@ -152,11 +164,17 @@ fun LmsMainScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     rosterViewModel: RosterViewModel = hiltViewModel(),
     gradingViewModel: GradingViewModel = hiltViewModel(),
-    examViewModel: ExamViewModel = hiltViewModel()
+    examViewModel: ExamViewModel = hiltViewModel(),
+    plannerViewModel: PlannerViewModel = hiltViewModel(),
+    schoolViewModel: SchoolViewModel = hiltViewModel(),
+    classroomActivityViewModel: ClassroomActivityViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val upgradeState by upgradeViewModel.upgradeState.collectAsStateWithLifecycle()
     val examUiState by examViewModel.uiState.collectAsStateWithLifecycle()
+    val plannerUiState by plannerViewModel.uiState.collectAsStateWithLifecycle()
+    val schoolUiState by schoolViewModel.uiState.collectAsStateWithLifecycle()
+    val activityUiState by classroomActivityViewModel.uiState.collectAsStateWithLifecycle()
 
     // 1. Guard against unmigrated or failed database upgrades
     when (val state = upgradeState) {
@@ -272,6 +290,25 @@ fun LmsMainScreen(
     val scope = rememberCoroutineScope()
     val authManager = syncViewModel.authManager
     var academicInitialSubTab by rememberSaveable { mutableIntStateOf(0) }
+    var showLandingScreen by rememberSaveable { mutableStateOf(true) }
+    var showSchoolSelector by rememberSaveable { mutableStateOf(true) }
+    var isSchoolManagementOpen by rememberSaveable { mutableStateOf(false) }
+    var isActivityHubOpen by rememberSaveable { mutableStateOf(false) }
+    var isAcademicCalendarOpen by rememberSaveable { mutableStateOf(false) }
+
+    // Return to Launch Landing Screen when pressing Back from inside a class workspace
+    BackHandler(enabled = !showLandingScreen && !isAcademicCalendarOpen && !isSchoolManagementOpen && !isActivityHubOpen) {
+        showLandingScreen = true
+    }
+    BackHandler(enabled = isSchoolManagementOpen) {
+        isSchoolManagementOpen = false
+    }
+    BackHandler(enabled = isActivityHubOpen) {
+        isActivityHubOpen = false
+    }
+    BackHandler(enabled = isAcademicCalendarOpen) {
+        isAcademicCalendarOpen = false
+    }
 
     // Handle system back gesture / button on all overlays
     BackHandler(enabled = drawerState.isOpen) {
@@ -350,12 +387,59 @@ fun LmsMainScreen(
             ModalDrawerSheet {
                 Spacer(Modifier.height(24.dp))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                
+
+                NavigationDrawerItem(
+                    label = { Text("Home (All Classes)") },
+                    selected = showLandingScreen && !isAcademicCalendarOpen && !isSchoolManagementOpen,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        isAcademicCalendarOpen = false
+                        isSchoolManagementOpen = false
+                        showLandingScreen = true
+                    },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Schools & Colleges") },
+                    selected = isSchoolManagementOpen,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        isSchoolManagementOpen = true
+                    },
+                    icon = { Icon(Icons.Default.Apartment, contentDescription = "Schools & Colleges") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Academic Year / Calendar") },
+                    selected = isAcademicCalendarOpen,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        isAcademicCalendarOpen = true
+                    },
+                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Academic Calendar") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Class Games & Toolkit") },
+                    selected = isActivityHubOpen,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        isActivityHubOpen = true
+                    },
+                    icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Class Games & Toolkit") },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
                 NavigationDrawerItem(
                     label = { Text("Manage Classes") },
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
+                        showLandingScreen = false
                         viewModel.selectTab(LmsTab.CLASSES)
                     },
                     icon = { Icon(Icons.Default.School, contentDescription = "Classes") },
@@ -378,6 +462,7 @@ fun LmsMainScreen(
                     selected = false,
                     onClick = { 
                         scope.launch { drawerState.close() }
+                        showLandingScreen = false
                         academicInitialSubTab = 1
                         viewModel.selectTab(LmsTab.ACADEMIC)
                     },
@@ -492,6 +577,38 @@ fun LmsMainScreen(
             }
         }
     ) {
+        if (showLandingScreen) {
+            if (showSchoolSelector && schoolUiState.schools.isNotEmpty()) {
+                SchoolSelectionScreen(
+                    schools = schoolUiState.schools,
+                    classrooms = schoolUiState.classrooms,
+                    teacherName = googleAccount?.givenName ?: googleAccount?.displayName,
+                    onSelectSchool = { schoolId ->
+                        schoolViewModel.selectSchoolFilter(schoolId)
+                        showSchoolSelector = false
+                    },
+                    onManageSchools = { isSchoolManagementOpen = true }
+                )
+            } else {
+                TeacherLandingScreen(
+                    teacherName = googleAccount?.givenName ?: googleAccount?.displayName,
+                    onLoginClick = { signInLauncher.launch(authManager.getSignInIntent()) },
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onOpenAcademicCalendar = { isAcademicCalendarOpen = true },
+                    onOpenClass = { cls, targetTab ->
+                        viewModel.selectClassroom(cls.id)
+                        viewModel.selectTab(targetTab)
+                        showLandingScreen = false
+                    },
+                    onCreateClass = { rosterViewModel.openAddClassroom() },
+                    onOpenPlanner = { viewModel.openPlanner() },
+                    onOpenTimetable = { viewModel.openScheduleScreen() },
+                    selectedSchoolFilterId = schoolUiState.selectedSchoolFilterId,
+                    schools = schoolUiState.schools,
+                    onSwitchSchool = { showSchoolSelector = true }
+                )
+            }
+        } else {
         Scaffold(
             modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -501,7 +618,8 @@ fun LmsMainScreen(
                 classrooms = uiState.classrooms,
                 onSelectClassroom = { viewModel.selectClassroom(it.id) },
                 onMenuClick = { scope.launch { drawerState.open() } },
-                onManageClassrooms = { viewModel.selectTab(LmsTab.CLASSES) }
+                onManageClassrooms = { viewModel.selectTab(LmsTab.CLASSES) },
+                onHomeClick = { showLandingScreen = true }
             )
         },
         bottomBar = {
@@ -565,6 +683,11 @@ fun LmsMainScreen(
                     LmsTab.DASHBOARD -> DashboardScreen(
                         uiState = uiState,
                         viewModel = viewModel,
+                        onOpenHomework = {
+                            academicInitialSubTab = 3
+                            viewModel.selectTab(LmsTab.ACADEMIC)
+                        },
+                        onOpenGamesHub = { isActivityHubOpen = true },
                         rosterViewModel = rosterViewModel,
                         studentSupportViewModel = studentSupportViewModel
                     )
@@ -602,8 +725,28 @@ fun LmsMainScreen(
             }
         }
     }
+        }
 
     // --- MODAL DIALOGS & BOTTOM SHEETS ---
+
+    if (isAcademicCalendarOpen) {
+        AcademicCalendarScreen(
+            onBack = { isAcademicCalendarOpen = false }
+        )
+    }
+
+    if (isSchoolManagementOpen) {
+        SchoolManagementScreen(
+            onBack = { isSchoolManagementOpen = false }
+        )
+    }
+
+    if (isActivityHubOpen) {
+        ClassroomActivityHubScreen(
+            classroomName = uiState.activeClassroom?.name ?: "Classroom",
+            onBack = { isActivityHubOpen = false }
+        )
+    }
 
     if (examUiState.gradingExam != null) {
         com.aistudio.classroomlms.ui.screens.FullMarksEntryWorkspace(
@@ -669,7 +812,9 @@ fun LmsMainScreen(
             },
             onSave = { assignment ->
                 gradingViewModel.saveAssignment(assignment)
-            }
+            },
+            prefillTitle = gradingUiState.prefillAssignmentTitle,
+            prefillDescription = gradingUiState.prefillAssignmentDescription
         )
     }
 
@@ -695,6 +840,11 @@ fun LmsMainScreen(
 
         val studentDiscipline = uiState.disciplineRecords.filter { it.studentId == student.id }
         val studentLiveAssessments = uiState.liveAssessments.filter { it.studentId == student.id }
+        val studentActivities = activityUiState.activities.filter {
+            it.firstWinnerStudentId == student.id ||
+                it.secondWinnerStudentId == student.id ||
+                it.thirdWinnerStudentId == student.id
+        }
 
         StudentDetailDialog(
             summary = uiState.selectedStudentProfile!!,
@@ -702,6 +852,7 @@ fun LmsMainScreen(
             interventions = studentInterventions,
             disciplineRecords = studentDiscipline,
             liveAssessments = studentLiveAssessments,
+            studentActivities = studentActivities,
             classroomName = uiState.activeClassroom?.name ?: "Classroom",
             onDismiss = { viewModel.closeStudentProfile() },
             onEditStudent = {
@@ -797,8 +948,10 @@ fun LmsMainScreen(
     if (isAddEditDisciplineOpen && supportUiState.disciplineStudent != null) {
         val student = supportUiState.disciplineStudent!!
         val activeClassId = uiState.activeClassroom?.id ?: 1L
+        val availableStudents = if (supportUiState.students.isNotEmpty()) supportUiState.students else uiState.students
         DisciplineLogDialog(
             student = student,
+            students = availableStudents,
             initialRecord = supportUiState.editingDisciplineRecord,
             classroomId = activeClassId,
             onDismiss = {
@@ -810,13 +963,13 @@ fun LmsMainScreen(
             onDelete = { record ->
                 studentSupportViewModel.deleteDisciplineRecord(record)
             },
-            onSaveAndSendWhatsApp = { record ->
+            onSaveAndSendWhatsApp = { targetStudent, record ->
                 studentSupportViewModel.saveDisciplineRecord(record)
-                studentSupportViewModel.sendWhatsAppRemark(context, student, record)
+                studentSupportViewModel.sendWhatsAppRemark(context, targetStudent, record)
             },
-            onSaveAndSendSms = { record ->
+            onSaveAndSendSms = { targetStudent, record ->
                 studentSupportViewModel.saveDisciplineRecord(record)
-                studentSupportViewModel.sendSmsRemark(context, student, record)
+                studentSupportViewModel.sendSmsRemark(context, targetStudent, record)
             }
         )
     }
@@ -824,6 +977,15 @@ fun LmsMainScreen(
     // Live Class Formative Assessment Dialog
     if (isLiveAssessmentDialogOpen) {
         val activeClassId = uiState.activeClassroom?.id ?: 1L
+        val suggestedTopics = remember(plannerUiState.lessonPlans, plannerUiState.lessonPlanSessions) {
+            (plannerUiState.lessonPlanSessions.mapNotNull { s ->
+                s.evaluationNote.takeIf { it.isNotBlank() } ?: s.learningOutcome.takeIf { it.isNotBlank() && !s.isClosingSession }
+            } + plannerUiState.lessonPlans.map { it.unitTitle })
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .take(12)
+        }
         LiveAssessmentDialog(
             initialStudent = supportUiState.liveAssessmentStudent,
             students = supportUiState.students,
@@ -837,7 +999,10 @@ fun LmsMainScreen(
             },
             onDelete = { assessment ->
                 studentSupportViewModel.deleteLiveAssessment(assessment)
-            }
+            },
+            prefillTopic = supportUiState.prefillLiveAssessmentTopic,
+            prefillTaskType = supportUiState.prefillLiveAssessmentTaskType,
+            suggestedTopics = suggestedTopics
         )
     }
 

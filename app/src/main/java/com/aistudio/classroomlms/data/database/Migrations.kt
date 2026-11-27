@@ -106,4 +106,95 @@ object Migrations {
             db.execSQL("ALTER TABLE `classrooms` ADD COLUMN `isArchived` INTEGER NOT NULL DEFAULT 0")
         }
     }
+
+    val MIGRATION_10_11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `lesson_plans` ADD COLUMN `unitNumber` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `lesson_plans` ADD COLUMN `allocatedHours` REAL NOT NULL DEFAULT 0.0")
+            db.execSQL("ALTER TABLE `lesson_plans` ADD COLUMN `unitLearningOutcomes` TEXT NOT NULL DEFAULT ''")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `lesson_plan_sessions` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `lessonPlanId` INTEGER NOT NULL,
+                    `sessionOrder` INTEGER NOT NULL,
+                    `learningOutcome` TEXT NOT NULL,
+                    `content` TEXT NOT NULL,
+                    `lecturerActivity` TEXT NOT NULL,
+                    `studentActivity` TEXT NOT NULL,
+                    `teachingAids` TEXT NOT NULL,
+                    `evaluationType` TEXT NOT NULL,
+                    `evaluationNote` TEXT NOT NULL,
+                    `linkedAssignmentId` INTEGER,
+                    `hours` REAL NOT NULL,
+                    `isClosingSession` INTEGER NOT NULL,
+                    FOREIGN KEY(`lessonPlanId`) REFERENCES `lesson_plans`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_lesson_plan_sessions_lessonPlanId` ON `lesson_plan_sessions` (`lessonPlanId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_lesson_plan_sessions_linkedAssignmentId` ON `lesson_plan_sessions` (`linkedAssignmentId`)")
+        }
+    }
+
+    val MIGRATION_11_12 = object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `academic_events` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `title` TEXT NOT NULL,
+                    `category` TEXT NOT NULL,
+                    `startDate` TEXT NOT NULL,
+                    `endDate` TEXT NOT NULL,
+                    `notes` TEXT NOT NULL,
+                    `academicYearLabel` TEXT NOT NULL,
+                    `createdAt` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_academic_events_startDate` ON `academic_events` (`startDate`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_academic_events_category` ON `academic_events` (`category`)")
+        }
+    }
+
+    val MIGRATION_12_13 = object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `schools` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `institutionType` TEXT NOT NULL,
+                    `address` TEXT NOT NULL,
+                    `colorHex` INTEGER NOT NULL,
+                    `createdAt` INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL("ALTER TABLE `classrooms` ADD COLUMN `schoolId` INTEGER")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `classroom_activities` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `classroomId` INTEGER NOT NULL,
+                    `title` TEXT NOT NULL,
+                    `category` TEXT NOT NULL,
+                    `date` TEXT NOT NULL,
+                    `durationSeconds` INTEGER NOT NULL,
+                    `firstWinnerStudentId` INTEGER,
+                    `secondWinnerStudentId` INTEGER,
+                    `thirdWinnerStudentId` INTEGER,
+                    `notes` TEXT NOT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    FOREIGN KEY(`classroomId`) REFERENCES `classrooms`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_classroom_activities_classroomId` ON `classroom_activities` (`classroomId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_classroom_activities_date` ON `classroom_activities` (`date`)")
+        }
+    }
 }

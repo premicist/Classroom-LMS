@@ -67,4 +67,16 @@ class FakeClassroomDao : ClassroomDao {
     override suspend fun deleteClassroomById(id: Long) {
         classroomsFlow.update { current -> current.filter { it.id != id } }
     }
+
+    override suspend fun assignClassroomToSchool(classroomId: Long, schoolId: Long?) {
+        classroomsFlow.update { current ->
+            current.map { if (it.id == classroomId) it.copy(schoolId = schoolId) else it }
+        }
+    }
+
+    override suspend fun clearSchoolAssignmentForSchool(schoolId: Long) {
+        classroomsFlow.update { current ->
+            current.map { if (it.schoolId == schoolId) it.copy(schoolId = null) else it }
+        }
+    }
 }

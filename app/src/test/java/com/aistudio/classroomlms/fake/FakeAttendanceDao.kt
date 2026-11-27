@@ -15,6 +15,10 @@ class FakeAttendanceDao : AttendanceDao {
         return recordsFlow.map { list -> list.filter { it.classroomId == classroomId && it.date == date } }
     }
 
+    override fun getAttendanceByDateAll(date: String): Flow<List<AttendanceRecordEntity>> {
+        return recordsFlow.map { list -> list.filter { it.date == date } }
+    }
+
     override suspend fun getAttendanceByDateOnce(classroomId: Long, date: String): List<AttendanceRecordEntity> {
         return recordsFlow.value.filter { it.classroomId == classroomId && it.date == date }
     }

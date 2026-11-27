@@ -48,6 +48,8 @@ data class GradingUiState(
     val isTermWeightingDialogOpen: Boolean = false,
     val isAddEditAssignmentOpen: Boolean = false,
     val editingAssignment: AssignmentEntity? = null,
+    val prefillAssignmentTitle: String = "",
+    val prefillAssignmentDescription: String = "",
     val isGradingSubmissionOpen: Boolean = false,
     val gradingSubmission: SubmissionEntity? = null,
     val gradingAssignment: AssignmentEntity? = null,
@@ -151,16 +153,37 @@ class GradingViewModel(
         val submissions: List<SubmissionEntity>
     )
 
-    fun openAddAssignment() {
-        _uiState.update { it.copy(isAddEditAssignmentOpen = true, editingAssignment = null) }
+    fun openAddAssignment(prefillTitle: String = "", prefillDescription: String = "") {
+        _uiState.update {
+            it.copy(
+                isAddEditAssignmentOpen = true,
+                editingAssignment = null,
+                prefillAssignmentTitle = prefillTitle,
+                prefillAssignmentDescription = prefillDescription
+            )
+        }
     }
 
     fun openEditAssignment(assignment: AssignmentEntity) {
-        _uiState.update { it.copy(isAddEditAssignmentOpen = true, editingAssignment = assignment) }
+        _uiState.update {
+            it.copy(
+                isAddEditAssignmentOpen = true,
+                editingAssignment = assignment,
+                prefillAssignmentTitle = "",
+                prefillAssignmentDescription = ""
+            )
+        }
     }
 
     fun closeAddEditAssignment() {
-        _uiState.update { it.copy(isAddEditAssignmentOpen = false, editingAssignment = null) }
+        _uiState.update {
+            it.copy(
+                isAddEditAssignmentOpen = false,
+                editingAssignment = null,
+                prefillAssignmentTitle = "",
+                prefillAssignmentDescription = ""
+            )
+        }
     }
 
     fun saveAssignment(assignment: AssignmentEntity) {

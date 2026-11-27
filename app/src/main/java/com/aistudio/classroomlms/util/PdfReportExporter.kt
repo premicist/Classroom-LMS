@@ -15,6 +15,8 @@ import com.aistudio.classroomlms.data.entity.AttendanceStatus
 import com.aistudio.classroomlms.data.entity.DisciplineRecordEntity
 import com.aistudio.classroomlms.data.entity.ExamEntity
 import com.aistudio.classroomlms.data.entity.ExamMarkEntity
+import com.aistudio.classroomlms.data.entity.LessonPlanEntity
+import com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.ui.viewmodel.AttendanceReport
 import com.aistudio.classroomlms.ui.viewmodel.StudentAttendanceSummary
@@ -852,5 +854,215 @@ object PdfReportExporter {
             report: AttendanceReport
         ): Map<String, AttendanceStatus> {
             return emptyMap()
+        }
+
+        fun exportLessonPlanMatrixPdf(
+            context: Context,
+            classTitle: String,
+            subject: String,
+            plans: List<LessonPlanEntity>,
+            sessions: List<LessonPlanSessionEntity>
+        ) {
+            try {
+                val document = PdfDocument()
+                val pageW = 842 // Landscape A4
+                val pageH = 595
+                val margin = 32f
+                val contentW = pageW - margin * 2
+
+                val titlePaint = Paint().apply {
+                    color = Color.rgb(30, 58, 138)
+                    textSize = 15f
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    isAntiAlias = true
+                }
+                val unitHeaderPaint = Paint().apply {
+                    color = Color.rgb(15, 23, 42)
+                    textSize = 11f
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    isAntiAlias = true
+                }
+                val headerTextPaint = Paint().apply {
+                    color = Color.WHITE
+                    textSize = 8.5f
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    isAntiAlias = true
+                }
+                val cellPaint = Paint().apply {
+                    color = Color.rgb(30, 41, 59)
+                    textSize = 8f
+                    isAntiAlias = true
+                }
+                val boldCellPaint = Paint().apply {
+                    color = Color.rgb(15, 23, 42)
+                    textSize = 8f
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    isAntiAlias = true
+                }
+                val metaPaint = Paint().apply {
+                    color = Color.rgb(71, 85, 105)
+                    textSize = 9.5f
+                    isAntiAlias = true
+                }
+                val headerBgPaint = Paint().apply {
+                    color = Color.rgb(30, 58, 138)
+                    style = Paint.Style.FILL
+                }
+                val unitBgPaint = Paint().apply {
+                    color = Color.rgb(239, 246, 255)
+                    style = Paint.Style.FILL
+                }
+                val borderPaint = Paint().apply {
+                    color = Color.rgb(203, 213, 225)
+                    strokeWidth = 0.8f
+                    style = Paint.Style.STROKE
+                }
+
+                var pageNumber = 1
+                var page = document.startPage(PdfDocument.PageInfo.Builder(pageW, pageH, pageNumber).create())
+                var canvas = page.canvas
+                var y = margin
+
+                fun newPage() {
+                    document.finishPage(page)
+                    pageNumber++
+                    page = document.startPage(PdfDocument.PageInfo.Builder(pageW, pageH, pageNumber).create())
+                    canvas = page.canvas
+                    y = margin
+                }
+
+                fun ensureSpace(needed: Float) {
+                    if (y + needed > pageH - margin) {
+                        newPage()
+                    }
+                }
+
+                val df = SimpleDateFormat("MMM dd, yyyy", Locale.US)
+                canvas.drawText("LESSON PLAN MATRIX — $classTitle", margin, y + 14f, titlePaint)
+                y += 20f
+                canvas.drawText(
+                    "Subject: ${subject.ifBlank { "General" }}   |   Generated: ${df.format(Date())}   |   Total Units: ${plans.size}",
+                    margin,
+                    y + 10f,
+                    metaPaint
+                )
+                y += 20f
+
+                // 8 columns summing to contentW (778f)
+                val colWidths = floatArrayOf(28f, 118f, 138f, 128f, 128f, 88f, 108f, 42f)
+                val headers = arrayOf("No", "Learning Outcome", "Content", "Lecturer Activity", "Student Activity", "Teaching Aids", "Evaluation", "Time")
+
+                fun drawTableHeader() {
+                    ensureSpace(24f)
+                    val rowH = 20f
+                    canvas.drawRect(margin, y, margin + colWidths.sum(), y + rowH, headerBgPaint)
+                    var x = margin
+                    headers.forEachIndexed { idx, h ->
+                        canvas.drawText(h, x + 4f, y + 13f, headerTextPaint)
+                        x += colWidths[idx]
+                    }
+                    y += rowH
+                }
+
+                if (plans.isEmpty()) {
+                    canvas.drawText("No lesson plans recorded for this classroom.", margin, y + 14f, metaPaint)
+                } else {
+                    plans.forEachIndexed { planIdx, plan ->
+                        ensureSpace(48f)
+                        val unitLabel = buildString {
+                            if (plan.unitNumber.isNotBlank()) append("${plan.unitNumber}: ") else append("Unit ${planIdx + 1}: ")
+                            append(plan.unitTitle)
+                            if (plan.allocatedHours > 0) append(" (${plan.allocatedHours} Hrs)")
+                        }
+                        canvas.drawRect(margin, y, margin + contentW, y + 22f, unitBgPaint)
+                        canvas.drawRect(margin, y, margin + contentW, y + 22f, borderPaint)
+                        canvas.drawText(truncateToWidth(unitLabel, unitHeaderPaint, contentW - 140f), margin + 6f, y + 15f, unitHeaderPaint)
+                        val statusDate = "${plan.status} • ${df.format(Date(plan.targetDate))}"
+                        canvas.drawText(statusDate, margin + contentW - 130f, y + 15f, metaPaint)
+                        y += 26f
+
+                        if (plan.unitLearningOutcomes.isNotBlank()) {
+                            val loLines = wrapText("LO: ${plan.unitLearningOutcomes}", metaPaint, contentW - 8f)
+                            loLines.forEach { line ->
+                                ensureSpace(13f)
+                                canvas.drawText(line, margin + 4f, y + 9f, metaPaint)
+                                y += 12f
+                            }
+                            y += 2f
+                        }
+
+                        if (plan.description.isNotBlank()) {
+                            val descLines = wrapText("Notes: ${plan.description}", metaPaint, contentW - 8f)
+                            descLines.forEach { line ->
+                                ensureSpace(13f)
+                                canvas.drawText(line, margin + 4f, y + 9f, metaPaint)
+                                y += 12f
+                            }
+                            y += 4f
+                        }
+
+                        val unitSessions = sessions.filter { it.lessonPlanId == plan.id }.sortedBy { it.sessionOrder }
+                        if (unitSessions.isNotEmpty()) {
+                            drawTableHeader()
+                            unitSessions.forEach { s ->
+                                val cells = arrayOf(
+                                    if (s.isClosingSession) "${s.sessionOrder}. End" else "${s.sessionOrder}",
+                                    if (s.isClosingSession) "Closing of Unit" else s.learningOutcome.ifBlank { "-" },
+                                    s.content.ifBlank { "-" },
+                                    s.lecturerActivity.ifBlank { "-" },
+                                    s.studentActivity.ifBlank { "-" },
+                                    s.teachingAids.ifBlank { "-" },
+                                    s.evaluationNote.ifBlank { s.evaluationType },
+                                    "${s.hours}h"
+                                )
+                                val wrapped = cells.mapIndexed { idx, txt ->
+                                    wrapText(txt, if (idx == 0) boldCellPaint else cellPaint, colWidths[idx] - 8f)
+                                }
+                                val maxLines = (wrapped.maxOfOrNull { it.size } ?: 1).coerceAtLeast(1)
+                                val rowH = maxLines * 10.5f + 8f
+
+                                if (y + rowH > pageH - margin) {
+                                    newPage()
+                                    drawTableHeader()
+                                }
+
+                                var x = margin
+                                wrapped.forEachIndexed { idx, lines ->
+                                    val w = colWidths[idx]
+                                    canvas.drawRect(x, y, x + w, y + rowH, borderPaint)
+                                    val p = if (idx == 0 || (s.isClosingSession && idx == 1)) boldCellPaint else cellPaint
+                                    lines.forEachIndexed { lIdx, line ->
+                                        canvas.drawText(line, x + 4f, y + 11f + lIdx * 10.5f, p)
+                                    }
+                                    x += w
+                                }
+                                y += rowH
+                            }
+                        }
+                        y += 12f
+                    }
+                }
+
+                document.finishPage(page)
+
+                val reportsDir = File(context.cacheDir, "reports")
+                if (!reportsDir.exists()) reportsDir.mkdirs()
+                val safeName = classTitle.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+                val file = File(reportsDir, "LessonPlanMatrix_${safeName}_${System.currentTimeMillis()}.pdf")
+                FileOutputStream(file).use { out -> document.writeTo(out) }
+                document.close()
+
+                val uri: Uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "Lesson Plan Matrix - $classTitle")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Share Lesson Plan PDF"))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Failed to export lesson plan PDF: ${e.message}", Toast.LENGTH_LONG).show()
+            }
         }
 }

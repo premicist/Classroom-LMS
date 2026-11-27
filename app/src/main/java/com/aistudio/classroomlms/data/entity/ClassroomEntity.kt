@@ -19,5 +19,6 @@ data class ClassroomEntity(
     val linkedSpreadsheetId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     @ColumnInfo(defaultValue = "0")
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val schoolId: Long? = null // null == Not Assigned
 )

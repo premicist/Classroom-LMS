@@ -504,14 +504,16 @@ fun AddEditAssignmentDialog(
     classroomId: Long,
     initialAssignment: AssignmentEntity?,
     onDismiss: () -> Unit,
-    onSave: (AssignmentEntity) -> Unit
+    onSave: (AssignmentEntity) -> Unit,
+    prefillTitle: String = "",
+    prefillDescription: String = ""
 ) {
     val defaultDate = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(System.currentTimeMillis() + 7 * 86400000L))
     }
 
-    var title by remember { mutableStateOf(initialAssignment?.title ?: "") }
-    var description by remember { mutableStateOf(initialAssignment?.description ?: "") }
+    var title by remember { mutableStateOf(initialAssignment?.title ?: prefillTitle) }
+    var description by remember { mutableStateOf(initialAssignment?.description ?: prefillDescription) }
     var dueDate by remember { mutableStateOf(initialAssignment?.dueDate ?: defaultDate) }
     var maxPointsStr by remember { mutableStateOf(initialAssignment?.maxPoints?.toInt()?.toString() ?: "100") }
     var weightStr by remember { mutableStateOf(initialAssignment?.weightPercentage?.toInt()?.toString() ?: "20") }

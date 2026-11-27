@@ -1,7 +1,10 @@
 package com.aistudio.classroomlms.di
 
 import android.content.Context
+import com.aistudio.classroomlms.data.dao.AcademicEventDao
 import com.aistudio.classroomlms.data.dao.AssignmentDao
+import com.aistudio.classroomlms.data.dao.ClassroomActivityDao
+import com.aistudio.classroomlms.data.dao.SchoolDao
 import com.aistudio.classroomlms.data.dao.AttendanceDao
 import com.aistudio.classroomlms.data.dao.ClassScheduleDao
 import com.aistudio.classroomlms.data.dao.ExamDao
@@ -102,6 +105,21 @@ object AppModule {
     @Provides
     fun provideLiveAssessmentDao(database: AppDatabase): LiveAssessmentDao {
         return database.liveAssessmentDao()
+    }
+
+    @Provides
+    fun provideAcademicEventDao(database: AppDatabase): AcademicEventDao {
+        return database.academicEventDao()
+    }
+
+    @Provides
+    fun provideSchoolDao(database: AppDatabase): SchoolDao {
+        return database.schoolDao()
+    }
+
+    @Provides
+    fun provideClassroomActivityDao(database: AppDatabase): ClassroomActivityDao {
+        return database.classroomActivityDao()
     }
 
     @Provides

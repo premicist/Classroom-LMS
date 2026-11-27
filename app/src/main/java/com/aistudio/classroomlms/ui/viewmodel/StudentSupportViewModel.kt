@@ -45,6 +45,8 @@ data class StudentSupportUiState(
     val isLiveAssessmentDialogOpen: Boolean = false,
     val liveAssessmentStudent: StudentEntity? = null,
     val editingLiveAssessment: LiveAssessmentEntity? = null,
+    val prefillLiveAssessmentTopic: String = "",
+    val prefillLiveAssessmentTaskType: com.aistudio.classroomlms.data.entity.LiveAssessmentTaskType? = null,
     val userNotificationMessage: String? = null
 )
 
@@ -285,12 +287,18 @@ class StudentSupportViewModel @Inject constructor(
 
     // --- LIVE CLASS FORMATIVE ASSESSMENTS ---
 
-    fun openLiveAssessment(student: StudentEntity? = null) {
+    fun openLiveAssessment(
+        student: StudentEntity? = null,
+        prefillTopic: String = "",
+        prefillTaskType: com.aistudio.classroomlms.data.entity.LiveAssessmentTaskType? = null
+    ) {
         _uiState.update {
             it.copy(
                 isLiveAssessmentDialogOpen = true,
                 liveAssessmentStudent = student,
-                editingLiveAssessment = null
+                editingLiveAssessment = null,
+                prefillLiveAssessmentTopic = prefillTopic,
+                prefillLiveAssessmentTaskType = prefillTaskType
             )
         }
     }
@@ -300,7 +308,9 @@ class StudentSupportViewModel @Inject constructor(
             it.copy(
                 isLiveAssessmentDialogOpen = true,
                 liveAssessmentStudent = _uiState.value.students.find { s -> s.id == assessment.studentId },
-                editingLiveAssessment = assessment
+                editingLiveAssessment = assessment,
+                prefillLiveAssessmentTopic = "",
+                prefillLiveAssessmentTaskType = null
             )
         }
     }
@@ -310,7 +320,9 @@ class StudentSupportViewModel @Inject constructor(
             it.copy(
                 isLiveAssessmentDialogOpen = false,
                 liveAssessmentStudent = null,
-                editingLiveAssessment = null
+                editingLiveAssessment = null,
+                prefillLiveAssessmentTopic = "",
+                prefillLiveAssessmentTaskType = null
             )
         }
     }

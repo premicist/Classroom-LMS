@@ -78,6 +78,7 @@ import com.aistudio.classroomlms.data.entity.InterventionEntity
 import com.aistudio.classroomlms.ui.components.GradeBadge
 import com.aistudio.classroomlms.ui.components.StudentAvatar
 import com.aistudio.classroomlms.data.entity.BehaviorCategory
+import com.aistudio.classroomlms.data.entity.ClassroomActivityEntity
 import com.aistudio.classroomlms.data.entity.DisciplineRecordEntity
 import com.aistudio.classroomlms.data.entity.LiveAssessmentEntity
 import com.aistudio.classroomlms.data.entity.MasteryLevel
@@ -103,6 +104,7 @@ fun StudentDetailDialog(
     interventions: List<InterventionEntity>,
     disciplineRecords: List<DisciplineRecordEntity> = emptyList(),
     liveAssessments: List<LiveAssessmentEntity> = emptyList(),
+    studentActivities: List<ClassroomActivityEntity> = emptyList(),
     classroomName: String = "Classroom",
     onDismiss: () -> Unit,
     onEditStudent: () -> Unit,
@@ -572,6 +574,30 @@ fun StudentDetailDialog(
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        if (studentActivities.isNotEmpty()) {
+                            Text(
+                                text = "🏆 Classroom Games & Wins (${studentActivities.size})",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFB45309)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            studentActivities.forEach { act ->
+                                val place = when (summary.student.id) {
+                                    act.firstWinnerStudentId -> "🥇 1st Place"
+                                    act.secondWinnerStudentId -> "🥈 2nd Place"
+                                    act.thirdWinnerStudentId -> "🥉 3rd Place"
+                                    else -> "Participant"
+                                }
+                                Text(
+                                    text = "$place • ${act.title} (${act.date})",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
                         if (liveAssessments.isEmpty()) {
                             Text(

@@ -3,7 +3,10 @@ package com.aistudio.classroomlms.data.repository
 import android.content.Context
 import android.net.Uri
 import com.aistudio.classroomlms.data.database.AppDatabase
+import com.aistudio.classroomlms.data.entity.AcademicEventEntity
 import com.aistudio.classroomlms.data.entity.AssignmentEntity
+import com.aistudio.classroomlms.data.entity.ClassroomActivityEntity
+import com.aistudio.classroomlms.data.entity.SchoolEntity
 import com.aistudio.classroomlms.data.entity.AttendanceRecordEntity
 import com.aistudio.classroomlms.data.entity.ClassScheduleEntity
 import com.aistudio.classroomlms.data.entity.ClassroomEntity
@@ -14,6 +17,7 @@ import com.aistudio.classroomlms.data.entity.ExamMarkEntity
 import com.aistudio.classroomlms.data.entity.HomeworkRecordEntity
 import com.aistudio.classroomlms.data.entity.InterventionEntity
 import com.aistudio.classroomlms.data.entity.LessonPlanEntity
+import com.aistudio.classroomlms.data.entity.LessonPlanSessionEntity
 import com.aistudio.classroomlms.data.entity.LiveAssessmentEntity
 import com.aistudio.classroomlms.data.entity.StudentEntity
 import com.aistudio.classroomlms.data.entity.SubmissionEntity
@@ -38,12 +42,16 @@ data class DatabaseBackupData(
     val attendanceRecords: List<AttendanceRecordEntity> = emptyList(),
     val interventions: List<InterventionEntity> = emptyList(),
     val lessonPlans: List<LessonPlanEntity> = emptyList(),
+    val lessonPlanSessions: List<LessonPlanSessionEntity> = emptyList(),
     val dailyLogs: List<DailyLogEntity> = emptyList(),
     val classSchedules: List<ClassScheduleEntity> = emptyList(),
     val disciplineRecords: List<DisciplineRecordEntity> = emptyList(),
     val liveAssessments: List<LiveAssessmentEntity> = emptyList(),
     val exams: List<ExamEntity> = emptyList(),
-    val examMarks: List<ExamMarkEntity> = emptyList()
+    val examMarks: List<ExamMarkEntity> = emptyList(),
+    val academicEvents: List<AcademicEventEntity> = emptyList(),
+    val schools: List<SchoolEntity> = emptyList(),
+    val classroomActivities: List<ClassroomActivityEntity> = emptyList()
 )
 
 @Singleton
@@ -66,12 +74,16 @@ class DatabaseBackupManager @Inject constructor(
                 attendanceRecords = db.attendanceDao().getAllAttendanceRecordsOnce(),
                 interventions = db.interventionDao().getAllInterventionsOnce(),
                 lessonPlans = db.plannerDao().getAllLessonPlansOnce(),
+                lessonPlanSessions = db.plannerDao().getAllLessonPlanSessionsOnce(),
                 dailyLogs = db.plannerDao().getAllDailyLogsOnce(),
                 classSchedules = db.classScheduleDao().getAllSchedulesOnce(),
                 disciplineRecords = db.disciplineDao().getAllDisciplineRecordsOnce(),
                 liveAssessments = db.liveAssessmentDao().getAllAssessmentsOnce(),
                 exams = db.examDao().getAllExamsOnce(),
-                examMarks = db.examDao().getAllExamMarksOnce()
+                examMarks = db.examDao().getAllExamMarksOnce(),
+                academicEvents = db.academicEventDao().getAllEventsOnce(),
+                schools = db.schoolDao().getAllSchoolsOnce(),
+                classroomActivities = db.classroomActivityDao().getAllActivitiesOnce()
             )
 
             val json = adapter.toJson(backupData)
@@ -106,12 +118,16 @@ class DatabaseBackupManager @Inject constructor(
                 db.attendanceDao().insertAttendanceRecordsSync(backupData.attendanceRecords)
                 db.interventionDao().insertInterventionsSync(backupData.interventions)
                 db.plannerDao().insertLessonPlansSync(backupData.lessonPlans)
+                db.plannerDao().insertLessonPlanSessionsSync(backupData.lessonPlanSessions)
                 db.plannerDao().insertDailyLogsSync(backupData.dailyLogs)
                 db.classScheduleDao().insertScheduleEntriesSync(backupData.classSchedules)
                 db.disciplineDao().insertDisciplineRecordsSync(backupData.disciplineRecords)
                 db.liveAssessmentDao().insertAssessmentsSync(backupData.liveAssessments)
                 db.examDao().insertExamsSync(backupData.exams)
                 db.examDao().insertExamMarksSync(backupData.examMarks)
+                db.academicEventDao().insertEventsSync(backupData.academicEvents)
+                db.schoolDao().insertSchoolsSync(backupData.schools)
+                db.classroomActivityDao().insertActivitiesSync(backupData.classroomActivities)
             }
 
             Result.success(Unit)

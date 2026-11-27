@@ -27,6 +27,10 @@ class FakeExamDao : ExamDao {
         return examsFlow.value
     }
 
+    override fun getAllExams(): Flow<List<ExamEntity>> {
+        return examsFlow
+    }
+
     override suspend fun insertExam(exam: ExamEntity): Long {
         val idToUse = if (exam.id == 0L) nextExamId++ else exam.id
         val item = exam.copy(id = idToUse)
